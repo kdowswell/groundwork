@@ -1,0 +1,96 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://groundwork.dev/schemas/principle.schema.json",
+  "title": "groundwork principle frontmatter",
+  "description": "Schema for the YAML frontmatter at the top of every principle markdown file.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["id", "title", "category", "sources", "applies_when"],
+  "properties": {
+    "id": {
+      "type": "string",
+      "pattern": "^[a-z0-9]+(-[a-z0-9]+)*$",
+      "description": "kebab-case identifier; must match the filename (without extension)."
+    },
+    "title": {
+      "type": "string",
+      "minLength": 1
+    },
+    "category": {
+      "type": "string",
+      "enum": [
+        "reliability",
+        "security",
+        "scalability",
+        "observability",
+        "data",
+        "design",
+        "delivery",
+        "operations"
+      ],
+      "description": "Must match the parent directory under principles/."
+    },
+    "sources": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["name", "url"],
+        "properties": {
+          "name": { "type": "string", "minLength": 1 },
+          "url": { "type": "string", "format": "uri" }
+        }
+      }
+    },
+    "applies_when": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["scope", "scale", "stage", "domains"],
+      "properties": {
+        "scope": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "enum": ["new_build", "epic", "feature", "story", "bug_fix"]
+          }
+        },
+        "scale": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "enum": ["solo", "team", "enterprise"]
+          }
+        },
+        "stage": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "enum": ["ideation", "discovery", "refinement", "build", "maintain"]
+          }
+        },
+        "domains": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Open vocabulary; common values include any_production, financial_services, healthcare, defense, ecommerce, government, media, education."
+          }
+        }
+      }
+    },
+    "tags": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": { "type": "string", "minLength": 1 }
+    }
+  }
+}
