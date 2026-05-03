@@ -5,8 +5,8 @@ category: operations
 sources:
   - name: Google SRE Book — Software Engineering in SRE (Capacity Planning, Auxon)
     url: https://sre.google/sre-book/software-engineering-in-sre/
-  - name: The Art of Capacity Planning (Allspaw, Kejariwal)
-    url: https://www.oreilly.com/library/view/the-art-of/9781491939208/
+  - name: The Art of Capacity Planning (Allspaw)
+    url: https://www.oreilly.com/library/view/the-art-of/9780596518578/
   - name: AWS Well-Architected Framework — Performance Efficiency Pillar
     url: https://docs.aws.amazon.com/wellarchitected/latest/performance-efficiency-pillar/
 applies_when:
@@ -59,4 +59,4 @@ Capacity planning is the discipline of knowing — before users do — when a sy
 - A regional outage cannot be absorbed because every region was running at 90% utilization to save money
 
 ## Further Reading
-The Google SRE book's chapter on software engineering in SRE describes the demand-and-supply model used by Auxon and the realities of forecasting at scale. Allspaw and Kejariwal's *The Art of Capacity Planning* is the practical canonical reference, combining measurement, forecasting, and load testing into a workable operational discipline.
+The Google SRE book's chapter on software engineering in SRE describes the demand-and-supply model used by Auxon and the realities of forecasting at scale. Allspaw's *The Art of Capacity Planning* is the practical canonical reference, combining measurement, forecasting, and load testing into a workable operational discipline.

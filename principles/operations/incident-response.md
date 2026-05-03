@@ -9,8 +9,8 @@ sources:
     url: https://sre.google/sre-book/postmortem-culture/
   - name: PagerDuty Incident Response Documentation
     url: https://response.pagerduty.com/
-  - name: Etsy — Debriefing Facilitation Guide for Blameless Postmortems
-    url: https://www.etsy.com/codeascraft/debriefing-facilitation-guide/
+  - name: Etsy — Debriefing Facilitation Guide (GitHub)
+    url: https://github.com/etsy/DebriefingFacilitationGuide
 applies_when:
   scope: [new_build, epic]
   scale: [team, enterprise]
