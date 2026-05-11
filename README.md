@@ -1,86 +1,119 @@
 # groundwork
 
-Architectural grounding for AI coding agents. A skill framework that injects best-practice architectural awareness into how agents plan and build software — guiding teams into the pit of success.
+A phase-based, framework-agnostic skills library for AI coding agents. Groundwork gives agents the architectural judgment they're missing — and grounds every planning decision in established practice, not instinct.
 
 > "You can outsource your thinking, but you cannot outsource your understanding." — Andrej Karpathy
 
 ## What This Is
 
-AI coding agents are fast but architecturally naive. They'll build what you ask for, but they won't ask whether you should build it that way. They don't know your team's scale targets, your compliance constraints, or whether event-driven makes more sense than request-response for your use case.
+AI coding agents are fast but architecturally naive. They'll build what you ask for, but they won't ask whether you should build it *that way*. They don't know your team's scale targets, your compliance constraints, or whether you're adding to a mature system or starting from scratch.
 
-groundwork is a collection of architectural skill files that agents consume during their planning phase. When a developer asks an agent to build something, the agent references the relevant principles — informed by the scope of work, the maturity of the system, and the team's own standards — and weaves that awareness into its plan before writing a line of code.
+groundwork is a two-layer library:
 
-It's not a linter. It's not a gatekeeper. It's the architectural judgment that most agents are missing.
+**Principles** — distilled architectural knowledge sourced from established frameworks (AWS Well-Architected, DDIA, Twelve-Factor, OWASP, SRE Workbook, and more). Each principle is a focused, actionable summary with source attribution: what the principle is, when it applies, how to evaluate it, and what goes wrong when you skip it.
 
-## How It Works
+**Skills** — executable process workflows organized by development phase. Skills tell an agent *how to do something*; principles tell it *what good looks like when done*. Skills reference principles — principles are independent.
 
-1. **Install** — Drop groundwork into your repo as a skill, instruction set, or custom command.
-2. **Onboard** *(optional)* — Run a guided interview to tailor guidance to your team's stack, process, and constraints.
-3. **Build** — The agent references relevant principles when planning work, not interrupting during coding.
+## Three Phases
 
-The agent selects which principles matter based on:
+| Phase | Skills | Use when |
+|---|---|---|
+| **Greenfield** | 5 | Creating something new: idea → spec → architecture |
+| **Exploration** | 4 | Research spikes, prototypes, assumption testing, tradeoffs |
+| **Brownfield** | 6 | Adding to, improving, or safely changing an existing system |
 
-- **Scope** — New build vs. epic vs. feature vs. story vs. bug fix
-- **Scale** — Solo project vs. team vs. enterprise
-- **Stage** — Greenfield ideation vs. active development vs. production hardening vs. maintenance
-- **Domain** — The compliance, security, and operational requirements of the target industry
+## Skills
 
-## Why This Exists
+### Greenfield
 
-We're in the middle of a paradigm shift — what Andrej Karpathy calls the move from "vibe coding" to "agentic engineering." The agents are superhuman at generating code but architecturally ungrounded. They don't know what they don't know.
+| Skill | What it does |
+|---|---|
+| `signal-driven-principles` | Scan project context → select the load-bearing principles this project needs |
+| `spec-from-idea` | Translate a raw idea into a structured spec with scope, success criteria, and identified risks |
+| `architecture-sketch` | Define system boundaries, components, data flows, and interfaces before coding |
+| `data-model-first` | Design the core data model to surface coupling and schema decisions early |
+| `adr-setup` | Establish Architecture Decision Records from day one |
 
-Groundwork exists because agentic engineering demands that someone maintain architectural judgment while agents handle implementation. That someone is you. This tool makes sure your agent knows what you know — your constraints, your patterns, your quality bar — so it can plan and build with the same architectural awareness you would bring to the work yourself.
+### Exploration
 
-The alternative is entropy. Every agent-generated PR that ignores your data residency requirements, every service boundary drawn without considering blast radius, every shared database that seemed fine until it wasn't — that's the cost of ungrounded agents moving fast without judgment.
+| Skill | What it does |
+|---|---|
+| `research-spike` | Time-boxed investigation with a defined question, approach, and exit criteria |
+| `assumption-mapping` | Surface and rank the riskiest assumptions before committing to a plan |
+| `prototype-review` | Evaluate a proof-of-concept for architectural soundness before building on it |
+| `tradeoff-analysis` | Structured comparison of approaches with documented decision rationale |
 
-## Core Concepts
+### Brownfield
 
-### Principles, Not Rules
+| Skill | What it does |
+|---|---|
+| `safe-change-plan` | Plan a production change with rollback strategy, test coverage, and blast radius assessment |
+| `strangler-fig` | Incrementally replace a legacy component without a risky big-bang rewrite |
+| `debt-triage` | Categorize and prioritize technical debt before a sprint |
+| `incident-retro` | Blameless postmortem → verified timeline + owned action items |
+| `dependency-upgrade` | Safely upgrade a critical dependency with compatibility checks and staged rollout |
+| `brownfield-architecture-review` | Assess an existing system against the principle library before significant new work |
 
-Each piece of architectural guidance is a **principle file** — a distilled, actionable summary of an established architectural concept. Principle files are not reproductions of source material. They are editorial distillations that capture: *what* the principle is, *when* it applies, *why* it matters, *how to evaluate* it in context, and *source* attribution.
+## Principle Library
 
-This is the citation + distillation model. The agent gets enough grounding to reason well. The developer gets breadcrumbs to go deeper. Original authors and frameworks are always attributed.
+32 principles across 8 categories:
 
-See [`principles/reliability/fault-isolation.md`](principles/reliability/fault-isolation.md) for the canonical example.
+| Category | Principles |
+|---|---|
+| **Reliability** | Circuit Breakers, Fault Isolation, Graceful Degradation, Health Checks, Chaos Engineering |
+| **Security** | Secrets Management, Zero Trust, Least Privilege, Data Classification, Supply Chain Security |
+| **Scalability** | Horizontal Scaling, Caching Strategy, Data Partitioning, Async Processing |
+| **Observability** | Structured Logging, Distributed Tracing, SLO / Error Budgets, Alerting Strategy |
+| **Data** | Data Ownership, Consistency Models, Event Sourcing, Schema Evolution |
+| **Design** | Field-First (Hostile Operating Conditions) |
+| **Delivery** | CI/CD Pipeline, Blue-Green / Canary, Feature Flags, Infrastructure as Code |
+| **Operations** | Incident Response, Runbooks, Capacity Planning, Tech Debt Management |
 
-### Phase-Aware Selection
+## How to Use
 
-The agent doesn't dump every principle into context. It selects what's relevant based on where the developer is in the process: **Ideation**, **Discovery**, **Refinement**, **Build**, or **Maintain**. The agent infers the current phase from context — repo state, the nature of the request, conversation history — or the developer can signal it explicitly.
+Drop any skill file into your agent's context (CLAUDE.md, `.github/copilot-instructions.md`, `.cursorrules`, system prompt) and invoke it when the development phase matches.
 
-### Scope Calibration
+For project-specific grounding:
 
-A new build needs fundamentally different guidance than a feature within an existing system. groundwork calibrates to scope:
+1. Copy `context/project-context.template.md` into your project and fill it in
+2. Run the `signal-driven-principles` skill to select the principles that apply to your project
+3. Invoke the relevant phase skill when starting a greenfield, exploration, or brownfield task
 
-| Scope | Architectural Depth |
-|-------|---------------------|
-| **New Build** | Full system design — boundaries, infrastructure, data strategy, deployment |
-| **Epic** | Cross-cutting concerns — how this epic affects existing architecture |
-| **Feature** | Pattern consistency — does this follow established patterns |
-| **Story** | Implementation guidance — tactical best practices |
-| **Bug Fix** | Root cause awareness — why did this break |
+The library is intentionally agent-agnostic — it works with Claude Code, Copilot, Cursor, Gemini, or any agent that can consume markdown instructions.
 
 ## Repo Structure
 
 ```
 groundwork/
-├── principles/         The core knowledge base (one .md per principle)
-│   └── _schema/        JSON Schema for principle frontmatter
-├── profiles/           Generated team/project profiles (from onboarding)
-├── skills/             Agent-consumable skill bundles (Claude Code, Copilot, Cursor, generic)
-├── onboarding/         Guided interview to tailor guidance to a team
-├── examples/           Worked example profiles + generated skill files
-└── scripts/            Tooling — principle validator, etc.
+├── principles/             Architectural principle library
+│   ├── _schema/            Frontmatter JSON Schema
+│   └── {category}/         One .md file per principle
+├── skills/                 Phase-organized skill workflows
+│   ├── _schema/            Frontmatter JSON Schema
+│   ├── greenfield/         0-to-1 skills (5)
+│   ├── exploration/        Research and prototype skills (4)
+│   └── brownfield/         Existing-system skills (6)
+├── context/                Project context artifacts
+│   ├── project-context.template.md
+│   └── discovery-questions.md
+└── scripts/
+    ├── validate-principles.ts
+    └── validate-skills.ts
 ```
 
-## Status
+## Validation
 
-Early scaffold. See `package.json` for tooling. Run `npm run validate` to check principle frontmatter against the schema.
+```bash
+npm run validate          # validate all principle frontmatter
+npm run validate:skills   # validate all skill frontmatter
+npm run validate:all      # both
+```
 
 ## Source Frameworks
 
-groundwork distills principles from established architectural frameworks. Each principle file attributes its sources. Initial frameworks include the AWS / Azure / Google Cloud Well-Architected Frameworks, 12-Factor App, Domain-Driven Design, Clean Architecture, Release It!, Site Reliability Engineering, OWASP Top 10, NIST CSF, Designing Data-Intensive Applications, and Enterprise Integration Patterns.
+The principle library distills from: AWS / Azure / Google Cloud Well-Architected Frameworks, 12-Factor App, Domain-Driven Design, Clean Architecture, Release It!, Site Reliability Engineering (Google), OWASP Top 10, NIST CSF, Designing Data-Intensive Applications (Kleppmann), and Enterprise Integration Patterns.
 
-> **Attribution Policy:** Principle files contain distilled guidance — the principle in plain language, when it applies, and how to evaluate it — not reproduced content. Developers are always directed to source material for comprehensive treatment.
+Every principle file attributes its sources directly. Groundwork distills — it does not reproduce.
 
 ## License
 

@@ -1,0 +1,114 @@
+---
+id: architecture-sketch
+title: "Architecture Sketch"
+phase: greenfield
+description: >
+  Define system boundaries, key components, data flows, and critical interfaces
+  before writing a line of code, so structural decisions are made deliberately
+  rather than inherited from the first implementation choice.
+trigger: >
+  When a spec exists and the team is about to start implementation, but no one
+  has drawn the system boundary or named the major components.
+entry_criteria:
+  - "A spec exists with a problem statement, scope, and primary data entity"
+  - "Active principles have been selected (signal-driven-principles skill)"
+exit_criteria:
+  - "System boundary is drawn: what is inside this system vs. outside"
+  - "Major components are named with one-sentence responsibilities"
+  - "Data flows between components are described"
+  - "External dependencies are listed with failure-mode notes"
+  - "At least one ADR captures the highest-stakes structural decision"
+principles:
+  - fault-isolation
+  - async-processing
+  - horizontal-scaling
+time_box: "45-90 minutes"
+tags: [architecture, design, greenfield]
+---
+
+# Architecture Sketch
+
+## When to Use This Skill
+
+Use this skill after a spec exists but before any code is written. Its purpose is to make structural decisions explicitly rather than letting them fall out of the first code written. The sketch doesn't need to be right — it needs to be documented so that when it changes, the change is a deliberate revision rather than an invisible drift.
+
+What goes wrong when you skip it: the architecture becomes whatever the first developer implemented. Boundaries emerge organically and are never questioned. Changing them later requires coordinated rewrites across services, teams, and data stores.
+
+## Steps
+
+1. **Draw the system boundary.** Write one sentence: "This system is responsible for X and hands off Y to Z." Anything inside the boundary is your problem; anything outside is a dependency. Ambiguity here is technical debt's favorite entry point.
+
+2. **Name the major components.** List 3–7 components with a one-sentence responsibility for each. A component is a distinct unit that could in principle be deployed, tested, or replaced independently. If a component's responsibility spans more than one sentence, split it.
+
+3. **Trace the primary data flow.** Follow the data entity from Step 5 of the spec-from-idea skill through the system: where it enters, what transforms it, where it's stored, who reads it, and where it exits. Write this as a numbered sequence. Every hop between components is a potential failure point — note it.
+
+4. **List external dependencies.** For each system outside the boundary that this system depends on, record:
+   - What this system requests from it
+   - What happens if it is slow or unavailable
+   - Whether the failure is catastrophic (blocks the primary path) or degraded (reduces capability)
+
+5. **Identify the synchronous/asynchronous boundary.** Draw a line between: things that must complete before the user gets a response, and things that can happen later. Anything that crosses the network or is slow should be on the async side unless there is a strong reason it can't be.
+
+6. **Note the three highest-stakes structural decisions.** These are the choices that would be most expensive to reverse after significant code is written. Write each as a decision statement: "We will use X rather than Y because Z." Each becomes an ADR (see adr-setup skill).
+
+7. **Check active principles against the sketch.** For each principle in the project's active set, ask: does the sketch violate it or create tension with it? Document any tensions explicitly — they are not necessarily blockers, but they must be acknowledged.
+
+## Checkpoints
+
+**Are the component responsibilities distinct?**
+If two components share the same primary noun in their responsibility statements (both "manage users," both "store events"), consolidate or clarify the boundary between them. Overlapping responsibilities become coordination problems at runtime.
+
+**Does every external dependency have a failure mode?**
+If you wrote a dependency without a failure mode, the implicit assumption is "it will always be available." That assumption will be wrong at the worst possible time. Ask: "What happens to the user if this is down for 30 minutes?" If the answer is "nothing works," that's a catastrophic dependency — treat it as such in the architecture.
+
+**Does the asynchronous boundary match the user's experience expectations?**
+If the user expects an immediate response to an action but the action crosses a slow external dependency synchronously, the user will experience unpredictable latency. This is a checkpoint where the developer must decide: accept the latency, make it async, or cache.
+
+## Principle Application
+
+**fault-isolation** (`principles/reliability/fault-isolation.md`)
+Step 4 is where fault-isolation thinking applies. Each external dependency is a potential failure zone. Use the "What Good Looks Like" section of this principle to evaluate whether each dependency is isolated: can a failure in that dependency be contained, or does it cascade to the primary path? If it cascades, that's the most important structural problem in the sketch.
+
+**async-processing** (`principles/scalability/async-processing.md`)
+Step 5 operationalizes this principle. The question is: which work is synchronous because it must be (user is waiting), and which is synchronous by accident (because it was easiest to write that way)? The principle's "Questions the Agent Should Ask" section drives Step 5.
+
+**horizontal-scaling** (`principles/scalability/horizontal-scaling.md`)
+If the scale target in the project context is team-scale or enterprise, check the sketch against this principle at Step 7. Stateful components that can't be replicated become bottlenecks. The sketch should make stateful vs. stateless components explicit.
+
+## Output Format
+
+An `architecture.md` file (or equivalent diagram + notes) with:
+
+```markdown
+# Architecture: {{SYSTEM NAME}}
+
+## System Boundary
+This system is responsible for: ...
+It hands off to: ...
+It receives from: ...
+
+## Components
+| Component | Responsibility |
+|---|---|
+| ... | One sentence |
+
+## Primary Data Flow
+1. ...
+2. ...
+
+## External Dependencies
+| Dependency | What we need | Failure mode | Severity |
+|---|---|---|---|
+| ... | ... | ... | Catastrophic / Degraded |
+
+## Sync / Async Boundary
+**Synchronous (user waits):** ...
+**Asynchronous (background):** ...
+
+## Structural Decisions (see ADRs)
+1. We will use X rather than Y because Z.
+2. ...
+
+## Active Principle Tensions
+- {{PRINCIPLE}}: ...
+```
