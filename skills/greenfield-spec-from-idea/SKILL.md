@@ -2,10 +2,12 @@
 name: greenfield-spec-from-idea
 title: "Spec From Idea"
 description: >
-  Translate a raw idea, one-pager, or conversation into a structured spec with
-  scope, success criteria, non-goals, and identified risks. Invoke when a
-  developer says "I want to build X" or provides a vague product idea without
-  defined requirements or scope.
+  Translates a raw idea, one-pager, or conversation into a structured spec with
+  scope, success criteria, non-goals, and identified risks. Invoke at the start
+  of any new project or feature — whenever someone describes an idea or problem
+  to solve, requirements are being discussed without written scope, or the team
+  is about to start work without a defined spec. Do not wait to be asked: if
+  the work is greenfield and no spec exists, trigger this skill.
 phase: greenfield
 entry_criteria:
   - "A description of the intended product or feature exists (any fidelity)"
@@ -23,11 +25,20 @@ tags: [planning, requirements, greenfield, spec]
 
 # Spec From Idea
 
-## When to Use This Skill
+## How This Skill Works
 
-Use this skill when a project or feature is in the idea stage — when the developer knows what they want to build but hasn't yet defined what "done" means, what's in scope, or what could go wrong. It turns unstructured intent into a structured starting point that every downstream artifact (architecture sketch, ADR, sprint plan) can reference.
+This skill is a structured conversation: the agent asks, the human answers, and together they produce a `spec.md` that every downstream artifact — architecture sketch, ADRs, sprint plan — treats as the source of truth for scope and intent.
 
-What goes wrong when you skip it: the team starts building from a shared but unstated assumption. Scope expands invisibly. Features ship that solve the wrong problem. Two months in, someone asks "what were we actually trying to achieve?" and the answer isn't written down anywhere.
+The agent's primary job is to resist solution-first thinking. Most ideas arrive as "I want to build X" — which describes the solution, not the problem. Before any scope or success criteria can be written, the problem must be stated in one sentence from the user's perspective. If it can't be, the idea isn't ready to spec yet.
+
+The human's job is to answer questions honestly, including "I don't know." Open questions and deferred decisions are valid spec outputs. A spec that names its unknowns is more useful than one that papers over them.
+
+**Key concepts used in the Steps:**
+- **Problem statement** — one sentence describing what a specific user cannot do or does badly today
+- **Success criteria** — measurable or falsifiable outcomes, not output descriptions
+- **Non-goals** — explicit scope exclusions; as important as the goals list
+- **Primary data entity and owner** — the core thing the system stores or transforms, and which team is the authoritative source
+- **Riskiest assumption** — the one belief, if wrong, that requires the most rework
 
 ## Steps
 
@@ -64,10 +75,39 @@ If the primary user is a field worker, mobile user, or anyone not sitting at a d
 ## Principle Application
 
 **data-ownership**
-Step 5 directly operationalizes this principle. The most load-bearing section is "Questions the Agent Should Ask" — use those questions to drive the conversation in Step 5. If ownership is ambiguous after Step 5, mark it as a Blocking open question and do not proceed to architecture until it's resolved.
+Step 5 exists to resolve what is the most common unforced error at spec time: data ownership that is implied by who will write the first migration rather than explicitly decided. The full complexity of contracts, consumer access patterns, and CDC pipelines doesn't need to be resolved at spec time — but ownership does, because it determines the access control model, the API contract, and which team's release schedule this feature lives on.
+
+When naming the primary data entity in Step 5, ask:
+
+- Which team or service is the system of record for this entity — is that decision explicit, or is it implied by who will write the first migration?
+- Do other services or pipelines currently read this type of data directly? If yes, through what mechanism?
+- When this feature needs data owned by another team, will it call an API, consume an event, or reach into that team's database?
+- Is there a named team accountable for the quality and schema of this data as a product other teams depend on?
+
+If the developer hesitates — or says "I guess we'd store it" — that is a Blocking open question. Do not proceed to architecture until it is resolved.
+
+What good looks like at spec time: "The primary data entity is `Inspection`, owned by the Compliance service. Other services receive it via event stream. No other team writes to this entity."
+
+What goes wrong when you skip it: two teams each store a version of the entity; a reporting pipeline reads from both; when either schema changes, the pipeline silently breaks. The incident at month four reveals that ownership was never decided — it was left ambiguous in the spec and both teams assumed the other had it.
+
+---
 
 **field-first**
-If the primary user is not a desk worker, Steps 2 and 4 must account for field conditions: gloves, sunlight, connectivity, divided attention, PPE. The success criteria in Step 4 should be written for the worst-case operating environment, not the best case. If the developer hasn't thought about the physical context, ask the "Questions the Agent Should Ask" section from this principle.
+This principle governs the spec if the primary user identified in Step 2 is doing physical work while using the product — a worker, technician, driver, clinician, or first responder. If so, it is not a constraint to note and move on from; it is the operating context for every success criterion and scope decision in the spec. Office-based criteria written assuming a desk, large screen, full attention, and reliable connectivity will silently fail in the field.
+
+Before writing success criteria in Step 4, ask:
+
+- Where will the user physically be when they use this? Indoors, outdoors, in a vehicle, on a ladder, in a trench?
+- What are they wearing on their hands? Bare-hand typing as a required input path may be an invalid assumption.
+- What is the worst-case connectivity scenario — no signal for hours, intermittent, slow cellular?
+- How divided is their attention? Are they responsible for their own physical safety while interacting with this product?
+- How many seconds can they realistically spend on a single screen before returning to the physical task?
+
+Success criteria that account for field context look different: "A technician can submit a report in under 60 seconds without removing gloves" describes the actual operating environment. "The form submits in under two seconds" does not — it measures the system, not the user in context.
+
+What good looks like at spec time: success criteria name the worst-case operating environment explicitly, and any criterion that requires connectivity, sustained visual attention, or fine motor input flags that as a design constraint, not an assumption.
+
+What goes wrong when you skip it: field-inappropriate success criteria pass through to architecture and build phases, where every decision treats them as valid. Adding "field mode" retrospectively — after the data model, auth flow, offline behavior, and workflow length are baked into a desktop-first design — is dramatically harder than building field-first from day one. Pilots crater. Workers revert to paper. No one can identify the spec as the root cause because by then the spec has been forgotten.
 
 ## Output Format
 

@@ -2,11 +2,11 @@
 name: greenfield-adr-setup
 title: "ADR Setup"
 description: >
-  Establish Architecture Decision Records from the first day of a project so
-  structural decisions are documented as they're made, not reconstructed later.
-  Invoke when a project has made at least one structural decision that would be
-  expensive to reverse, or when the architecture-sketch skill surfaces
-  high-stakes decisions that need to be captured.
+  Establishes Architecture Decision Records so structural decisions are
+  documented as they're made, not reconstructed later. Use at the start of any
+  new project, when a high-stakes architectural decision has been made, when
+  the architecture-sketch skill surfaces decisions that need to be captured, or
+  when the team lacks a record of why past decisions were made.
 phase: greenfield
 entry_criteria:
   - "At least one structural decision has been made or is being made"
@@ -21,13 +21,20 @@ tags: [architecture, documentation, process, greenfield]
 
 # ADR Setup
 
-## When to Use This Skill
+## How This Skill Works
 
-Use this skill whenever a project makes a structural decision that would be expensive to reverse. This includes: choice of data store, synchronous vs. asynchronous communication model, authentication approach, deployment topology, and language or framework choice when it has significant downstream implications.
+This skill establishes a lightweight ADR practice so structural decisions are captured as they're made, not reconstructed from memory months later. The output is an ADR directory with the first set of populated records — one per high-stakes decision already made.
 
-The goal is not to document everything — it's to capture the decisions that future developers will ask "why did they do it this way?" If the question has an answer worth preserving, write an ADR. If the answer is "seemed fine at the time," the decision probably didn't need an ADR — or it did and no one recorded it.
+An ADR is not documentation for its own sake. It answers one question: "why did we do it this way?" If that question has an answer worth preserving, write the ADR. If the answer is "seemed fine at the time," the decision probably needs an ADR more than most.
 
-What goes wrong when you skip it: six months in, a new engineer asks why the system uses approach X instead of Y. Nobody knows. The original reasons may have been good ones that should still apply, or they may have been temporary constraints that have since changed. Without ADRs, the team can't tell the difference.
+The agent structures the ADR format and populates records based on decisions the human describes. The human provides the context the agent cannot infer from code: the constraints present when the decision was made, the alternatives that were considered, and the conditions under which the decision should be reconsidered.
+
+**Key concepts used in the Steps:**
+- **ADR** — a short document capturing a single architectural decision: context, decision, alternatives, consequences
+- **Status** — the state of the decision: proposed, accepted, deprecated, or superseded
+- **Context** — the forces and constraints that made this decision necessary at the time
+- **Consequences** — what becomes easier, harder, or constrained as a result of this decision
+- **Superseded by** — a link to the ADR that replaces this one if the decision is later reversed
 
 ## Steps
 

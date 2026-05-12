@@ -2,10 +2,10 @@
 name: exploration-prototype-review
 title: "Prototype Review"
 description: >
-  Evaluate a proof-of-concept for architectural soundness and identify what
-  must change before the prototype becomes the foundation for production code.
-  Invoke when a working prototype exists and the team is deciding whether to
-  build on it or rewrite.
+  Evaluates a proof-of-concept for architectural soundness and identifies what
+  must change before it becomes the foundation for production code. Use when a
+  working prototype or POC exists and the team is deciding whether to build on
+  it, rewrite it, or treat it as throwaway validation.
 phase: exploration
 entry_criteria:
   - "A working prototype or proof-of-concept exists"
@@ -25,13 +25,19 @@ tags: [exploration, prototype, code-review, architecture]
 
 # Prototype Review
 
-## When to Use This Skill
+## How This Skill Works
 
-Use this skill when a prototype exists and the team is about to decide whether to build on top of it or rewrite. Prototypes are built to answer a question, not to be production code. They routinely carry assumptions, shortcuts, and missing concerns that are fine for exploration but dangerous in production.
+This skill applies an architectural lens to a prototype to make explicit what it traded away to move fast — and to decide whether those trades are acceptable as the foundation for production code. The output is an assessment with a build / rewrite / discard recommendation and a list of what must change before the prototype can be built upon.
 
-The goal of this review is not to judge the prototype's code quality — it's to make explicit what the prototype traded away to move fast, and to decide consciously whether those trades are acceptable going forward.
+This is not a code quality review. Prototypes are built to answer a question, and doing that well often means deliberate shortcuts. The question is not "is this good code?" but "what did this prototype prove, what did it skip, and what are the consequences of building on top of it?"
 
-What goes wrong when you skip it: the prototype becomes the product. The prototype's assumptions become the system's constraints. The team inherits a structure that was shaped by exploration goals, not production goals, and refactoring becomes progressively harder as more is built on top of it.
+The agent applies the principle library to surface what the prototype leaves unaddressed. The human provides what the agent cannot determine from the code alone: what question the prototype was built to validate, which shortcuts were deliberate, and what the constraints on a rewrite would be.
+
+**Key concepts used in the Steps:**
+- **Prototype purpose** — the specific question or assumption the prototype was built to validate
+- **Deliberate trade** — a shortcut acceptable for exploration but not acceptable in production
+- **Production concern** — a requirement the prototype does not address (error handling, auth, observability, data ownership)
+- **Build / rewrite / discard** — extend the prototype, replace it cleanly, or treat it as validated learning only
 
 ## Steps
 

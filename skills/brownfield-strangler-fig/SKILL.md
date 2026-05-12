@@ -2,10 +2,10 @@
 name: brownfield-strangler-fig
 title: "Strangler Fig"
 description: >
-  Incrementally replace a legacy component by routing new traffic to the
-  replacement while existing traffic continues through the original. Invoke
-  when a component needs to be replaced but a big-bang rewrite is too risky
-  to attempt.
+  Incrementally replaces a legacy component by routing new traffic to the
+  replacement while existing traffic continues through the original. Use when
+  a component needs replacing but a big-bang rewrite is too risky, or when
+  the team says "we need to get off this" but can't stop the system to do it.
 phase: brownfield
 entry_criteria:
   - "The component to be replaced is identified"
@@ -25,13 +25,20 @@ tags: [brownfield, migration, legacy, refactoring]
 
 # Strangler Fig
 
-## When to Use This Skill
+## How This Skill Works
 
-Use this skill when a component needs to be replaced and the risk of a big-bang rewrite is unacceptable. The strangler fig pattern replaces a system incrementally by intercepting calls to the old component, routing some to the new one, and gradually shifting 100% of traffic to the replacement.
+This skill plans an incremental replacement of a legacy component by routing traffic through a facade that progressively shifts calls to the new implementation. At no point is the old system unavailable while the new one is unfinished — the two coexist until the migration is complete.
 
-The pattern is named after the strangler fig tree, which grows around a host tree and eventually replaces it. The original stays alive and functional until the replacement is complete; there is no moment where both are dead simultaneously.
+The pattern is named after the strangler fig tree, which grows around a host tree and eventually replaces it. The original stays alive and functional throughout; there is no moment where both are simultaneously unavailable.
 
-What goes wrong when you skip it and attempt a big-bang rewrite: the rewrite takes 3x longer than estimated, the old system gets emergency patches during the rewrite that must be ported, and the cutover date keeps slipping. Eventually either the old system is shipped with the new system still unfinished, or the rewrite is abandoned and the old system lives forever.
+The agent structures the migration phases and routing strategy. The human provides what the agent cannot know: the system's traffic patterns, deployment constraints, the acceptable pace of cutover, and which behaviors must reach parity before any traffic shifts.
+
+**Key concepts used in the Steps:**
+- **Facade** — the routing layer that intercepts calls to the legacy component and directs them to old or new
+- **Traffic routing** — the mechanism for shifting call volume from legacy to replacement (percentage, feature flag, request type)
+- **Parity verification** — confirming the new implementation handles a given behavior correctly before legacy traffic shifts
+- **Completion criteria** — the conditions under which the legacy component can be decommissioned
+- **Rollback trigger** — the signal that causes traffic to shift back to the legacy path
 
 ## Steps
 

@@ -2,10 +2,10 @@
 name: exploration-research-spike
 title: "Research Spike"
 description: >
-  Run a time-boxed technical investigation with a defined question, approach,
-  and exit criteria so the spike produces a decision, not just information.
-  Invoke when a technical question is blocking a decision and the answer
-  requires experimentation, prototyping, or deep reading to resolve.
+  Runs a time-boxed technical investigation with a defined question, approach,
+  and exit criteria so the spike produces a decision, not just information. Use
+  when a technical question is blocking a decision, when the team says "we need
+  to research this first," or when the right approach requires a proof of concept.
 phase: exploration
 entry_criteria:
   - "A specific question to answer is written down (not a topic to explore)"
@@ -21,13 +21,20 @@ tags: [exploration, research, discovery, prototype]
 
 # Research Spike
 
-## When to Use This Skill
+## How This Skill Works
 
-Use this skill when a technical question must be answered before a decision can be made, and the answer requires more than reading documentation or asking a colleague. Typical triggers: "we don't know if this approach will perform at scale," "we've never integrated with this third-party API," "the library claims to support X but we need to verify it works in our stack."
+This skill structures a technical investigation so it produces a specific decision, not just information. The output is a spike report: a stated question, the approach taken, what was found, and the decision the findings enable.
 
-A spike is not the same as open-ended exploration. It has a question, a time box, and a decision it must unblock. If those three things aren't defined before the spike starts, it will expand to fill all available time and produce a memo instead of a decision.
+A spike is not open-ended exploration. It has a question, a time box, and a decision it must unblock. If those three things are not defined before the spike starts, it will expand to fill available time and produce a memo instead of a conclusion.
 
-What goes wrong when you skip it: the team builds on an untested assumption. The assumption is wrong. The discovery happens in production or at a sprint review, not in a controlled spike. The rewrite cost is 10x the spike cost would have been.
+The agent structures the investigation — defining the question, setting exit criteria, and tracking findings against the original question. The human provides the domain context and directs the investigation toward the areas of highest uncertainty.
+
+**Key concepts used in the Steps:**
+- **Spike question** — the specific, answerable question the spike is designed to resolve
+- **Time box** — the maximum time allocated; findings at the time box are the findings, even if incomplete
+- **Exit criteria** — the condition under which the spike is complete (question answered, or sufficient information to make the decision)
+- **Decision** — the specific choice the spike unblocks; a spike that ends without a decision has not met its exit criteria
+- **Spike report** — the output artifact: question, approach, findings, decision
 
 ## Steps
 

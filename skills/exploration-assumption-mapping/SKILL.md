@@ -2,10 +2,10 @@
 name: exploration-assumption-mapping
 title: "Assumption Mapping"
 description: >
-  Surface and rank the riskiest assumptions in a plan before committing to it,
-  so the most dangerous unknowns are tested first. Invoke when a spec or plan
-  exists and the team is about to commit to building it — before architecture
-  is finalized or significant code is written.
+  Surfaces and ranks the riskiest assumptions in a plan so the most dangerous
+  unknowns are tested first. Use when a spec or plan exists and the team is
+  about to commit to building it, when someone asks "what are we assuming,"
+  or before architecture is finalized or significant code is written.
 phase: exploration
 entry_criteria:
   - "A plan, spec, or idea exists with enough detail to identify assumptions"
@@ -20,13 +20,20 @@ tags: [exploration, risk, planning, validation]
 
 # Assumption Mapping
 
-## When to Use This Skill
+## How This Skill Works
 
-Use this skill before committing to a plan that will be expensive to change — before an architecture is locked, before a sprint is planned, before a contract is signed, before significant code is written. Its job is to make the invisible assumptions in a plan visible so they can be tested before they become surprises.
+This skill makes the invisible assumptions in a plan visible so they can be ranked by risk and tested before the plan is committed to. The output is an assumption register — a ranked list of beliefs the plan depends on, annotated with confidence level, failure impact, and a proposed validation approach.
 
-Every plan rests on assumptions. Some are well-founded; some are guesses dressed up as facts. Assumption mapping separates them and forces the team to test the dangerous ones before building on top of them.
+Every plan rests on assumptions. Some are well-founded; some are guesses dressed as facts. This skill separates them and surfaces the dangerous ones so the team tests before building, not discovers while operating.
 
-What goes wrong when you skip it: the plan is built. Three months in, an assumption breaks. The assumption was never articulated explicitly, so the team doesn't realize it has broken until the system fails. The cost to fix it is proportional to how much was built on top of it.
+The agent elicits and categorizes assumptions by asking structured questions about the plan. The human provides the domain knowledge needed to assess which assumptions are grounded in evidence and which are untested beliefs the team has been treating as facts.
+
+**Key concepts used in the Steps:**
+- **Assumption** — a belief the plan depends on that has not been verified
+- **Confidence** — how well-evidenced the assumption is (high = tested or established; low = untested belief)
+- **Failure impact** — how much the plan changes if the assumption turns out to be wrong
+- **Risk rank** — a function of low confidence and high failure impact; high-risk assumptions are tested first
+- **Validation approach** — the cheapest, fastest way to confirm or disprove the assumption before building
 
 ## Steps
 

@@ -2,10 +2,10 @@
 name: brownfield-dependency-upgrade
 title: "Dependency Upgrade"
 description: >
-  Safely upgrade a critical dependency by validating compatibility, checking
-  security advisories, and staging the rollout so a problematic upgrade can
-  be reverted. Invoke when a dependency needs to be updated, especially when
-  it is critical to the system's operation.
+  Safely upgrades a dependency by validating compatibility, checking security
+  advisories, and staging the rollout so a problematic upgrade can be reverted.
+  Use when a dependency needs updating, a security advisory or CVE flags an
+  outdated package, or a version upgrade is blocking other work.
 phase: brownfield
 entry_criteria:
   - "The dependency to upgrade is identified"
@@ -25,11 +25,18 @@ tags: [brownfield, dependencies, security, maintenance]
 
 # Dependency Upgrade
 
-## When to Use This Skill
+## How This Skill Works
 
-Use this skill before upgrading any dependency that plays a significant role in the system — a runtime framework, data access library, authentication package, or any package where a breaking change or security vulnerability could affect users. Minor patches to low-criticality packages can be handled with less ceremony; this skill is for upgrades where something can go meaningfully wrong.
+This skill structures a dependency upgrade as a staged, verifiable process with a documented rollback path — so the upgrade is either confirmed safe or reverted cleanly, rather than applied and hoped for. The output is an upgrade plan with a compatibility matrix, test checklist, and explicit rollback procedure.
 
-What goes wrong when you skip it: the upgrade is applied, something breaks in an unexpected way, and the team doesn't know if the problem is the upgrade or something unrelated. Without a documented test plan and a clear rollback path, the response is to either fight the upgrade or revert it blindly — neither of which is efficient.
+The agent drives the compatibility analysis, advisory review, and test plan structure. The human provides what the agent cannot determine remotely: which system behaviors are most critical to verify, what the release window looks like, and the acceptable risk threshold given the current system state.
+
+**Key concepts used in the Steps:**
+- **Compatibility matrix** — a mapping of the dependency's new version against the system's known usage patterns
+- **Security advisory** — a published CVE or vendor notice affecting the current version
+- **Staging strategy** — the sequence of environments (dev → staging → canary → production) the upgrade moves through
+- **Rollback procedure** — the specific steps to revert the upgrade if a problem is detected after deployment
+- **Blast radius** — which system behaviors are affected if the upgrade introduces a regression
 
 ## Steps
 

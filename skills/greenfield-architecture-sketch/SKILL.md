@@ -2,10 +2,10 @@
 name: greenfield-architecture-sketch
 title: "Architecture Sketch"
 description: >
-  Define system boundaries, key components, data flows, and critical interfaces
+  Defines system boundaries, key components, data flows, and critical interfaces
   before writing a line of code, so structural decisions are made deliberately.
-  Invoke when a spec exists and the team is about to start implementation but
-  no one has drawn the system boundary or named the major components.
+  Use when a spec exists and implementation is about to start, when no one has
+  drawn the system boundary, or when the team is about to build without a design.
 phase: greenfield
 entry_criteria:
   - "A spec exists with a problem statement, scope, and primary data entity"
@@ -26,11 +26,20 @@ tags: [architecture, design, greenfield]
 
 # Architecture Sketch
 
-## When to Use This Skill
+## How This Skill Works
 
-Use this skill after a spec exists but before any code is written. Its purpose is to make structural decisions explicitly rather than letting them fall out of the first code written. The sketch doesn't need to be right — it needs to be documented so that when it changes, the change is a deliberate revision rather than an invisible drift.
+This skill converts a spec into a structural diagram — a documented system boundary with named components, data flows, and critical interfaces. The sketch does not need to be right; it needs to be documented so that when it changes, the change is a deliberate revision rather than invisible drift.
 
-What goes wrong when you skip it: the architecture becomes whatever the first developer implemented. Boundaries emerge organically and are never questioned. Changing them later requires coordinated rewrites across services, teams, and data stores.
+What emerges from skipping this step is not "no architecture" — it's an architecture decided implicitly by whoever wrote the first code. This skill makes those decisions explicit before the code locks them in.
+
+The agent draws the structural questions out of the spec and proposes a sketch. The human corrects, constrains, and contributes context the agent cannot infer: organizational boundaries, team ownership, existing infrastructure constraints, and operational requirements not captured in the spec.
+
+**Key concepts used in the Steps:**
+- **System boundary** — what this system is responsible for and what it hands off to external systems
+- **Component** — a named, deployable or logical unit with a defined responsibility
+- **Data flow** — the movement of data between components, including direction and synchrony
+- **Critical interface** — a contract between components where a change has significant downstream consequences
+- **Stateful vs. stateless** — whether a component holds persistent state; stateful components constrain scaling and deployment
 
 ## Steps
 

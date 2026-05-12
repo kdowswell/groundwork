@@ -2,10 +2,10 @@
 name: exploration-tradeoff-analysis
 title: "Tradeoff Analysis"
 description: >
-  Produce a structured comparison of two or more implementation approaches that
-  captures the decision, alternatives considered, and reversal conditions.
-  Invoke when the team is choosing between meaningfully different approaches
-  with architectural implications that will be expensive to change later.
+  Produces a structured comparison of two or more approaches that captures the
+  decision, alternatives considered, and reversal conditions. Use when the team
+  is choosing between meaningfully different approaches, when an ADR is needed,
+  or when a decision has architectural implications that are expensive to reverse.
 phase: exploration
 entry_criteria:
   - "At least two distinct approaches have been identified"
@@ -21,13 +21,19 @@ tags: [exploration, architecture, decision, adr]
 
 # Tradeoff Analysis
 
-## When to Use This Skill
+## How This Skill Works
 
-Use this skill when the team is choosing between two meaningfully different approaches and the choice will shape the system for a significant time. The analysis is meant to be lightweight enough to do in a meeting but rigorous enough to be useful when someone asks "why did we choose this?" six months from now.
+This skill structures a comparison between meaningfully different approaches so the team makes a documented, reasoned decision — not one driven by whoever spoke last. The output is an analysis document with the decision, alternatives considered, failure modes for each, and the conditions under which the decision should be revisited.
 
-Not every choice needs a tradeoff analysis. Use it when: the approaches have significantly different failure modes, the decision is hard to reverse, reasonable engineers disagree about which is better, or the choice has implications beyond the immediate feature.
+Not every choice warrants this skill. It earns its time when: the approaches have significantly different failure modes, the decision is hard to reverse, reasonable engineers disagree, or the choice has implications beyond the immediate feature.
 
-What goes wrong when you skip it: the team picks an approach, usually the one suggested by whoever spoke last or loudest, and doesn't document why. Six months later, the choice is reconsidered because someone joined the team who has strong opinions about it. The debate restarts from scratch because no one wrote down why the original choice was made.
+The agent structures the comparison by applying the principle library to each approach's failure modes and constraints. The human provides what the agent cannot derive: which failure modes are acceptable given the team's capabilities, what organizational constraints apply, and what has already been tried.
+
+**Key concepts used in the Steps:**
+- **Approach** — a meaningfully distinct implementation strategy with its own assumptions and failure modes
+- **Failure mode** — the specific way an approach breaks or degrades under stress
+- **Reversal condition** — the observable signal that would cause the team to revisit and potentially reverse the decision
+- **Decision record** — the output artifact: decision, context, alternatives considered, rationale, reversal conditions
 
 ## Steps
 

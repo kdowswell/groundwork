@@ -2,10 +2,10 @@
 name: brownfield-incident-retro
 title: "Incident Retro"
 description: >
-  Run a blameless postmortem that produces a verified timeline, contributing
-  factors, and owned action items with due dates. Invoke after a production
-  incident is resolved and the team needs to understand what happened and
-  prevent recurrence.
+  Runs a blameless postmortem that produces a verified timeline, contributing
+  factors, and owned action items with due dates. Use after a production
+  incident is resolved, when the team asks "what happened" or "how do we
+  prevent this," or when an outage, data loss, or SLO breach has occurred.
 phase: brownfield
 entry_criteria:
   - "The incident is resolved (system is stable)"
@@ -26,13 +26,19 @@ tags: [brownfield, incident, postmortem, reliability]
 
 # Incident Retro
 
-## When to Use This Skill
+## How This Skill Works
 
-Use this skill after every production incident that affected users or required on-call response. The goal is not to assign blame — it's to understand the system well enough to make it more reliable. Incidents are learning opportunities that, if not captured in a structured retro, repeat.
+This skill structures a postmortem conversation so it produces a verified timeline, contributing factors, and owned action items — not a blame narrative. The output is a retro document that closes the incident with actionable learning rather than reassignment of fault.
 
-Blameless means the focus is on systems and processes, not individuals. People make reasonable decisions with the information they had at the time. The question is: what information was missing, what signals were ambiguous, and what processes could be improved so the next engineer makes a better decision?
+Blameless means the focus is on systems and processes, not individuals. People made reasonable decisions with the information they had at the time. The questions are: what information was missing, what signals were ambiguous, and what could be improved so the next engineer makes a better decision under similar conditions?
 
-What goes wrong when you skip it: the incident gets closed and the team moves on. The same failure mode recurs 3 months later. Everyone is surprised. The second incident would have been prevented if the first had produced an action item.
+The agent facilitates the structured conversation, drafts the timeline and factors as they emerge, and tracks action items to ownership. The human participants provide the timeline, context, and first-hand knowledge of what signals looked like in the moment.
+
+**Key concepts used in the Steps:**
+- **Verified timeline** — a sequence of events with timestamps, sourced from logs, alerts, and participant accounts
+- **Contributing factor** — a condition that made the incident more likely or harder to detect and resolve (not a "root cause")
+- **Blameless** — analysis focused on system and process gaps, not individual error
+- **Owned action item** — a specific improvement with a named owner and a due date
 
 ## Steps
 

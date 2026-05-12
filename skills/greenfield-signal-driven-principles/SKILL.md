@@ -2,10 +2,10 @@
 name: greenfield-signal-driven-principles
 title: "Signal-Driven Principle Selection"
 description: >
-  Scan project context for signals and select the load-bearing principles this
-  project actually needs. Invoke when a project is beginning and the team needs
-  to establish which architectural principles apply — before writing specs,
-  plans, or code.
+  Scans project context for signals and selects the load-bearing architectural
+  principles this project actually needs. Use at the start of any new project,
+  before writing specs or code, or when the team asks which architectural
+  principles apply given the project's scale, domain, and constraints.
 phase: greenfield
 entry_criteria:
   - "A project context exists (PRD, README, onboarding answers, or conversation)"
@@ -19,11 +19,19 @@ tags: [principles, architecture, greenfield, setup]
 
 # Signal-Driven Principle Selection
 
-## When to Use This Skill
+## How This Skill Works
 
-Use this skill at the very start of a project — before the spec is written, before architecture is chosen. Its job is to narrow the full principle library down to the handful that actually govern this project. Without it, agents either ignore principles entirely (no grounding) or cite every principle indiscriminately (no signal).
+This skill reads project context to select the handful of principles that actually govern this project — rather than applying the full library indiscriminately or ignoring it entirely. The output is a selected principle set with a brief rationale for each, ready to be referenced by downstream skills.
 
-What goes wrong when you skip it: the team starts building with implicit assumptions that contradict each other. The data model ignores ownership. The deployment assumes the connectivity the field workers won't have. The compliance requirements emerge six months in as a rewrite.
+The full principle library covers concerns that won't all apply to every project. A solo prototype has different constraints than an enterprise financial system. Selecting the right principles focuses the team's attention on what matters for this project, not what matters in general.
+
+The agent reads the signals in the project context and matches them against each principle's `applies_when` criteria. The human provides context the agent cannot derive from written materials: team capabilities, organizational risk tolerance, and constraints that haven't been written down yet.
+
+**Key concepts used in the Steps:**
+- **Signal** — a fact about the project (scale, domain, operating environment, stage) that indicates a principle applies
+- **applies_when** — the frontmatter field on each principle defining the conditions under which it is load-bearing
+- **Load-bearing principle** — a principle whose absence would meaningfully degrade the system's outcomes for this project
+- **Selected set** — the subset of principles chosen for this project with rationale; the input to downstream skills
 
 ## Steps
 

@@ -2,10 +2,10 @@
 name: brownfield-safe-change-plan
 title: "Safe Change Plan"
 description: >
-  Plan a change to a production system with an explicit rollback strategy,
-  test coverage plan, and blast radius assessment before writing any code.
-  Invoke when a production change is about to be designed and the risk,
-  rollback path, or required test coverage has not been assessed.
+  Plans a change to a production system with an explicit rollback strategy,
+  test coverage plan, and blast radius assessment before writing any code. Use
+  when a production change is being designed and the risk, rollback path, or
+  blast radius has not been assessed — do not wait until code is written.
 phase: brownfield
 entry_criteria:
   - "The change is described (what will be different after)"
@@ -27,11 +27,20 @@ tags: [brownfield, production, safety, deployment]
 
 # Safe Change Plan
 
-## When to Use This Skill
+## How This Skill Works
 
-Use this skill before making any change to a production system where a mistake would affect users. This includes schema migrations, API changes, dependency upgrades, infrastructure changes, and significant feature additions. The plan doesn't need to be long — it needs to be explicit about the three things that matter: what could go wrong, how to know it's going wrong, and how to undo it.
+This skill produces a change plan before code is written — not a process artifact for its own sake, but a forcing function for three questions: what could go wrong, how to detect it, and how to undo it. The output is a plan with a blast radius assessment, test coverage map, and an explicit rollback path.
 
-What goes wrong when you skip it: the change ships and something breaks. The team scrambles to understand whether to roll forward or roll back, what the rollback would actually involve, and which teams need to be notified. The incident takes twice as long to resolve as it would have if the rollback path had been thought through in advance.
+The plan doesn't need to be long. It needs to be explicit about the things that matter and validated by someone other than the person making the change.
+
+The agent structures the plan by asking probing questions about the change's scope and dependencies. The human provides what the agent cannot infer: which downstream systems depend on the component being changed, what the monitoring and release capabilities look like, and what the tolerance for disruption is.
+
+**Key concepts used in the Steps:**
+- **Blast radius** — the set of behaviors, users, or downstream services affected if the change introduces a regression
+- **Rollback path** — the specific steps to revert the change, verified to be executable under incident conditions
+- **Test coverage map** — which behaviors must be verified before, during, and after the change
+- **Staged rollout** — a deployment sequence that limits exposure before the change is confirmed safe
+- **Go / no-go criteria** — the observable signals that determine whether to proceed, pause, or roll back at each stage
 
 ## Steps
 

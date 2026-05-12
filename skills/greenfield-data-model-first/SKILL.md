@@ -2,11 +2,11 @@
 name: greenfield-data-model-first
 title: "Data Model First"
 description: >
-  Design the core data model before writing implementation code so that schema
-  decisions, ownership, and evolution constraints are made deliberately rather
-  than discovered during refactoring. Invoke when implementation is about to
-  start and no one has explicitly designed the data model, or when the model
-  was sketched informally and never validated.
+  Designs the core data model before implementation so that schema decisions,
+  ownership, and evolution constraints are made deliberately rather than
+  discovered during refactoring. Use when implementation is about to start and
+  no data model exists, when the schema was sketched informally, or when the
+  team is about to write code without an explicit data design.
 phase: greenfield
 entry_criteria:
   - "The primary data entity is named (from spec-from-idea)"
@@ -27,11 +27,20 @@ tags: [data, schema, greenfield, architecture]
 
 # Data Model First
 
-## When to Use This Skill
+## How This Skill Works
 
-Use this skill when implementation is about to begin and the data model hasn't been deliberately designed. The goal is not to produce a perfect schema — it's to surface the decisions that, once baked into a deployed data store, become expensive to change: entity ownership, relationship cardinality, schema evolution strategy, and consistency requirements.
+This skill produces a deliberate data model before implementation begins — not a perfect schema, but an explicit record of the decisions that become expensive to change once deployed: entity ownership, relationship cardinality, schema evolution strategy, and consistency requirements.
 
-What goes wrong when you skip it: the schema emerges from the first feature built. It encodes the assumptions of that feature, not the system's actual data relationships. Adding the second feature requires working around those assumptions. By the third feature, the team is carrying a schema debt that would take a week to pay down — and they never do.
+The data model is the most durable part of a system. Code can be rewritten in weeks; a deployed schema with live data can take months to migrate. The cost of schema decisions is paid forward for the lifetime of the system, which is why they are made deliberately here rather than discovered during the first feature.
+
+The agent asks the structural questions and models what the human describes. The human provides what the agent cannot derive: the real-world relationships between entities, the business rules that constrain them, and the expected evolution of the model as the product matures.
+
+**Key concepts used in the Steps:**
+- **Entity** — a named thing the system stores, tracks, or transforms; the core unit of the data model
+- **Ownership** — which service or team is the authoritative source for a given entity
+- **Cardinality** — the numerical relationship between entities (one-to-one, one-to-many, many-to-many)
+- **Schema evolution strategy** — how the model will change over time without breaking existing consumers
+- **Consistency requirement** — whether related records must be updated atomically or can tolerate eventual consistency
 
 ## Steps
 

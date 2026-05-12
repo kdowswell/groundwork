@@ -2,12 +2,11 @@
 name: brownfield-architecture-review
 title: "Brownfield Architecture Review"
 description: >
-  Assess an existing system against the principle library to identify
-  architectural debt and prioritize improvements. Invoke before any new
-  feature development, major refactoring, or system extension that impacts
-  core functionality — when the team needs to understand what architectural
-  problems exist before adding more complexity. Primary output: a ranked
-  list of findings with concrete improvement proposals.
+  Assesses an existing system against the principle library to identify
+  architectural debt and prioritize improvements. Use before adding a major
+  feature, refactoring core functionality, or extending a system — when the
+  team needs to understand what architectural problems exist before adding
+  more complexity. Output: ranked findings with concrete improvement proposals.
 phase: brownfield
 entry_criteria:
   - "The system exists in production or a near-production state"
@@ -29,13 +28,19 @@ tags: [brownfield, architecture, audit, review]
 
 # Brownfield Architecture Review
 
-## When to Use This Skill
+## How This Skill Works
 
-Use this skill before a significant new feature, a major refactoring effort, or any work that will meaningfully extend an existing system's surface area. The review's purpose is to surface architectural debt that will compound with new work, not to audit the system for its own sake.
+This skill applies the principle library as a lens against an existing system to produce a prioritized list of architectural findings. The output is not a report card — it's a ranked action list that tells the team which structural problems are urgent, which are acceptable, and which will compound if left unaddressed while new work is added.
 
-This is not a code quality review — it's an architectural assessment. The question is not "is this code well-written?" but "does this system's structure make it possible to build what we need to build safely and sustainably?"
+This is not a code quality review. The question is not "is this code well-written?" but "does this system's structure make it possible to build what we need to build safely and sustainably?" Those are different questions with different answers.
 
-What goes wrong when you skip it: a significant feature is built on top of a system with undetected architectural debt. The new feature amplifies the existing problems. What would have been a week of remediation before the feature becomes a month of retrofitting after it.
+The agent drives the assessment by applying principles to what it can observe about the system. The human provides what the agent cannot see: the constraints that shaped past decisions, the business pressures that will shape new ones, and the team's capacity to address findings.
+
+**Key concepts used in the Steps:**
+- **Architectural debt** — structural decisions that now cost more to work with than they saved when made
+- **Load-bearing component** — a component whose failure or refactoring would cascade broadly
+- **Finding** — a specific observed gap between current structure and a principle, with an impact assessment
+- **Improvement proposal** — a concrete, scoped action to address a finding
 
 ## Steps
 

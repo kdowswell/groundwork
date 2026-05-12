@@ -2,10 +2,10 @@
 name: brownfield-debt-triage
 title: "Debt Triage"
 description: >
-  Categorize and prioritize technical debt before a sprint so the team
-  consciously decides which debt to pay, accept, or close. Invoke when
-  technical debt is competing with feature work in sprint planning, or when
-  the team needs to decide what debt to address next.
+  Categorizes and prioritizes technical debt so the team consciously decides
+  what to pay, accept, or close. Use when technical debt is competing with
+  feature work in sprint planning, when the team asks "what should we fix
+  next," or when debt decisions have been implicit rather than deliberate.
 phase: brownfield
 entry_criteria:
   - "A list of known technical debt items exists (or will be assembled in this skill)"
@@ -20,13 +20,20 @@ tags: [brownfield, tech-debt, planning, prioritization]
 
 # Debt Triage
 
-## When to Use This Skill
+## How This Skill Works
 
-Use this skill before a sprint or planning cycle where technical debt competes with feature work. Its purpose is to make the debt visible, categorized, and prioritized — so the team consciously chooses what to address rather than alternating between ignoring debt entirely and declaring periodic "cleanup sprints" that never happen.
+This skill makes technical debt explicit, categorized, and prioritized so the team can make a conscious decision about each item rather than ignoring debt collectively or addressing it randomly. The output is a debt register with a recommended action — pay, accept, or close — for each item.
 
-Technical debt is not inherently bad. Some debt was the right tradeoff when it was made. The goal of triage is not to eliminate all debt — it's to understand which debt is actively costing the team and address only that.
+Technical debt is not inherently bad. Some debt was the right tradeoff when it was made and remains acceptable. The goal is not to eliminate all debt — it's to identify which debt is actively costing the team and address only that.
 
-What goes wrong when you skip it: debt accumulates invisibly until it becomes unavoidable. By the time it's addressed, it's larger than it needed to be and harder to pay down. "We'll clean this up later" is not a plan; it's a policy that turns minor inefficiencies into structural problems.
+The agent structures the categorization and surfaces the cost/risk framing for each item. The human provides what the agent cannot determine: actual velocity cost data, team capacity constraints, and the business context that determines whether a given item is blocking, tolerable, or irrelevant.
+
+**Key concepts used in the Steps:**
+- **Debt categories** — structural (architecture), tactical (implementation shortcuts), test (coverage gaps)
+- **Pay** — address the debt in the current or upcoming sprint
+- **Accept** — acknowledge and monitor; revisit when conditions change
+- **Close** — no longer relevant; remove from the register
+- **Cost signal** — observable evidence that a debt item is actively slowing work (frequent breakage, slow onboarding, recurring incidents)
 
 ## Steps
 
