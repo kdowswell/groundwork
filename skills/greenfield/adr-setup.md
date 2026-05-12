@@ -1,15 +1,13 @@
 ---
-id: adr-setup
+name: adr-setup
 title: "ADR Setup"
-phase: greenfield
 description: >
   Establish Architecture Decision Records from the first day of a project so
-  that structural decisions are documented as they're made, not reconstructed
-  months later when no one remembers why.
-trigger: >
-  When a project is starting and has made at least one structural decision that
-  would be expensive to reverse — or when the architecture-sketch skill surfaces
+  structural decisions are documented as they're made, not reconstructed later.
+  Invoke when a project has made at least one structural decision that would be
+  expensive to reverse, or when the architecture-sketch skill surfaces
   high-stakes decisions that need to be captured.
+phase: greenfield
 entry_criteria:
   - "At least one structural decision has been made or is being made"
   - "A location for ADRs is chosen (directory, wiki, or doc system)"

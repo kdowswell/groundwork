@@ -1,15 +1,12 @@
 ---
-id: debt-triage
+name: debt-triage
 title: "Debt Triage"
-phase: brownfield
 description: >
-  Categorize and prioritize technical debt items before a sprint so the team
-  can make conscious decisions about which debt to pay, which to accept, and
-  which to eliminate from the backlog as not worth addressing.
-trigger: >
-  When technical debt is accumulating and the team needs to decide what to
-  work on — or when planning a sprint in a brownfield system and debt is
-  competing with feature work.
+  Categorize and prioritize technical debt before a sprint so the team
+  consciously decides which debt to pay, accept, or close. Invoke when
+  technical debt is competing with feature work in sprint planning, or when
+  the team needs to decide what debt to address next.
+phase: brownfield
 entry_criteria:
   - "A list of known technical debt items exists (or will be assembled in this skill)"
   - "The current development focus (sprint goal, quarter goal) is known"

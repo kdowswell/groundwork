@@ -1,13 +1,12 @@
 ---
-id: research-spike
+name: research-spike
 title: "Research Spike"
-phase: exploration
 description: >
   Run a time-boxed technical investigation with a defined question, approach,
   and exit criteria so the spike produces a decision, not just information.
-trigger: >
-  When a technical question is blocking a decision and the answer isn't
-  knowable without experimentation, prototyping, or deep reading.
+  Invoke when a technical question is blocking a decision and the answer
+  requires experimentation, prototyping, or deep reading to resolve.
+phase: exploration
 entry_criteria:
   - "A specific question to answer is written down (not a topic to explore)"
   - "A time box is agreed upon"

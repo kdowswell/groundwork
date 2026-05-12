@@ -1,13 +1,12 @@
 ---
-id: spec-from-idea
+name: spec-from-idea
 title: "Spec From Idea"
-phase: greenfield
 description: >
   Translate a raw idea, one-pager, or conversation into a structured spec with
-  scope, success criteria, non-goals, and identified risks.
-trigger: >
-  When a developer says "I want to build X" or provides a vague product idea
-  without defined requirements, scope, or success criteria.
+  scope, success criteria, non-goals, and identified risks. Invoke when a
+  developer says "I want to build X" or provides a vague product idea without
+  defined requirements or scope.
+phase: greenfield
 entry_criteria:
   - "A description of the intended product or feature exists (any fidelity)"
   - "The primary problem being solved is stated or can be inferred"

@@ -1,15 +1,12 @@
 ---
-id: brownfield-architecture-review
+name: brownfield-architecture-review
 title: "Brownfield Architecture Review"
-phase: brownfield
 description: >
   Assess an existing system against the principle library to identify
-  architectural debt, surface load-bearing risks, and prioritize improvements
-  before a significant build or refactoring phase.
-trigger: >
-  When a team is about to make significant changes to an existing system and
-  needs to understand what architectural problems exist before adding more
-  complexity on top of them.
+  architectural debt and prioritize improvements. Invoke before significant
+  new work on an existing system — when the team needs to understand what
+  architectural problems exist before adding more complexity.
+phase: brownfield
 entry_criteria:
   - "The system exists in production or a near-production state"
   - "Sufficient codebase and operational context exists to assess it"

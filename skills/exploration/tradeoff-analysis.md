@@ -1,16 +1,12 @@
 ---
-id: tradeoff-analysis
+name: tradeoff-analysis
 title: "Tradeoff Analysis"
-phase: exploration
 description: >
-  Produce a structured comparison of two or more implementation approaches
-  that captures the decision, the alternatives considered, and what would
-  cause the team to revisit it — so the choice is a documented decision,
-  not an undocumented assumption.
-trigger: >
-  When the team is choosing between two or more meaningfully different
-  approaches and the choice has architectural implications that will be
-  expensive to change later.
+  Produce a structured comparison of two or more implementation approaches that
+  captures the decision, alternatives considered, and reversal conditions.
+  Invoke when the team is choosing between meaningfully different approaches
+  with architectural implications that will be expensive to change later.
+phase: exploration
 entry_criteria:
   - "At least two distinct approaches have been identified"
   - "The decision criteria are known (or need to be surfaced)"

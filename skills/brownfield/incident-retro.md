@@ -1,14 +1,12 @@
 ---
-id: incident-retro
+name: incident-retro
 title: "Incident Retro"
-phase: brownfield
 description: >
   Run a blameless postmortem that produces a verified timeline, contributing
-  factors, and owned action items with due dates — so the incident improves
-  the system rather than just being closed.
-trigger: >
-  After a production incident has been resolved and the team needs to understand
-  what happened and prevent recurrence.
+  factors, and owned action items with due dates. Invoke after a production
+  incident is resolved and the team needs to understand what happened and
+  prevent recurrence.
+phase: brownfield
 entry_criteria:
   - "The incident is resolved (system is stable)"
   - "The incident timeline can be reconstructed from logs, alerts, or participant memory"

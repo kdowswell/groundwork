@@ -1,14 +1,12 @@
 ---
-id: architecture-sketch
+name: architecture-sketch
 title: "Architecture Sketch"
-phase: greenfield
 description: >
   Define system boundaries, key components, data flows, and critical interfaces
-  before writing a line of code, so structural decisions are made deliberately
-  rather than inherited from the first implementation choice.
-trigger: >
-  When a spec exists and the team is about to start implementation, but no one
-  has drawn the system boundary or named the major components.
+  before writing a line of code, so structural decisions are made deliberately.
+  Invoke when a spec exists and the team is about to start implementation but
+  no one has drawn the system boundary or named the major components.
+phase: greenfield
 entry_criteria:
   - "A spec exists with a problem statement, scope, and primary data entity"
   - "Active principles have been selected (signal-driven-principles skill)"

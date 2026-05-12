@@ -12,25 +12,31 @@ Skills are executable process artifacts — step-by-step workflows an agent foll
 
 ## Skill File Format
 
-Each skill is a Markdown file with YAML frontmatter. Required frontmatter fields:
+Each skill is a Markdown file with YAML frontmatter. The schema follows the [Agent Skills open standard](https://agentskills.io) — two fields are required; all others are groundwork extensions.
 
 ```yaml
 ---
-id: kebab-case-name          # must match filename
+# Required (Agent Skills standard)
+name: kebab-case-name        # must match filename; the invocation identifier
+description: >               # what the skill does + when to invoke it
+  ...                        # this is what agent runtimes read for auto-invocation
+
+# Optional (Agent Skills standard)
 title: "Human Readable Title"
+disable-model-invocation: true   # only user can invoke; model cannot auto-trigger
+user-invocable: false            # hide from user menus; model-triggered only
+allowed-tools: [Bash, Read]      # tools pre-approved without prompting
+
+# Optional (groundwork extensions)
 phase: greenfield             # greenfield | exploration | brownfield
-description: >               # one sentence: what and when
-  ...
-trigger: >                   # agent-readable scenario that should activate this skill
-  ...
 entry_criteria:              # what must be true before starting
   - "..."
 exit_criteria:               # what must be true when done
   - "..."
-principles:                  # optional: principle ids this skill references
+principles:                  # principle ids this skill references
   - principle-id
-time_box: "30-60 minutes"    # optional
-tags: [tag1, tag2]           # optional
+time_box: "30-60 minutes"
+tags: [tag1, tag2]
 ---
 ```
 
@@ -44,6 +50,7 @@ Required body sections (in order):
 
 ## Authoring Rules
 
+- **`description` carries both what and when** — agent runtimes use this single field for auto-invocation. Phrase it as: what the skill does, then "Invoke when..." for the trigger condition.
 - **No technology names in Steps** — use abstract terms (data store, message queue, compute layer). Technology decisions belong in the output artifact.
 - **Checkpoints are real forks** — not rhetorical questions. Each checkpoint changes something downstream.
 - **Principle Application is specific** — not a pointer to "go read the principle," but a synthesis of what the principle means in this exact phase and context.

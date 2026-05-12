@@ -60,16 +60,15 @@ function validateFile(
     messages.push(...formatAjvErrors(ajv.errors));
   }
 
-  // Cross-checks: filename ↔ id, parent dir ↔ phase.
+  // Cross-checks: filename ↔ name, parent dir ↔ phase (when phase is present).
   const fileId = basename(filePath, ".md");
-  if (data.id && data.id !== fileId) {
-    messages.push(`id "${data.id}" does not match filename "${fileId}"`);
+  if (data.name && data.name !== fileId) {
+    messages.push(`name "${data.name}" does not match filename "${fileId}"`);
   }
 
-  const parentDir = basename(dirname(filePath));
-  if (data.phase && PHASE_DIRS[data.phase] !== parentDir) {
+  if (data.phase && PHASE_DIRS[data.phase] !== basename(dirname(filePath))) {
     messages.push(
-      `phase "${data.phase}" does not match parent directory "${parentDir}"`,
+      `phase "${data.phase}" does not match parent directory "${basename(dirname(filePath))}"`,
     );
   }
 

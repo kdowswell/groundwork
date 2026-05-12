@@ -1,14 +1,12 @@
 ---
-id: dependency-upgrade
+name: dependency-upgrade
 title: "Dependency Upgrade"
-phase: brownfield
 description: >
   Safely upgrade a critical dependency by validating compatibility, checking
-  security advisories, understanding breaking changes, and staging the rollout
-  so a problematic upgrade can be reverted without extended downtime.
-trigger: >
-  When a dependency has a new version available that the team needs or wants
-  to adopt — especially when the dependency is critical to the system's operation.
+  security advisories, and staging the rollout so a problematic upgrade can
+  be reverted. Invoke when a dependency needs to be updated, especially when
+  it is critical to the system's operation.
+phase: brownfield
 entry_criteria:
   - "The dependency to upgrade is identified"
   - "The current and target versions are known"

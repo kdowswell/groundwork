@@ -1,14 +1,12 @@
 ---
-id: assumption-mapping
+name: assumption-mapping
 title: "Assumption Mapping"
-phase: exploration
 description: >
-  Surface and rank the riskiest assumptions in a plan before committing to
-  it, so the most dangerous unknowns are tested first rather than discovered
-  after significant investment.
-trigger: >
-  When a plan or spec has been written and the team is about to commit to
-  building it — before architecture is finalized or significant code is written.
+  Surface and rank the riskiest assumptions in a plan before committing to it,
+  so the most dangerous unknowns are tested first. Invoke when a spec or plan
+  exists and the team is about to commit to building it — before architecture
+  is finalized or significant code is written.
+phase: exploration
 entry_criteria:
   - "A plan, spec, or idea exists with enough detail to identify assumptions"
   - "The team is about to make a commitment (sprint planning, architecture lock, hiring)"

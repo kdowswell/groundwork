@@ -1,14 +1,13 @@
 ---
-id: data-model-first
+name: data-model-first
 title: "Data Model First"
-phase: greenfield
 description: >
   Design the core data model before writing implementation code so that schema
-  decisions, ownership boundaries, and evolution constraints are made deliberately
-  rather than discovered painfully during refactoring.
-trigger: >
-  When implementation is about to start and no one has explicitly designed the
-  data model — or when the model was sketched informally and never validated.
+  decisions, ownership, and evolution constraints are made deliberately rather
+  than discovered during refactoring. Invoke when implementation is about to
+  start and no one has explicitly designed the data model, or when the model
+  was sketched informally and never validated.
+phase: greenfield
 entry_criteria:
   - "The primary data entity is named (from spec-from-idea)"
   - "Data ownership is established"

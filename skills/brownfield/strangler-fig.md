@@ -1,14 +1,12 @@
 ---
-id: strangler-fig
+name: strangler-fig
 title: "Strangler Fig"
-phase: brownfield
 description: >
   Incrementally replace a legacy component by routing new traffic to the
-  replacement while existing traffic continues through the original, until
-  the original can be safely decommissioned.
-trigger: >
-  When a system component needs to be replaced but a big-bang rewrite is
-  too risky, and the component can be incrementally routed around.
+  replacement while existing traffic continues through the original. Invoke
+  when a component needs to be replaced but a big-bang rewrite is too risky
+  to attempt.
+phase: brownfield
 entry_criteria:
   - "The component to be replaced is identified"
   - "The interface (API, event, message format) between the component and its callers is known"

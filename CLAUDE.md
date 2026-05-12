@@ -70,10 +70,12 @@ groundwork/
 ## When Writing a New Skill
 
 1. Create a new `.md` file under the appropriate `skills/<phase>/` directory
-2. Filename MUST be kebab-case and MUST match the `id` frontmatter field
-3. Include all required frontmatter: `id`, `title`, `phase`, `description`, `trigger`, `entry_criteria`, `exit_criteria`; add optional `principles`, `time_box`, `tags`
-4. Write all five required body sections in order: When to Use This Skill, Steps, Checkpoints, Principle Application, Output Format
-5. Run `npm run validate:skills` to confirm frontmatter validates against the schema before committing
+2. Filename MUST be kebab-case and MUST match the `name` frontmatter field
+3. Include required frontmatter per the Agent Skills standard: `name`, `description`
+4. `description` carries both what the skill does and when to invoke it — phrase it as: "Does X. Invoke when Y."
+5. Add groundwork extensions as needed: `phase`, `entry_criteria`, `exit_criteria`, `principles`, `time_box`, `tags`
+6. Write all five required body sections in order: When to Use This Skill, Steps, Checkpoints, Principle Application, Output Format
+7. Run `npm run validate:skills` to confirm frontmatter validates against the schema before committing
 
 ## Content Standards
 
@@ -84,6 +86,7 @@ groundwork/
 - Keep principles focused — one concept per file, not a survey of a topic
 
 **Skills:**
+- `description` combines what + when: "Does X. Invoke when Y." — this is the only field agent runtimes read for auto-invocation
 - Steps use action verbs and are executable by an agent without further clarification
 - No technology names in Steps — use abstract terms (data store, identity provider, message queue)
 - Checkpoints are real forks: each checkpoint changes something downstream based on the answer

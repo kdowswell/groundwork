@@ -1,13 +1,12 @@
 ---
-id: prototype-review
+name: prototype-review
 title: "Prototype Review"
-phase: exploration
 description: >
   Evaluate a proof-of-concept for architectural soundness and identify what
   must change before the prototype becomes the foundation for production code.
-trigger: >
-  When a prototype or proof-of-concept exists and the team is considering
-  using it as the basis for the real implementation.
+  Invoke when a working prototype exists and the team is deciding whether to
+  build on it or rewrite.
+phase: exploration
 entry_criteria:
   - "A working prototype or proof-of-concept exists"
   - "Active principles are selected for the project"

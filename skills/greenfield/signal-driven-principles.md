@@ -1,14 +1,12 @@
 ---
-id: signal-driven-principles
+name: signal-driven-principles
 title: "Signal-Driven Principle Selection"
-phase: greenfield
 description: >
   Scan project context for signals and select the load-bearing principles this
-  project actually needs, so every downstream decision is grounded in the right
-  architectural constraints from the start.
-trigger: >
-  When a project is beginning and the team needs to establish which architectural
-  principles apply — before writing specs, plans, or code.
+  project actually needs. Invoke when a project is beginning and the team needs
+  to establish which architectural principles apply — before writing specs,
+  plans, or code.
+phase: greenfield
 entry_criteria:
   - "A project context exists (PRD, README, onboarding answers, or conversation)"
   - "The principles library is accessible"

@@ -1,14 +1,12 @@
 ---
-id: safe-change-plan
+name: safe-change-plan
 title: "Safe Change Plan"
-phase: brownfield
 description: >
   Plan a change to a production system with an explicit rollback strategy,
   test coverage plan, and blast radius assessment before writing any code.
-trigger: >
-  When a change to a production system is about to be designed or implemented
-  and no one has explicitly assessed the risk, rollback path, or test coverage
-  required.
+  Invoke when a production change is about to be designed and the risk,
+  rollback path, or required test coverage has not been assessed.
+phase: brownfield
 entry_criteria:
   - "The change is described (what will be different after)"
   - "The system receiving the change is running in production"
