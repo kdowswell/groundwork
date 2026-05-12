@@ -2,6 +2,34 @@
 
 Skills are executable process artifacts — step-by-step workflows an agent follows at a specific phase of development. They differ from principles: principles describe *what good looks like*; skills describe *how to get there*.
 
+## Directory Structure
+
+Each skill lives in its own named directory containing a `SKILL.md` file — this is the [Agent Skills open standard](https://agentskills.io) structure, compatible with Claude Code, GitHub Copilot, Cursor, and skills.sh.
+
+```
+skills/
+├── greenfield/
+│   ├── spec-from-idea/
+│   │   └── SKILL.md
+│   └── architecture-sketch/
+│       └── SKILL.md
+├── exploration/
+│   └── research-spike/
+│       └── SKILL.md
+└── brownfield/
+    └── safe-change-plan/
+        └── SKILL.md
+```
+
+To add supporting reference files to a skill, place them alongside `SKILL.md`:
+
+```
+skills/greenfield/spec-from-idea/
+├── SKILL.md
+└── references/
+    └── example-spec.md
+```
+
 ## Three Phases
 
 | Phase | Directory | When to use |
@@ -17,7 +45,7 @@ Each skill is a Markdown file with YAML frontmatter. The schema follows the [Age
 ```yaml
 ---
 # Required (Agent Skills standard)
-name: kebab-case-name        # must match filename; the invocation identifier
+name: kebab-case-name        # must match the directory name; the invocation identifier
 description: >               # what the skill does + when to invoke it
   ...                        # this is what agent runtimes read for auto-invocation
 

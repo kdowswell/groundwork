@@ -9,8 +9,8 @@ import matter from "gray-matter";
 
 const ROOT = resolve(fileURLToPath(import.meta.url), "../..");
 const SCHEMA_PATH = resolve(ROOT, "skills/_schema/skill.schema.json");
-const SKILLS_GLOB = "skills/**/*.md";
-const IGNORE = ["skills/README.md", "skills/_schema/**"];
+const SKILLS_GLOB = "skills/**/SKILL.md";
+const IGNORE: string[] = [];
 
 const PHASE_DIRS: Record<string, string> = {
   greenfield: "greenfield",
@@ -60,15 +60,18 @@ function validateFile(
     messages.push(...formatAjvErrors(ajv.errors));
   }
 
-  // Cross-checks: filename ↔ name, parent dir ↔ phase (when phase is present).
-  const fileId = basename(filePath, ".md");
-  if (data.name && data.name !== fileId) {
-    messages.push(`name "${data.name}" does not match filename "${fileId}"`);
+  // Cross-checks: skill directory name ↔ name, grandparent dir ↔ phase.
+  // Each skill lives at skills/<phase>/<skill-name>/SKILL.md
+  const skillDir = basename(dirname(filePath));
+  const phaseDir = basename(dirname(dirname(filePath)));
+
+  if (data.name && data.name !== skillDir) {
+    messages.push(`name "${data.name}" does not match skill directory "${skillDir}"`);
   }
 
-  if (data.phase && PHASE_DIRS[data.phase] !== basename(dirname(filePath))) {
+  if (data.phase && PHASE_DIRS[data.phase] !== phaseDir) {
     messages.push(
-      `phase "${data.phase}" does not match parent directory "${basename(dirname(filePath))}"`,
+      `phase "${data.phase}" does not match phase directory "${phaseDir}"`,
     );
   }
 

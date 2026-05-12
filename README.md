@@ -69,17 +69,60 @@ groundwork is a two-layer library:
 | **Delivery** | CI/CD Pipeline, Blue-Green / Canary, Feature Flags, Infrastructure as Code |
 | **Operations** | Incident Response, Runbooks, Capacity Planning, Tech Debt Management |
 
-## How to Use
+## Installation
 
-Drop any skill file into your agent's context (CLAUDE.md, `.github/copilot-instructions.md`, `.cursorrules`, system prompt) and invoke it when the development phase matches.
+Skills follow the [Agent Skills open standard](https://agentskills.io), supported by Claude Code, GitHub Copilot, Cursor, and [skills.sh](https://skills.sh). Each skill lives at `skills/<phase>/<skill-name>/SKILL.md`.
 
-For project-specific grounding:
+### Claude Code
+
+```bash
+# Install a single skill into your project
+cp -r skills/greenfield/spec-from-idea .claude/skills/
+
+# Install all skills
+cp -r skills/greenfield/* skills/exploration/* skills/brownfield/* .claude/skills/
+```
+
+Or for global installation (available across all projects):
+```bash
+cp -r skills/greenfield/* skills/exploration/* skills/brownfield/* ~/.claude/skills/
+```
+
+Invoke with `/spec-from-idea` or let Claude auto-trigger from the `description` field.
+
+### GitHub Copilot
+
+```bash
+mkdir -p .github/skills
+cp -r skills/greenfield/* skills/exploration/* skills/brownfield/* .github/skills/
+```
+
+### Cursor
+
+Cursor uses `.mdc` files. Convert any skill for use as a Cursor rule:
+
+```bash
+# Copy the SKILL.md content into a .mdc file in .cursor/rules/
+cat skills/greenfield/spec-from-idea/SKILL.md > .cursor/rules/spec-from-idea.mdc
+```
+
+Cursor is also adding native Agent Skills support — watch for `SKILL.md` support in `.cursor/skills/`.
+
+### skills.sh (via Vercel Agent Skills)
+
+Install individual skills directly from this repo:
+
+```bash
+npx skills add kurtdowswell/groundwork/skills/greenfield/spec-from-idea
+npx skills add kurtdowswell/groundwork/skills/exploration/research-spike
+# etc.
+```
+
+### All agents — project context
 
 1. Copy `context/project-context.template.md` into your project and fill it in
-2. Run the `signal-driven-principles` skill to select the principles that apply to your project
-3. Invoke the relevant phase skill when starting a greenfield, exploration, or brownfield task
-
-The library is intentionally agent-agnostic — it works with Claude Code, Copilot, Cursor, Gemini, or any agent that can consume markdown instructions.
+2. Invoke `signal-driven-principles` to select which principles apply to your project
+3. Invoke the matching phase skill when the work begins
 
 ## Repo Structure
 
