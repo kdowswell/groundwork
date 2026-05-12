@@ -77,13 +77,16 @@ Migration-managed evolution requires coordinated deploys and rollback capability
 ## Principle Application
 
 **data-ownership**
-Steps 1 and 3 are direct applications of this principle. The "Questions the Agent Should Ask" section identifies ownership ambiguities that surface as architectural problems later. Any entity where ownership is unclear at Step 3 is a Blocking open question — do not proceed to implementation until it's resolved.
+Steps 1 and 3 are direct applications of this principle. Ask the ownership questions at Step 3 — any entity where ownership is unclear is a Blocking open question; do not proceed to implementation until it's resolved.
+Full reference: [principles/data-ownership.md](principles/data-ownership.md)
 
 **schema-evolution**
-Step 5 is where this principle is operationalized. The key insight from the principle: the schema evolution strategy must be chosen *before* the first external consumer exists, because changing the strategy after consumers exist is breaking change territory. The "When This Matters" section is most load-bearing for Step 5.
+Step 5 is where this principle is operationalized. The schema evolution strategy must be chosen before the first external consumer exists — changing it after consumers exist is breaking-change territory.
+Full reference: [principles/schema-evolution.md](principles/schema-evolution.md)
 
 **consistency-models**
-Step 6 applies this principle. If the project context signals offline-first or field deployment, strong consistency across all relationships is architecturally impossible — the model must be designed for eventual consistency from the start. The "What Good Looks Like" section describes how to design for convergence rather than fighting it.
+Step 6 applies this principle. If the project context signals offline-first or field deployment, strong consistency across all relationships is architecturally impossible — the model must be designed for eventual consistency from the start.
+Full reference: [principles/consistency-models.md](principles/consistency-models.md)
 
 ## Output Format
 

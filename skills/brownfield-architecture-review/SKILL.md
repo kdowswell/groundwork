@@ -92,16 +92,20 @@ A review that produces 15 high-priority improvements and doesn't account for the
 ## Principle Application
 
 **structured-logging**
-Step 2 (gather system artifacts) includes examining the logging configuration. The "Questions the Agent Should Ask" section from this principle drives the observability assessment in Step 3. For brownfield systems, the most common finding is that logging exists but is unstructured — which means it's present during development and useless during incidents.
+Step 2 (gather system artifacts) includes examining the logging configuration. For brownfield systems, the most common finding is that logging exists but is unstructured — present during development and useless during incidents.
+Full reference: [principles/structured-logging.md](principles/structured-logging.md)
 
 **alerting-strategy**
-Existing alerting configuration is one of the most revealing artifacts in Step 2. How many alerts exist? Are they actionable? What's the false-positive rate? The "What Goes Wrong" section from this principle describes exactly what a brownfield system looks like when alerting has never been systematically designed.
+Existing alerting configuration is one of the most revealing artifacts in Step 2. How many alerts exist? Are they actionable? What's the false-positive rate?
+Full reference: [principles/alerting-strategy.md](principles/alerting-strategy.md)
 
 **health-checks**
-Step 2 should include examining the health check configuration for all services. Missing or shallow health checks are one of the most common brownfield findings. The principle's "What Good Looks Like" section defines the minimum bar.
+Step 2 should include examining the health check configuration for all services. Missing or shallow health checks are one of the most common brownfield findings.
+Full reference: [principles/health-checks.md](principles/health-checks.md)
 
 **fault-isolation** and **graceful-degradation**
-These principles are assessed together in Step 3 by asking: if the external dependencies listed in the architecture fail, how does the system behave? A system that hard-depends on every external service (no circuit breakers, no graceful degradation) has high blast radius and fragile reliability characteristics.
+These principles are assessed together in Step 3 by asking: if the external dependencies listed in the architecture fail, how does the system behave? A system that hard-depends on every external service has high blast radius and fragile reliability characteristics.
+Full reference: [principles/fault-isolation.md](principles/fault-isolation.md) · [principles/graceful-degradation.md](principles/graceful-degradation.md)
 
 ## Output Format
 

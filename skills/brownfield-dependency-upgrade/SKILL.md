@@ -93,10 +93,12 @@ If the test suite passes after the upgrade but the team has low confidence in th
 ## Principle Application
 
 **supply-chain-security**
-Step 3 (security advisories) directly applies this principle. The "Questions the Agent Should Ask" section from this principle drives the security assessment: is the dependency still maintained? Is the new version signed or verified? Have there been recent supply-chain compromises in this package ecosystem? The "What Goes Wrong" section describes the consequences of skipping supply-chain checks on dependency upgrades.
+Step 3 (security advisories) directly applies this principle. Ask: is the dependency still maintained? Is the new version signed or verified? Have there been recent supply-chain compromises in this package ecosystem?
+Full reference: [principles/supply-chain-security.md](principles/supply-chain-security.md)
 
 **health-checks**
-Step 7 (staging the rollout) relies on health checks to detect that the upgrade is causing problems. Before deploying the upgraded dependency, verify that health checks cover the paths exercised by the dependency. If they don't, add health checks as part of the upgrade work — not as an afterthought after the deployment.
+Step 7 (staging the rollout) relies on health checks to detect that the upgrade is causing problems. Before deploying, verify that health checks cover the paths exercised by the dependency. If they don't, add them as part of the upgrade work — not as an afterthought after deployment.
+Full reference: [principles/health-checks.md](principles/health-checks.md)
 
 ## Output Format
 

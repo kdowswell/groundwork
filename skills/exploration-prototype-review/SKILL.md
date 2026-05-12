@@ -72,13 +72,16 @@ Prototypes should be built on when their architecture aligns with the production
 ## Principle Application
 
 **fault-isolation**
-Step 3 (error handling) is where this principle applies most directly. A prototype with no fault isolation means one failure takes down the whole path. The "What Goes Wrong" section of this principle describes exactly what happens when fault isolation is deferred from prototype to production.
+Step 3 (error handling) is where this principle applies most directly. A prototype with no fault isolation means one failure takes down the whole path — a pattern that follows the code into production if not caught here.
+Full reference: [principles/fault-isolation.md](principles/fault-isolation.md)
 
 **structured-logging**
-Step 4 (observability) is where this principle applies. Prototypes with no structured logging are operationally blind. The "Questions the Agent Should Ask" section from this principle drives the observability audit in Step 4.
+Step 4 (observability) is where this principle applies. Prototypes with no structured logging are operationally blind; the habit of logging nothing carries forward unless explicitly called out in the review.
+Full reference: [principles/structured-logging.md](principles/structured-logging.md)
 
 **secrets-management**
-Step 2 (hardcoded values) and Step 5 (security surface) are where this principle is most load-bearing. Hardcoded credentials in a prototype are the most common security vulnerability that makes it from exploration to production. The "What Good Looks Like" section describes the minimal standard before any code handles real credentials.
+Step 2 (hardcoded values) and Step 5 (security surface) are where this principle is most load-bearing. Hardcoded credentials in a prototype are the most common security vulnerability that makes it from exploration to production.
+Full reference: [principles/secrets-management.md](principles/secrets-management.md)
 
 ## Output Format
 

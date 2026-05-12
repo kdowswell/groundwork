@@ -74,13 +74,16 @@ If the user expects an immediate response to an action but the action crosses a 
 ## Principle Application
 
 **fault-isolation**
-Step 4 is where fault-isolation thinking applies. Each external dependency is a potential failure zone. Use the "What Good Looks Like" section of this principle to evaluate whether each dependency is isolated: can a failure in that dependency be contained, or does it cascade to the primary path? If it cascades, that's the most important structural problem in the sketch.
+Step 4 is where fault-isolation thinking applies. Each external dependency is a potential failure zone. For each, ask: can a failure in that dependency be contained, or does it cascade to the primary path? If it cascades, that's the most important structural problem in the sketch.
+Full reference: [principles/fault-isolation.md](principles/fault-isolation.md)
 
 **async-processing**
-Step 5 operationalizes this principle. The question is: which work is synchronous because it must be (user is waiting), and which is synchronous by accident (because it was easiest to write that way)? The principle's "Questions the Agent Should Ask" section drives Step 5.
+Step 5 operationalizes this principle. The question is: which work is synchronous because it must be (the user is waiting), and which is synchronous by accident (because it was easiest to write that way)?
+Full reference: [principles/async-processing.md](principles/async-processing.md)
 
 **horizontal-scaling**
 If the scale target in the project context is team-scale or enterprise, check the sketch against this principle at Step 7. Stateful components that can't be replicated become bottlenecks. The sketch should make stateful vs. stateless components explicit.
+Full reference: [principles/horizontal-scaling.md](principles/horizontal-scaling.md)
 
 ## Output Format
 

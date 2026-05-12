@@ -91,16 +91,20 @@ Schema migrations that drop columns or tables, data transformations that overwri
 ## Principle Application
 
 **graceful-degradation**
-Step 2 (blast radius) is where this principle is most load-bearing. For each catastrophic failure mode, ask: can the system degrade gracefully rather than fail completely? The "What Good Looks Like" section defines what graceful looks like for each failure mode. If the change removes a graceful degradation path, that must be flagged and addressed.
+Step 2 (blast radius) is where this principle is most load-bearing. For each catastrophic failure mode, ask: can the system degrade gracefully rather than fail completely? If the change removes a graceful degradation path, that must be flagged and addressed.
+Full reference: [principles/graceful-degradation.md](principles/graceful-degradation.md)
 
 **health-checks**
 Step 3 (detection signals) is where this principle applies. Health checks are the primary mechanism for detecting that a change has broken something. If the system doesn't have health checks covering the changed path, add them as part of the test coverage plan in Step 5.
+Full reference: [principles/health-checks.md](principles/health-checks.md)
 
 **feature-flags**
-Step 4 (rollback strategy) and Step 6 (deployment sequence) both benefit from feature flags. A change deployed behind a flag can be rolled back by toggling the flag — no code deployment required. If the change can be flagged, it should be. The "What Good Looks Like" section describes flag lifecycle.
+Step 4 (rollback strategy) and Step 6 (deployment sequence) both benefit from feature flags. A change deployed behind a flag can be rolled back by toggling the flag — no code deployment required. If the change can be flagged, it should be.
+Full reference: [principles/feature-flags.md](principles/feature-flags.md)
 
 **blue-green-canary**
-Step 6 (deployment sequence) is where this principle applies. For high-blast-radius changes, canary deployment reduces the scope of a mistake from "all users" to "a small percentage of users." The "When This Matters" section identifies when the overhead of a canary deployment is justified.
+Step 6 (deployment sequence) is where this principle applies. For high-blast-radius changes, canary deployment reduces the scope of a mistake from "all users" to "a small percentage of users."
+Full reference: [principles/blue-green-canary.md](principles/blue-green-canary.md)
 
 ## Output Format
 

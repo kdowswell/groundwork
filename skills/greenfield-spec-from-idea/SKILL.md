@@ -90,6 +90,8 @@ What good looks like at spec time: "The primary data entity is `Inspection`, own
 
 What goes wrong when you skip it: two teams each store a version of the entity; a reporting pipeline reads from both; when either schema changes, the pipeline silently breaks. The incident at month four reveals that ownership was never decided — it was left ambiguous in the spec and both teams assumed the other had it.
 
+Full reference: [principles/data-ownership.md](principles/data-ownership.md)
+
 ---
 
 **field-first**
@@ -108,6 +110,8 @@ Success criteria that account for field context look different: "A technician ca
 What good looks like at spec time: success criteria name the worst-case operating environment explicitly, and any criterion that requires connectivity, sustained visual attention, or fine motor input flags that as a design constraint, not an assumption.
 
 What goes wrong when you skip it: field-inappropriate success criteria pass through to architecture and build phases, where every decision treats them as valid. Adding "field mode" retrospectively — after the data model, auth flow, offline behavior, and workflow length are baked into a desktop-first design — is dramatically harder than building field-first from day one. Pilots crater. Workers revert to paper. No one can identify the spec as the root cause because by then the spec has been forgotten.
+
+Full reference: [principles/field-first.md](principles/field-first.md)
 
 ## Output Format
 
