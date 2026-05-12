@@ -4,27 +4,24 @@ Skills are executable process artifacts — step-by-step workflows an agent foll
 
 ## Directory Structure
 
-Each skill lives in its own named directory containing a `SKILL.md` file — this is the [Agent Skills open standard](https://agentskills.io) structure, compatible with Claude Code, GitHub Copilot, Cursor, and skills.sh.
+Each skill lives in its own named directory containing a `SKILL.md` file — this is the [Agent Skills open standard](https://agentskills.io) structure, compatible with Claude Code, GitHub Copilot, Cursor, and skills.sh. Skill directories are flat (no phase subdirectories) and prefixed with their phase so the phase is legible after installation.
 
 ```
 skills/
-├── greenfield/
-│   ├── spec-from-idea/
-│   │   └── SKILL.md
-│   └── architecture-sketch/
-│       └── SKILL.md
-├── exploration/
-│   └── research-spike/
-│       └── SKILL.md
-└── brownfield/
-    └── safe-change-plan/
-        └── SKILL.md
+├── greenfield-spec-from-idea/
+│   └── SKILL.md
+├── greenfield-architecture-sketch/
+│   └── SKILL.md
+├── exploration-research-spike/
+│   └── SKILL.md
+└── brownfield-safe-change-plan/
+    └── SKILL.md
 ```
 
 To add supporting reference files to a skill, place them alongside `SKILL.md`:
 
 ```
-skills/greenfield/spec-from-idea/
+skills/greenfield-spec-from-idea/
 ├── SKILL.md
 └── references/
     └── example-spec.md
@@ -32,11 +29,11 @@ skills/greenfield/spec-from-idea/
 
 ## Three Phases
 
-| Phase | Directory | When to use |
+| Phase | Prefix | When to use |
 |---|---|---|
-| **Greenfield** | `greenfield/` | Creating something new from scratch (idea → spec → architecture) |
-| **Exploration** | `exploration/` | Research spikes, prototyping, assumption testing, tradeoff analysis |
-| **Brownfield** | `brownfield/` | Adding to or safely improving an existing system |
+| **Greenfield** | `greenfield-` | Creating something new from scratch (idea → spec → architecture) |
+| **Exploration** | `exploration-` | Research spikes, prototyping, assumption testing, tradeoff analysis |
+| **Brownfield** | `brownfield-` | Adding to or safely improving an existing system |
 
 ## Skill File Format
 

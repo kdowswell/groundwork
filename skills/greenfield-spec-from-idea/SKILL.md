@@ -1,5 +1,5 @@
 ---
-name: spec-from-idea
+name: greenfield-spec-from-idea
 title: "Spec From Idea"
 description: >
   Translate a raw idea, one-pager, or conversation into a structured spec with
@@ -63,10 +63,10 @@ If the primary user is a field worker, mobile user, or anyone not sitting at a d
 
 ## Principle Application
 
-**data-ownership** (`principles/data/data-ownership.md`)
+**data-ownership**
 Step 5 directly operationalizes this principle. The most load-bearing section is "Questions the Agent Should Ask" — use those questions to drive the conversation in Step 5. If ownership is ambiguous after Step 5, mark it as a Blocking open question and do not proceed to architecture until it's resolved.
 
-**field-first** (`principles/design/field-first.md`)
+**field-first**
 If the primary user is not a desk worker, Steps 2 and 4 must account for field conditions: gloves, sunlight, connectivity, divided attention, PPE. The success criteria in Step 4 should be written for the worst-case operating environment, not the best case. If the developer hasn't thought about the physical context, ask the "Questions the Agent Should Ask" section from this principle.
 
 ## Output Format

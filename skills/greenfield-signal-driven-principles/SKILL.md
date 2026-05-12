@@ -1,5 +1,5 @@
 ---
-name: signal-driven-principles
+name: greenfield-signal-driven-principles
 title: "Signal-Driven Principle Selection"
 description: >
   Scan project context for signals and select the load-bearing principles this

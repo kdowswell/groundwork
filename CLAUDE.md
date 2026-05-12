@@ -23,13 +23,12 @@ groundwork/
 │   ├── design/             Field-first (hostile conditions UX)
 │   ├── delivery/           CI/CD, blue-green/canary, feature flags, IaC
 │   └── operations/         Incident response, runbooks, capacity planning, tech debt
-├── skills/                 Phase-organized skill workflows (Agent Skills standard)
+├── skills/                 Phase-prefixed skill workflows (Agent Skills standard, flat)
 │   ├── _schema/            JSON Schema for skill frontmatter
-│   ├── greenfield/         Phase 1: 5 skills, each in its own named directory
-│   │   └── spec-from-idea/
-│   │       └── SKILL.md    Literal filename required by Agent Skills standard
-│   ├── exploration/        Phase 2: 4 skills
-│   └── brownfield/         Phase 3: 6 skills
+│   ├── greenfield-*/       Phase 1: 5 skills (greenfield-spec-from-idea, etc.)
+│   │   └── SKILL.md        Literal filename required by Agent Skills standard
+│   ├── exploration-*/      Phase 2: 4 skills
+│   └── brownfield-*/       Phase 3: 6 skills
 ├── context/                Project context artifacts
 │   ├── project-context.template.md   Project context capture (principle selection input)
 │   └── discovery-questions.md        Question bank for gathering project context
@@ -48,9 +47,9 @@ groundwork/
 
 | Phase | Directory | When it applies |
 |---|---|---|
-| **Greenfield** | `skills/greenfield/` | Building something new from scratch: idea → spec → architecture → initial implementation |
-| **Exploration** | `skills/exploration/` | Research spikes, prototypes, assumption testing, tradeoff analysis |
-| **Brownfield** | `skills/brownfield/` | Adding to, improving, or safely modifying an existing system |
+| **Greenfield** | `skills/greenfield-*/` | Building something new from scratch: idea → spec → architecture → initial implementation |
+| **Exploration** | `skills/exploration-*/` | Research spikes, prototypes, assumption testing, tradeoff analysis |
+| **Brownfield** | `skills/brownfield-*/` | Adding to, improving, or safely modifying an existing system |
 
 ## Core Invariants
 
@@ -71,7 +70,7 @@ groundwork/
 
 ## When Writing a New Skill
 
-1. Create a new directory under the appropriate `skills/<phase>/` directory — directory name MUST be kebab-case and MUST match the `name` frontmatter field
+1. Create a new directory directly under `skills/` — name MUST be `<phase>-<skill-name>` in kebab-case and MUST match the `name` frontmatter field
 2. Create `SKILL.md` inside that directory (literal filename, required by the Agent Skills standard)
 3. Include required frontmatter per the Agent Skills standard: `name`, `description`
 4. `description` carries both what the skill does and when to invoke it — phrase it as: "Does X. Invoke when Y."

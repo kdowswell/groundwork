@@ -1,5 +1,5 @@
 ---
-name: research-spike
+name: exploration-research-spike
 title: "Research Spike"
 description: >
   Run a time-boxed technical investigation with a defined question, approach,

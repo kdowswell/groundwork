@@ -1,5 +1,5 @@
 ---
-name: architecture-sketch
+name: greenfield-architecture-sketch
 title: "Architecture Sketch"
 description: >
   Define system boundaries, key components, data flows, and critical interfaces
@@ -64,13 +64,13 @@ If the user expects an immediate response to an action but the action crosses a 
 
 ## Principle Application
 
-**fault-isolation** (`principles/reliability/fault-isolation.md`)
+**fault-isolation**
 Step 4 is where fault-isolation thinking applies. Each external dependency is a potential failure zone. Use the "What Good Looks Like" section of this principle to evaluate whether each dependency is isolated: can a failure in that dependency be contained, or does it cascade to the primary path? If it cascades, that's the most important structural problem in the sketch.
 
-**async-processing** (`principles/scalability/async-processing.md`)
+**async-processing**
 Step 5 operationalizes this principle. The question is: which work is synchronous because it must be (user is waiting), and which is synchronous by accident (because it was easiest to write that way)? The principle's "Questions the Agent Should Ask" section drives Step 5.
 
-**horizontal-scaling** (`principles/scalability/horizontal-scaling.md`)
+**horizontal-scaling**
 If the scale target in the project context is team-scale or enterprise, check the sketch against this principle at Step 7. Stateful components that can't be replicated become bottlenecks. The sketch should make stateful vs. stateless components explicit.
 
 ## Output Format

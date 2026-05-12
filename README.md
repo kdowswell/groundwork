@@ -71,30 +71,30 @@ groundwork is a two-layer library:
 
 ## Installation
 
-Skills follow the [Agent Skills open standard](https://agentskills.io), supported by Claude Code, GitHub Copilot, Cursor, and [skills.sh](https://skills.sh). Each skill lives at `skills/<phase>/<skill-name>/SKILL.md`.
+Skills follow the [Agent Skills open standard](https://agentskills.io), supported by Claude Code, GitHub Copilot, Cursor, and [skills.sh](https://skills.sh). Each skill lives at `skills/<phase>-<skill-name>/SKILL.md` — flat structure, phase-prefixed names.
 
 ### Claude Code
 
 ```bash
-# Install a single skill into your project
-cp -r skills/greenfield/spec-from-idea .claude/skills/
-
 # Install all skills
-cp -r skills/greenfield/* skills/exploration/* skills/brownfield/* .claude/skills/
+cp -r skills/* .claude/skills/
+
+# Install a single skill
+cp -r skills/greenfield-spec-from-idea .claude/skills/
 ```
 
 Or for global installation (available across all projects):
 ```bash
-cp -r skills/greenfield/* skills/exploration/* skills/brownfield/* ~/.claude/skills/
+cp -r skills/* ~/.claude/skills/
 ```
 
-Invoke with `/spec-from-idea` or let Claude auto-trigger from the `description` field.
+Invoke with `/greenfield-spec-from-idea` or let Claude auto-trigger from the `description` field.
 
 ### GitHub Copilot
 
 ```bash
 mkdir -p .github/skills
-cp -r skills/greenfield/* skills/exploration/* skills/brownfield/* .github/skills/
+cp -r skills/* .github/skills/
 ```
 
 ### Cursor
@@ -103,19 +103,29 @@ Cursor uses `.mdc` files. Convert any skill for use as a Cursor rule:
 
 ```bash
 # Copy the SKILL.md content into a .mdc file in .cursor/rules/
-cat skills/greenfield/spec-from-idea/SKILL.md > .cursor/rules/spec-from-idea.mdc
+cat skills/greenfield-spec-from-idea/SKILL.md > .cursor/rules/greenfield-spec-from-idea.mdc
 ```
 
 Cursor is also adding native Agent Skills support — watch for `SKILL.md` support in `.cursor/skills/`.
 
 ### skills.sh (via Vercel Agent Skills)
 
-Install individual skills directly from this repo:
+Install all skills at once:
 
 ```bash
-npx skills add kurtdowswell/groundwork/skills/greenfield/spec-from-idea
-npx skills add kurtdowswell/groundwork/skills/exploration/research-spike
-# etc.
+npx skills add kdowswell/groundwork --all
+```
+
+Or install a specific phase:
+
+```bash
+npx skills add kdowswell/groundwork --skill greenfield-spec-from-idea --skill greenfield-architecture-sketch --skill greenfield-data-model-first --skill greenfield-signal-driven-principles --skill greenfield-adr-setup
+```
+
+Or install a single skill:
+
+```bash
+npx skills add kdowswell/groundwork --skill greenfield-spec-from-idea
 ```
 
 ### All agents — project context
@@ -131,11 +141,11 @@ groundwork/
 ├── principles/             Architectural principle library
 │   ├── _schema/            Frontmatter JSON Schema
 │   └── {category}/         One .md file per principle
-├── skills/                 Phase-organized skill workflows
+├── skills/                 Phase-prefixed skill workflows (flat)
 │   ├── _schema/            Frontmatter JSON Schema
-│   ├── greenfield/         0-to-1 skills (5)
-│   ├── exploration/        Research and prototype skills (4)
-│   └── brownfield/         Existing-system skills (6)
+│   ├── greenfield-*/       0-to-1 skills (5)
+│   ├── exploration-*/      Research and prototype skills (4)
+│   └── brownfield-*/       Existing-system skills (6)
 ├── context/                Project context artifacts
 │   ├── project-context.template.md
 │   └── discovery-questions.md

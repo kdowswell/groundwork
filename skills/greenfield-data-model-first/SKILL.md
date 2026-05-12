@@ -1,5 +1,5 @@
 ---
-name: data-model-first
+name: greenfield-data-model-first
 title: "Data Model First"
 description: >
   Design the core data model before writing implementation code so that schema
@@ -67,13 +67,13 @@ Migration-managed evolution requires coordinated deploys and rollback capability
 
 ## Principle Application
 
-**data-ownership** (`principles/data/data-ownership.md`)
+**data-ownership**
 Steps 1 and 3 are direct applications of this principle. The "Questions the Agent Should Ask" section identifies ownership ambiguities that surface as architectural problems later. Any entity where ownership is unclear at Step 3 is a Blocking open question — do not proceed to implementation until it's resolved.
 
-**schema-evolution** (`principles/data/schema-evolution.md`)
+**schema-evolution**
 Step 5 is where this principle is operationalized. The key insight from the principle: the schema evolution strategy must be chosen *before* the first external consumer exists, because changing the strategy after consumers exist is breaking change territory. The "When This Matters" section is most load-bearing for Step 5.
 
-**consistency-models** (`principles/data/consistency-models.md`)
+**consistency-models**
 Step 6 applies this principle. If the project context signals offline-first or field deployment, strong consistency across all relationships is architecturally impossible — the model must be designed for eventual consistency from the start. The "What Good Looks Like" section describes how to design for convergence rather than fighting it.
 
 ## Output Format

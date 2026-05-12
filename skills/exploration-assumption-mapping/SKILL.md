@@ -1,5 +1,5 @@
 ---
-name: assumption-mapping
+name: exploration-assumption-mapping
 title: "Assumption Mapping"
 description: >
   Surface and rank the riskiest assumptions in a plan before committing to it,

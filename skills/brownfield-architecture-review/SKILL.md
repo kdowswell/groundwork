@@ -3,9 +3,11 @@ name: brownfield-architecture-review
 title: "Brownfield Architecture Review"
 description: >
   Assess an existing system against the principle library to identify
-  architectural debt and prioritize improvements. Invoke before significant
-  new work on an existing system — when the team needs to understand what
-  architectural problems exist before adding more complexity.
+  architectural debt and prioritize improvements. Invoke before any new
+  feature development, major refactoring, or system extension that impacts
+  core functionality — when the team needs to understand what architectural
+  problems exist before adding more complexity. Primary output: a ranked
+  list of findings with concrete improvement proposals.
 phase: brownfield
 entry_criteria:
   - "The system exists in production or a near-production state"
@@ -84,16 +86,16 @@ A review that produces 15 high-priority improvements and doesn't account for the
 
 ## Principle Application
 
-**structured-logging** (`principles/observability/structured-logging.md`)
+**structured-logging**
 Step 2 (gather system artifacts) includes examining the logging configuration. The "Questions the Agent Should Ask" section from this principle drives the observability assessment in Step 3. For brownfield systems, the most common finding is that logging exists but is unstructured — which means it's present during development and useless during incidents.
 
-**alerting-strategy** (`principles/observability/alerting-strategy.md`)
+**alerting-strategy**
 Existing alerting configuration is one of the most revealing artifacts in Step 2. How many alerts exist? Are they actionable? What's the false-positive rate? The "What Goes Wrong" section from this principle describes exactly what a brownfield system looks like when alerting has never been systematically designed.
 
-**health-checks** (`principles/reliability/health-checks.md`)
+**health-checks**
 Step 2 should include examining the health check configuration for all services. Missing or shallow health checks are one of the most common brownfield findings. The principle's "What Good Looks Like" section defines the minimum bar.
 
-**fault-isolation** and **graceful-degradation** (`principles/reliability/`)
+**fault-isolation** and **graceful-degradation**
 These principles are assessed together in Step 3 by asking: if the external dependencies listed in the architecture fail, how does the system behave? A system that hard-depends on every external service (no circuit breakers, no graceful degradation) has high blast radius and fragile reliability characteristics.
 
 ## Output Format

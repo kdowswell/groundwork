@@ -1,5 +1,5 @@
 ---
-name: strangler-fig
+name: brownfield-strangler-fig
 title: "Strangler Fig"
 description: >
   Incrementally replace a legacy component by routing new traffic to the
@@ -76,13 +76,13 @@ The strangler fig can become an excuse to rewrite adjacent components ("as long 
 
 ## Principle Application
 
-**feature-flags** (`principles/delivery/feature-flags.md`)
+**feature-flags**
 Step 3 (migration seams) and Step 4 (milestones) benefit directly from feature flags. A feature flag IS the routing layer for many component types — it controls which implementation a given request uses. The flag lifecycle described in this principle (create, ramp, remove) maps directly to the migration stages. The "What Good Looks Like" section describes the expected lifespan.
 
-**health-checks** (`principles/reliability/health-checks.md`)
+**health-checks**
 Both implementations must have health checks during the transition. If the new implementation starts failing, the routing layer must be able to detect this and reroute to the old implementation. The "Questions the Agent Should Ask" section from this principle drives the health check design for both implementations.
 
-**circuit-breakers** (`principles/reliability/circuit-breakers.md`)
+**circuit-breakers**
 The routing layer is a natural place to implement a circuit breaker on the new implementation. If the new implementation's error rate exceeds a threshold, the circuit breaker routes 100% of traffic back to the old implementation until the issue is resolved. The "What Good Looks Like" section defines the circuit breaker state machine.
 
 ## Output Format

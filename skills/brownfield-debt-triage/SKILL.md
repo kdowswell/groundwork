@@ -1,5 +1,5 @@
 ---
-name: debt-triage
+name: brownfield-debt-triage
 title: "Debt Triage"
 description: >
   Categorize and prioritize technical debt before a sprint so the team
@@ -70,7 +70,7 @@ If the same items keep appearing on every triage list and keep being moved to "a
 
 ## Principle Application
 
-**tech-debt-management** (`principles/operations/tech-debt-management.md`)
+**tech-debt-management**
 This entire skill operationalizes this principle. The "Questions the Agent Should Ask" section from the principle drives the cost-to-carry scoring in Step 3. The "What Good Looks Like" section defines the target state: debt that is visible, categorized, and managed rather than invisible and accumulated.
 
 When applying this skill, surface the principle's definition of load-bearing debt — debt in code that is about to be changed, that sits on a critical path, or that compounds with scale. These items get priority regardless of their origin.

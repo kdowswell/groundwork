@@ -1,5 +1,5 @@
 ---
-name: dependency-upgrade
+name: brownfield-dependency-upgrade
 title: "Dependency Upgrade"
 description: >
   Safely upgrade a critical dependency by validating compatibility, checking
@@ -85,10 +85,10 @@ If the test suite passes after the upgrade but the team has low confidence in th
 
 ## Principle Application
 
-**supply-chain-security** (`principles/security/supply-chain-security.md`)
+**supply-chain-security**
 Step 3 (security advisories) directly applies this principle. The "Questions the Agent Should Ask" section from this principle drives the security assessment: is the dependency still maintained? Is the new version signed or verified? Have there been recent supply-chain compromises in this package ecosystem? The "What Goes Wrong" section describes the consequences of skipping supply-chain checks on dependency upgrades.
 
-**health-checks** (`principles/reliability/health-checks.md`)
+**health-checks**
 Step 7 (staging the rollout) relies on health checks to detect that the upgrade is causing problems. Before deploying the upgraded dependency, verify that health checks cover the paths exercised by the dependency. If they don't, add health checks as part of the upgrade work — not as an afterthought after the deployment.
 
 ## Output Format

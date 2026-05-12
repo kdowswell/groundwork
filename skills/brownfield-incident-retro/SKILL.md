@@ -1,5 +1,5 @@
 ---
-name: incident-retro
+name: brownfield-incident-retro
 title: "Incident Retro"
 description: >
   Run a blameless postmortem that produces a verified timeline, contributing
@@ -86,13 +86,13 @@ If any sentence in the document contains a person's name paired with a judgment 
 
 ## Principle Application
 
-**incident-response** (`principles/operations/incident-response.md`)
+**incident-response**
 This entire skill operationalizes the postmortem phase of this principle. The "Questions the Agent Should Ask" section from the principle drives the contributing factor analysis in Step 3. The "What Good Looks Like" section defines what a retro document that actually improves the system looks like vs. one that just closes the incident.
 
-**structured-logging** (`principles/observability/structured-logging.md`)
+**structured-logging**
 Step 1 (gathering raw materials) reveals the quality of the system's observability. If the timeline can't be reconstructed from logs because logs are missing, unstructured, or unhelpful, that's a contributing factor and a monitoring gap action item. The "What Goes Wrong When You Skip This" section lists exactly the problems that appear when logs are insufficient during incident reconstruction.
 
-**alerting-strategy** (`principles/observability/alerting-strategy.md`)
+**alerting-strategy**
 Step 4 (detection and response time) is where this principle is applied. Every monitoring gap identified in Step 4 should be evaluated against the "What Good Looks Like" section of this principle to determine whether the gap should be filled with a new alert, a threshold adjustment, or a runbook update.
 
 ## Output Format

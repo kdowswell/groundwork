@@ -1,5 +1,5 @@
 ---
-name: adr-setup
+name: greenfield-adr-setup
 title: "ADR Setup"
 description: >
   Establish Architecture Decision Records from the first day of a project so

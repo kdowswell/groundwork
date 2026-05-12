@@ -12,12 +12,6 @@ const SCHEMA_PATH = resolve(ROOT, "skills/_schema/skill.schema.json");
 const SKILLS_GLOB = "skills/**/SKILL.md";
 const IGNORE: string[] = [];
 
-const PHASE_DIRS: Record<string, string> = {
-  greenfield: "greenfield",
-  exploration: "exploration",
-  brownfield: "brownfield",
-};
-
 type FileError = { file: string; messages: string[] };
 
 function loadSchema(): object {
@@ -60,18 +54,17 @@ function validateFile(
     messages.push(...formatAjvErrors(ajv.errors));
   }
 
-  // Cross-checks: skill directory name ↔ name, grandparent dir ↔ phase.
-  // Each skill lives at skills/<phase>/<skill-name>/SKILL.md
+  // Cross-checks: skill directory name ↔ name, phase ↔ name prefix.
+  // Each skill lives at skills/<phase>-<skill-name>/SKILL.md (flat structure).
   const skillDir = basename(dirname(filePath));
-  const phaseDir = basename(dirname(dirname(filePath)));
 
   if (data.name && data.name !== skillDir) {
     messages.push(`name "${data.name}" does not match skill directory "${skillDir}"`);
   }
 
-  if (data.phase && PHASE_DIRS[data.phase] !== phaseDir) {
+  if (data.phase && data.name && !String(data.name).startsWith(`${data.phase}-`)) {
     messages.push(
-      `phase "${data.phase}" does not match phase directory "${phaseDir}"`,
+      `name "${data.name}" must start with phase prefix "${data.phase}-"`,
     );
   }
 

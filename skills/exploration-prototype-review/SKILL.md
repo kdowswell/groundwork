@@ -1,5 +1,5 @@
 ---
-name: prototype-review
+name: exploration-prototype-review
 title: "Prototype Review"
 description: >
   Evaluate a proof-of-concept for architectural soundness and identify what
@@ -65,13 +65,13 @@ Prototypes should be built on when their architecture aligns with the production
 
 ## Principle Application
 
-**fault-isolation** (`principles/reliability/fault-isolation.md`)
+**fault-isolation**
 Step 3 (error handling) is where this principle applies most directly. A prototype with no fault isolation means one failure takes down the whole path. The "What Goes Wrong" section of this principle describes exactly what happens when fault isolation is deferred from prototype to production.
 
-**structured-logging** (`principles/observability/structured-logging.md`)
+**structured-logging**
 Step 4 (observability) is where this principle applies. Prototypes with no structured logging are operationally blind. The "Questions the Agent Should Ask" section from this principle drives the observability audit in Step 4.
 
-**secrets-management** (`principles/security/secrets-management.md`)
+**secrets-management**
 Step 2 (hardcoded values) and Step 5 (security surface) are where this principle is most load-bearing. Hardcoded credentials in a prototype are the most common security vulnerability that makes it from exploration to production. The "What Good Looks Like" section describes the minimal standard before any code handles real credentials.
 
 ## Output Format

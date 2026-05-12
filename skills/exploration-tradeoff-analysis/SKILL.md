@@ -1,5 +1,5 @@
 ---
-name: tradeoff-analysis
+name: exploration-tradeoff-analysis
 title: "Tradeoff Analysis"
 description: >
   Produce a structured comparison of two or more implementation approaches that
