@@ -1,5 +1,5 @@
 #!/usr/bin/env tsx
-import { readFileSync } from "node:fs";
+import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { basename, dirname, relative, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import Ajv, { type ErrorObject } from "ajv";
@@ -25,6 +25,86 @@ function formatAjvErrors(errors: ErrorObject[] | null | undefined): string[] {
     const path = err.instancePath || "(frontmatter root)";
     return `${path} ${err.message ?? "is invalid"}`;
   });
+}
+
+const MAX_BODY_LINES = 500;
+const MARKDOWN_LINK_RE = /\[([^\]]*)\]\(([^)]+)\)/g;
+
+function checkDescriptionWhen(description: string): string | null {
+  const lower = description.toLowerCase();
+  if (
+    !lower.includes("invoke") &&
+    !lower.includes("use when") &&
+    !lower.includes("use after") &&
+    !lower.includes("use at") &&
+    !lower.includes("use before")
+  ) {
+    return 'description must state when to invoke the skill (include "Invoke when/at/after/before" or "Use when/at/after/before")';
+  }
+  return null;
+}
+
+function checkBodyLineCount(raw: string): string | null {
+  const lines = raw.split("\n").length;
+  if (lines > MAX_BODY_LINES) {
+    return `SKILL.md is ${lines} lines — must be ${MAX_BODY_LINES} or fewer (move additional detail to separate files)`;
+  }
+  return null;
+}
+
+function checkFileRefsDepth(body: string): string[] {
+  const errors: string[] = [];
+  for (const match of body.matchAll(MARKDOWN_LINK_RE)) {
+    const href = match[2];
+    if (href.startsWith("http://") || href.startsWith("https://") || href.startsWith("#")) continue;
+    const normalized = href.replace(/^\.\//, "");
+    const slashes = (normalized.match(/\//g) ?? []).length;
+    if (slashes > 1) {
+      errors.push(`file reference "${href}" is more than one level deep`);
+    }
+  }
+  return errors;
+}
+
+function checkPrincipleFiles(skillDir: string, principles: unknown): string[] {
+  const errors: string[] = [];
+  const principlesDir = `${skillDir}/principles`;
+
+  const declaredIds: string[] = Array.isArray(principles)
+    ? principles.filter((p): p is string => typeof p === "string")
+    : [];
+
+  const fileIds: string[] = existsSync(principlesDir)
+    ? readdirSync(principlesDir)
+        .filter((f) => f.endsWith(".md"))
+        .map((f) => f.slice(0, -3))
+    : [];
+
+  for (const id of declaredIds) {
+    if (!fileIds.includes(id)) {
+      errors.push(`principle "${id}" is listed in frontmatter but missing from principles/${id}.md`);
+    }
+  }
+  for (const id of fileIds) {
+    if (!declaredIds.includes(id)) {
+      errors.push(`principles/${id}.md exists but "${id}" is not listed in frontmatter principles`);
+    }
+  }
+  return errors;
+}
+
+function checkStepsSection(body: string): string | null {
+  const stepsIdx = body.search(/^## Steps\b/m);
+  if (stepsIdx === -1) {
+    return 'missing "## Steps" section';
+  }
+  const afterSteps = body.slice(stepsIdx + "## Steps".length);
+  const nextSection = afterSteps.search(/^## /m);
+  const stepsBlock = nextSection === -1 ? afterSteps : afterSteps.slice(0, nextSection);
+  if (!/^\d+\.\s/m.test(stepsBlock)) {
+    return '"## Steps" section has no numbered list items';
+  }
+  return null;
 }
 
 function validateFile(
@@ -67,6 +147,22 @@ function validateFile(
       `name "${data.name}" must start with phase prefix "${data.phase}-"`,
     );
   }
+
+  // Quality checks
+  if (typeof data.description === "string") {
+    const whenErr = checkDescriptionWhen(data.description);
+    if (whenErr) messages.push(whenErr);
+  }
+
+  const lineErr = checkBodyLineCount(raw);
+  if (lineErr) messages.push(lineErr);
+
+  messages.push(...checkFileRefsDepth(parsed.content));
+
+  const stepsErr = checkStepsSection(parsed.content);
+  if (stepsErr) messages.push(stepsErr);
+
+  messages.push(...checkPrincipleFiles(dirname(filePath), data.principles));
 
   return messages.length ? { file: filePath, messages } : null;
 }

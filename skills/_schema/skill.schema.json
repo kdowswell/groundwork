@@ -13,8 +13,8 @@
     },
     "description": {
       "type": "string",
-      "minLength": 1,
-      "description": "What this skill does and when to invoke it. This is the primary signal used by agent runtimes for auto-invocation (Agent Skills standard)."
+      "minLength": 80,
+      "description": "What this skill does and when to invoke it. This is the primary signal used by agent runtimes for auto-invocation (Agent Skills standard). Format: 'Does X. Invoke when Y.' Must be at least 80 characters."
     },
     "title": {
       "type": "string",
