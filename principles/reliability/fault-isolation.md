@@ -27,8 +27,11 @@ A failure in one component should not cascade to unrelated components. Design sy
 - Multiple teams will own different parts of the system
 
 ## When This Doesn't Matter
-- Single-user tools or prototypes where downtime is acceptable
-- Monolithic applications with a single deployment unit (isolation is internal, not architectural)
+- Single-user tools or prototypes where downtime is acceptable and cascading failure has no consequence
+- Monolithic applications with a single deployment unit where isolation is a code-organization concern, not an architectural one — structural patterns like modules and packages provide the equivalent discipline
+- Event-driven architectures with dead-letter queues and per-message processing — the message layer already contains failures to individual messages; application-level blast-radius management is handled by queue semantics
+- Serverless functions or short-lived containers invoked by a platform — each invocation is isolated by the runtime; architectural blast-radius design is still required at the service boundary level, but within the function, isolation is provided
+- When a service mesh or sidecar already enforces timeout and circuit-breaker policies at the infrastructure layer and the work is designing a single application behind it — though you should still understand and intentionally configure what the mesh is doing on your behalf
 
 ## Questions the Agent Should Ask
 - What happens to the rest of the system if this component goes down?
@@ -51,4 +54,4 @@ A failure in one component should not cascade to unrelated components. Design sy
 - Incident response is slow because blast radius is unknown
 
 ## Further Reading
-See the source publications linked above for comprehensive treatment. The AWS Reliability Pillar covers this in depth with specific implementation patterns for cloud-native systems.
+Nygard's *Release It!* is the foundational text for stability patterns including bulkheads, timeouts, and failure-mode design — the stability anti-patterns chapter explains the mechanics of how coupling becomes a blast-radius problem. The [AWS Well-Architected Reliability Pillar](https://docs.aws.amazon.com/wellarchitected/latest/reliability-pillar/) (REL10) covers cell-based architectures, availability zone isolation, and shuffle sharding as mechanisms for controlling blast radius in cloud deployments. The paper [Crash-Only Software](https://www.usenix.org/legacy/events/hotos03/tech/full_papers/candea/candea.pdf) (Candea & Fox, 2003) articulates why designing for clean, bounded failure is preferable to defensive recovery — a useful framing for why isolation is a design property rather than a safety net. *Circuit Breakers* describes the companion mechanism that detects dependency failures early and stops them propagating; *Graceful Degradation* describes what the system should return once isolation has contained a failure.

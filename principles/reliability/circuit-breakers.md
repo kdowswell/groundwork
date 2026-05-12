@@ -59,4 +59,4 @@ Wrap calls to remote services in a state machine that stops calling them once fa
 - Incident responders cannot tell which dependency is the root cause because every request looks like a generic timeout
 
 ## Further Reading
-Nygard's *Release It!* introduces the pattern and is the canonical treatment, including stability anti-patterns that motivate it. The Azure Architecture Center entry covers state-machine semantics, half-open probing, and trade-offs with retries and service-mesh implementations.
+Nygard's *Release It!* introduces the pattern and is the canonical treatment, including stability anti-patterns that motivate it. The Azure Architecture Center entry covers state-machine semantics, half-open probing, and trade-offs with retries and service-mesh implementations. Circuit breakers are a detection and trip mechanism — *Graceful Degradation* is the companion principle that defines what the caller should return when the breaker is open; the two are designed to be applied together.

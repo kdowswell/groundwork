@@ -27,6 +27,7 @@ principles:
   - fallacies-of-distributed-computing
   - idempotency-by-design
   - api-contract-first
+  - conways-law-organizational-alignment
 time_box: "2-4 hours"
 tags: [brownfield, architecture, audit, review]
 ---
@@ -131,6 +132,10 @@ Full reference: [principles/idempotency-by-design.md](principles/idempotency-by-
 **api-contract-first**
 Step 2 should include reviewing the system's API surface: is there a machine-readable contract? Is it in sync with the implementation? Is there a versioning policy, and is it followed? The most common brownfield finding is an API that was designed code-first and reflects internal implementation details — field names that are database column names, operations named after internal functions, error responses that expose stack traces. Assess whether callers could generate a client from the contract alone, and whether breaking changes are made with or without a versioning protocol.
 Full reference: [principles/api-contract-first.md](principles/api-contract-first.md)
+
+**conways-law-organizational-alignment**
+Step 2 (gather system artifacts) should include mapping team ownership alongside the technical artifacts: which team owns which service, and does that ownership map match what the architecture diagram implies? Step 3 (assess each active principle) should explicitly evaluate whether service boundaries align with team boundaries. The most common finding is a service that multiple teams contribute to on a regular cadence — which produces coupling in the code that mirrors the coupling in the org. A system that routinely requires cross-team coordination for routine feature delivery is non-compliant with this principle regardless of how clean the code looks internally. Proposed improvements in Step 5 should address both the technical structure and the ownership model; fixing the code without clarifying ownership recreates the problem.
+Full reference: [principles/conways-law-organizational-alignment.md](principles/conways-law-organizational-alignment.md)
 
 ## Output Format
 

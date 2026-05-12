@@ -15,6 +15,9 @@ exit_criteria:
   - "Debt items are prioritized: pay now, schedule, accept, or delete"
   - "Items marked 'pay now' have an owner and estimated effort"
 time_box: "60-90 minutes"
+principles:
+  - tech-debt-management
+  - finops-cost-visibility
 tags: [brownfield, tech-debt, planning, prioritization]
 ---
 
@@ -81,6 +84,10 @@ If the same items keep appearing on every triage list and keep being moved to "a
 This entire skill operationalizes this principle. The "Questions the Agent Should Ask" section from the principle drives the cost-to-carry scoring in Step 3. The "What Good Looks Like" section defines the target state: debt that is visible, categorized, and managed rather than invisible and accumulated.
 
 When applying this skill, surface the principle's definition of load-bearing debt — debt in code that is about to be changed, that sits on a critical path, or that compounds with scale. These items get priority regardless of their origin.
+
+**finops-cost-visibility**
+The velocity tax and risk scoring in Step 3 captures developer time and incident cost. The principle extends this to infrastructure cost: some technical debt actively inflates cloud spend — over-provisioned resources holding on from an earlier scale decision, inefficient query patterns driving up compute or data-transfer costs, redundant data copies inflating storage, retry storms amplifying API call volume. When scoring an item's cost-to-carry in Step 3, include operational cost impact as part of the risk dimension, not just incident probability. An item that increases cloud spend by 20% per month carries a cost-to-carry that doesn't appear in incident metrics and may not surface in any alert — only in the monthly bill. Debt items tied to cost inefficiency that sit in actively changing code should score high on compounding rate: each new feature built on top of an inefficient pattern inherits its cost profile.
+Full reference: [principles/finops-cost-visibility.md](principles/finops-cost-visibility.md)
 
 ## Output Format
 

@@ -22,6 +22,7 @@ principles:
   - schema-evolution
   - consistency-models
   - bounded-contexts
+  - conways-law-organizational-alignment
 time_box: "45-90 minutes"
 tags: [data, schema, greenfield, architecture]
 ---
@@ -97,6 +98,10 @@ When an entity's ownership is contested between two teams, that's not a personne
 What good looks like: every entity in the model has exactly one owner, and entities owned by other teams appear in the model only as identifiers (foreign keys to their bounded context) rather than as full embedded records.
 
 Full reference: [principles/bounded-contexts.md](principles/bounded-contexts.md)
+
+**conways-law-organizational-alignment**
+Step 3 (assign ownership to each entity) operationalizes this principle at the data layer. "No entity should have two owners" is simultaneously a data architecture rule and an organizational alignment rule: an entity with two owners has two teams that must coordinate on every schema change, which means its schema change rate is bounded by the coordination cost between those teams. When ownership is contested in Step 3, that is not a data modeling problem — it is a signal that team boundaries and service boundaries haven't been drawn in the right place, and the data model is inheriting that misalignment. Surface contested ownership as a Blocking open question and resolve it through the organizational conversation before proceeding. The resolution is often splitting the entity into two distinct domain entities each owned by one team, rather than forcing shared write access.
+Full reference: [principles/conways-law-organizational-alignment.md](principles/conways-law-organizational-alignment.md)
 
 ## Output Format
 

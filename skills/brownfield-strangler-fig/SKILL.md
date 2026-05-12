@@ -23,6 +23,8 @@ principles:
   - separation-of-concerns
   - api-contract-first
   - idempotency-by-design
+  - testing-strategy
+  - conways-law-organizational-alignment
 time_box: "2-4 hours (planning)"
 tags: [brownfield, migration, legacy, refactoring]
 ---
@@ -114,6 +116,14 @@ Full reference: [principles/api-contract-first.md](principles/api-contract-first
 **idempotency-by-design**
 Step 5 (parity tests) must include idempotency verification for all state-mutating operations handled by the component being replaced. During the shadow mode phase, both implementations will receive the same requests — including requests that the original implementation handled idempotently. If the new implementation is not idempotent where the old one was, shadow mode will produce duplicate side effects (duplicate writes, duplicate charges, duplicate notifications). Verify idempotency parity before any traffic shifts, not as a post-migration cleanup item.
 Full reference: [principles/idempotency-by-design.md](principles/idempotency-by-design.md)
+
+**testing-strategy**
+Step 5 (parity tests) is a testing strategy question. Apply the pyramid: unit-level parity tests (same output for same input, in-process) cover the bulk of behaviors quickly and cheaply. Integration-level parity tests (both implementations running against real dependencies) catch behaviors that unit parity misses. Shadow mode — running both implementations in parallel on live traffic and comparing outputs — is the equivalent of an E2E parity test: expensive, hard to maintain, and necessary only for behaviors that cannot be verified any other way. Define parity tests at the lowest feasible fidelity first and reserve shadow mode for the highest-risk behaviors. If a large portion of the component's behavior requires shadow mode to verify, that's a signal the component has insufficient unit-level observability — consider adding it before starting the migration.
+Full reference: [principles/testing-strategy.md](principles/testing-strategy.md)
+
+**conways-law-organizational-alignment**
+Step 1 (component boundary) and Step 7 (long transition plan) are where organizational structure becomes load-bearing. The legacy component being replaced exists because some team built it — but by the time a strangler fig migration starts, it may be maintained by multiple teams, owned by none, or inherited by a team that didn't design it. Step 7's question — "who is responsible for the old implementation during migration?" — requires a named team, not "we all are." Unowned legacy components during a migration attract neglect; bugs go unresolved because each team assumes the other is handling it. If the migration is also an opportunity to clarify ownership of the replacement, make that explicit: who owns the new component after decommission? That team should own the routing layer, the parity tests, and the decommission criteria from the start.
+Full reference: [principles/conways-law-organizational-alignment.md](principles/conways-law-organizational-alignment.md)
 
 ## Output Format
 

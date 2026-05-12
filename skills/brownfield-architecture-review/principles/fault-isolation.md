@@ -12,8 +12,11 @@ A failure in one component should not cascade to unrelated components. Design sy
 - Multiple teams will own different parts of the system
 
 ## When This Doesn't Matter
-- Single-user tools or prototypes where downtime is acceptable
-- Monolithic applications with a single deployment unit (isolation is internal, not architectural)
+- Single-user tools or prototypes where downtime is acceptable and cascading failure has no consequence
+- Monolithic applications with a single deployment unit where isolation is a code-organization concern, not an architectural one — structural patterns like modules and packages provide the equivalent discipline
+- Event-driven architectures with dead-letter queues and per-message processing — the message layer already contains failures to individual messages; application-level blast-radius management is handled by queue semantics
+- Serverless functions or short-lived containers invoked by a platform — each invocation is isolated by the runtime; architectural blast-radius design is still required at the service boundary level, but within the function, isolation is provided
+- When a service mesh or sidecar already enforces timeout and circuit-breaker policies at the infrastructure layer and the work is designing a single application behind it — though you should still understand and intentionally configure what the mesh is doing on your behalf
 
 ## Questions the Agent Should Ask
 - What happens to the rest of the system if this component goes down?

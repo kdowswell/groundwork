@@ -20,6 +20,7 @@ principles:
   - data-ownership
   - field-first
   - bounded-contexts
+  - conways-law-organizational-alignment
 time_box: "30-60 minutes"
 tags: [planning, requirements, greenfield, spec]
 ---
@@ -105,6 +106,13 @@ What good looks like at spec time: the entity has one name, one owner, and one d
 What goes wrong when you skip it: the spec describes a single shared entity that three teams will each extend for their own use case. By the time those extensions conflict, the schema is live and the resolution costs are structural.
 
 Full reference: [principles/bounded-contexts.md](principles/bounded-contexts.md)
+
+---
+
+**conways-law-organizational-alignment**
+Step 5 (primary data entity and owner) is where this principle first applies. Naming an owner isn't only about data accountability — it determines which team's release schedule this feature lives on, whose API design conventions govern the contract, and who has authority to evolve the schema. If the spec implies that two teams share ownership of the primary entity, that's a signal that either the spec spans two bounded contexts (and should be scoped more narrowly) or the organization's team structure doesn't align with the domain's natural boundaries. Surface it as a Blocking open question at Step 6 rather than proceeding with ambiguous ownership. A spec that assigns ownership to "the platform team and the product team together" has not resolved ownership — it has deferred a structural decision that will resurface at every schema change.
+
+Full reference: [principles/conways-law-organizational-alignment.md](principles/conways-law-organizational-alignment.md)
 
 ---
 

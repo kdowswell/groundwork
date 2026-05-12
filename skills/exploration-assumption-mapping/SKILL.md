@@ -16,6 +16,7 @@ exit_criteria:
   - "The top 3 riskiest assumptions have a validation plan"
 principles:
   - fallacies-of-distributed-computing
+  - testing-strategy
 time_box: "60-90 minutes"
 tags: [exploration, risk, planning, validation]
 ---
@@ -96,6 +97,10 @@ The eight fallacies are a named catalog of the most common false assumptions in 
 
 In Step 3 (top 5 highest-risk assumptions), distributed computing assumptions tend to score high on impact (architecture-level change required if wrong) but vary on uncertainty — some teams have production evidence for their latency/reliability profile; others are working from development assumptions that have never been tested under load. Score honestly.
 Full reference: [principles/fallacies-of-distributed-computing.md](principles/fallacies-of-distributed-computing.md)
+
+**testing-strategy**
+The validation methods in Step 4 (technical spike, API/SDK test, paper prototype, user interview) correspond to different levels of testing fidelity applied to assumption validation. Use the cheapest form of falsification that can actually disprove the assumption: a feasibility assumption ("can this library do X?") needs only a unit-level spike — write a small targeted test, run it, get the answer. A performance assumption needs an integration-level test against real infrastructure. A user behavior assumption requires research with actual users — no technical test can falsify it. Over-investing in full-stack validation for a feasibility question wastes the time box; under-investing (asking engineers to imagine user behavior) cannot falsify a user behavior assumption. Match the test fidelity to the assumption type before committing to a validation approach.
+Full reference: [principles/testing-strategy.md](principles/testing-strategy.md)
 
 ## Output Format
 

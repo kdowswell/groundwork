@@ -22,6 +22,8 @@ principles:
   - feature-flags
   - blue-green-canary
   - idempotency-by-design
+  - testing-strategy
+  - conways-law-organizational-alignment
 time_box: "60-120 minutes"
 tags: [brownfield, production, safety, deployment]
 ---
@@ -110,6 +112,14 @@ Full reference: [principles/blue-green-canary.md](principles/blue-green-canary.m
 **idempotency-by-design**
 Steps 4 and 6 are where this principle is most relevant to safe change planning. Any change that modifies a write path — a new API endpoint, a modified message handler, a schema migration — must account for what happens if the deployment is partially applied and then rolled back. If the new code runs twice (once before rollback, once after redeployment), does it produce the same result or a duplicate side effect? For changes that involve migrations or external API calls with side effects, verify the write path is idempotent before shipping. If it isn't, make idempotency part of the test coverage plan in Step 5 — not a follow-up item.
 Full reference: [principles/idempotency-by-design.md](principles/idempotency-by-design.md)
+
+**testing-strategy**
+Step 5 (test coverage plan) is where this principle is most load-bearing. Order test coverage to match the pyramid: unit tests for the changed behavior, integration tests for the changed path through the system, E2E tests only for the critical user journeys that exercise the changed path. A coverage plan that relies primarily on E2E tests produces slow, fragile verification — either too slow to be a useful release gate, or so flaky it gets bypassed. If the change touches a service boundary, consumer-driven contract tests must exist before the change ships — they catch schema or contract regressions faster and more reliably than a shared integration environment. Silent failure modes from Step 2 (blast radius) require dedicated test coverage; if a failure mode produces wrong results without an error signal, the only defense is a test that asserts the correct result, not just the absence of exceptions.
+Full reference: [principles/testing-strategy.md](principles/testing-strategy.md)
+
+**conways-law-organizational-alignment**
+Step 7 (coordination requirements) is where this principle is diagnostic as well as prescriptive. The coordination plan should reflect the actual team ownership structure — which team owns the service being changed, which teams own dependent services, what confirmation is required from each. But Conway's Law also works as a signal: if a routine production change routinely requires coordinating more than two teams, that pattern is evidence the service boundary is in the wrong place. A well-aligned architecture allows one team to change one service without synchronizing across the organization. When Step 7 consistently produces a coordination table with four or five teams, flag it as an architectural finding — it belongs in the next brownfield architecture review, not only in this change plan.
+Full reference: [principles/conways-law-organizational-alignment.md](principles/conways-law-organizational-alignment.md)
 
 ## Output Format
 

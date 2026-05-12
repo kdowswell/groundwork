@@ -24,6 +24,7 @@ principles:
   - bounded-contexts
   - fallacies-of-distributed-computing
   - api-contract-first
+  - conways-law-organizational-alignment
 time_box: "45-90 minutes"
 tags: [architecture, design, greenfield]
 ---
@@ -108,6 +109,10 @@ Full reference: [principles/fallacies-of-distributed-computing.md](principles/fa
 **api-contract-first**
 Step 6 (highest-stakes structural decisions) and the "critical interfaces" listed in the output format are where API contracts live. The most expensive contracts to change after code is written are the ones between components with independent deployment cycles — services owned by different teams, or a backend and a mobile client. For each critical interface identified in the sketch, note whether a contract has been defined or whether it's currently implied. Implied contracts become breaking changes nobody planned for.
 Full reference: [principles/api-contract-first.md](principles/api-contract-first.md)
+
+**conways-law-organizational-alignment**
+Steps 2 and 6 are where this principle is most load-bearing. When naming components in Step 2, ask: does each component map to one team's ownership, or will multiple teams contribute to the same component? Components that multiple teams share tend to accumulate conflicting assumptions and coupling that mirrors the organizational boundary — each team bends the component toward its own use case. If the sketch produces a component that two teams will both own, that's a structural signal: either split the component along team lines, or designate one team as owner with a clear contract for the other to consume. In Step 6 (highest-stakes decisions), if the proposed architecture requires the organization to be restructured to deliver it effectively, name that dependency in an ADR — it is a structural decision, not a side effect to discover after the architecture is locked.
+Full reference: [principles/conways-law-organizational-alignment.md](principles/conways-law-organizational-alignment.md)
 
 ## Output Format
 

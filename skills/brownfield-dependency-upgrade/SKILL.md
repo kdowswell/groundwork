@@ -19,6 +19,7 @@ exit_criteria:
 principles:
   - supply-chain-security
   - health-checks
+  - testing-strategy
 time_box: "2-8 hours depending on criticality"
 tags: [brownfield, dependencies, security, maintenance]
 ---
@@ -99,6 +100,10 @@ Full reference: [principles/supply-chain-security.md](principles/supply-chain-se
 **health-checks**
 Step 7 (staging the rollout) relies on health checks to detect that the upgrade is causing problems. Before deploying, verify that health checks cover the paths exercised by the dependency. If they don't, add them as part of the upgrade work — not as an afterthought after deployment.
 Full reference: [principles/health-checks.md](principles/health-checks.md)
+
+**testing-strategy**
+Step 5 (test plan) is where this principle is most direct. Apply the pyramid: unit tests cover individual usage points identified in Step 4 — does each call site work correctly with the new version? Integration tests cover the dependency's behavior under the system's actual usage patterns against real infrastructure. E2E tests cover the critical user journeys that exercise the dependency. A dependency upgrade validated only by E2E tests has slow, fragile verification — a regression may take 45 minutes to discover and produce environment-noise false positives that obscure it. Write unit-level coverage for the usage points first, then integration tests for the primary use cases, and lean on E2E only for final critical-path confirmation. If unit coverage of the dependency's usage is thin before the upgrade starts, write it first — regressions introduced by the upgrade will otherwise be ambiguous about whether they existed before.
+Full reference: [principles/testing-strategy.md](principles/testing-strategy.md)
 
 ## Output Format
 

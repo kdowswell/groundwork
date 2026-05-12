@@ -16,6 +16,8 @@ exit_criteria:
   - "A recommendation is made and its reasoning is explicit"
   - "Reversal conditions are documented: what would cause this decision to change"
 time_box: "60-120 minutes"
+principles:
+  - finops-cost-visibility
 tags: [exploration, architecture, decision, adr]
 ---
 
@@ -75,8 +77,13 @@ The applicable principles depend entirely on what is being compared. Before writ
 - Choosing a deployment topology → `horizontal-scaling`, `fault-isolation`
 - Choosing an authentication approach → `least-privilege`, `zero-trust`
 - Choosing a data architecture → `data-ownership`, `schema-evolution`
+- Choosing between infrastructure options or architecturally different implementations → `finops-cost-visibility`
 
 For each relevant principle, add at least one criterion that tests whether each approach aligns with the principle. The principle's "What Good Looks Like" section defines what a score of Strong looks like for that criterion.
+
+**finops-cost-visibility**
+Cost per unit of work should be a first-class criterion in Step 3 whenever the approaches being compared have meaningfully different cost profiles at scale. Add it when: the approaches use different infrastructure shapes (synchronous vs. async, object storage vs. block storage, on-demand vs. provisioned capacity), when one approach fans out significantly more than the other, or when AI/ML inference is part of the architecture. "Costs about the same" is only safe to assume when the approaches are structurally similar. Approaches that differ in fan-out, data transfer, or inference cost often have 5–10× cost differences at production scale that are invisible at current load. Score each approach's cost profile against expected peak load, not current load — the decision will outlive the scale it was made at.
+Full reference: [principles/finops-cost-visibility.md](principles/finops-cost-visibility.md)
 
 ## Output Format
 
