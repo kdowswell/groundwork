@@ -25,5 +25,8 @@ jobs:
       - name: Validate principles
         run: npm run validate
 
+      - name: Validate skills
+        run: npm run validate:skills
+
       - name: Run tests
         run: npm test

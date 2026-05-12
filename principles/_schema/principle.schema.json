@@ -1,6 +1,5 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
-  "$id": "https://groundwork.dev/schemas/principle.schema.json",
   "title": "groundwork principle frontmatter",
   "description": "Schema for the YAML frontmatter at the top of every principle markdown file.",
   "type": "object",

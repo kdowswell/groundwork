@@ -1,6 +1,5 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
-  "$id": "https://groundwork.dev/schemas/skill.schema.json",
   "title": "groundwork skill frontmatter",
   "description": "Schema for the YAML frontmatter at the top of every skill markdown file. Required fields follow the Agent Skills open standard (agentskills.io). All other fields are groundwork extensions.",
   "type": "object",

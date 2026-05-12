@@ -13,8 +13,7 @@
     "validate:skills": "tsx scripts/validate-skills.ts",
     "validate:all": "npm run validate && npm run validate:skills",
     "typecheck": "tsc --noEmit",
-    "test": "vitest run --passWithNoTests",
-    "build": "tsc"
+    "test": "vitest run --passWithNoTests"
   },
   "dependencies": {
     "ajv": "^8.17.1",
