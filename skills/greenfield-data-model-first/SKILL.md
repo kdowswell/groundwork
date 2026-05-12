@@ -21,6 +21,7 @@ principles:
   - data-ownership
   - schema-evolution
   - consistency-models
+  - bounded-contexts
 time_box: "45-90 minutes"
 tags: [data, schema, greenfield, architecture]
 ---
@@ -87,6 +88,15 @@ Full reference: [principles/schema-evolution.md](principles/schema-evolution.md)
 **consistency-models**
 Step 6 applies this principle. If the project context signals offline-first or field deployment, strong consistency across all relationships is architecturally impossible — the model must be designed for eventual consistency from the start.
 Full reference: [principles/consistency-models.md](principles/consistency-models.md)
+
+**bounded-contexts**
+Steps 1 and 3 together are where bounded context decisions crystallize. Listing entities forces the question of which entities belong to this model and which belong to a neighboring domain. Assigning ownership forces the question of where the boundary actually falls. A data model that contains entities owned by multiple distinct teams is not one model — it's several models that haven't been separated yet.
+
+When an entity's ownership is contested between two teams, that's not a personnel question — it's a signal that the two teams are working within the same conceptual space and the bounded context hasn't been properly drawn. Surface this in Step 3 rather than splitting ownership or creating shared write access as a workaround.
+
+What good looks like: every entity in the model has exactly one owner, and entities owned by other teams appear in the model only as identifiers (foreign keys to their bounded context) rather than as full embedded records.
+
+Full reference: [principles/bounded-contexts.md](principles/bounded-contexts.md)
 
 ## Output Format
 

@@ -14,6 +14,8 @@ exit_criteria:
   - "Assumptions are listed and categorized by type"
   - "Each assumption is scored for risk (impact × uncertainty)"
   - "The top 3 riskiest assumptions have a validation plan"
+principles:
+  - fallacies-of-distributed-computing
 time_box: "60-90 minutes"
 tags: [exploration, risk, planning, validation]
 ---
@@ -88,6 +90,12 @@ If a high-risk assumption is related to **reliability** (third-party system reli
 If a high-risk assumption is about **data** (user data ownership, data format from external source), the `data-ownership` and `schema-evolution` principles become load-bearing — the data model must be designed to accommodate being wrong about the data.
 
 If a high-risk assumption is about **scale** (traffic volume, data size), validate it before the scalability principles are selected in `signal-driven-principles` — the right principles depend on the right scale target.
+
+**fallacies-of-distributed-computing**
+The eight fallacies are a named catalog of the most common false assumptions in distributed system design. Use them as a structured probe during Step 1 (listing assumptions) whenever the plan involves a network call, an external dependency, or inter-service communication. For each network-touching part of the plan, ask: does this plan assume the network is reliable? That latency is negligible? That the topology won't change? That all services are administered by the same team? Each yes is an assumption that belongs in the register and should be scored.
+
+In Step 3 (top 5 highest-risk assumptions), distributed computing assumptions tend to score high on impact (architecture-level change required if wrong) but vary on uncertainty — some teams have production evidence for their latency/reliability profile; others are working from development assumptions that have never been tested under load. Score honestly.
+Full reference: [principles/fallacies-of-distributed-computing.md](principles/fallacies-of-distributed-computing.md)
 
 ## Output Format
 

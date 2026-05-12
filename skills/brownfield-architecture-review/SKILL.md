@@ -22,6 +22,11 @@ principles:
   - health-checks
   - fault-isolation
   - graceful-degradation
+  - separation-of-concerns
+  - bounded-contexts
+  - fallacies-of-distributed-computing
+  - idempotency-by-design
+  - api-contract-first
 time_box: "2-4 hours"
 tags: [brownfield, architecture, audit, review]
 ---
@@ -106,6 +111,26 @@ Full reference: [principles/health-checks.md](principles/health-checks.md)
 **fault-isolation** and **graceful-degradation**
 These principles are assessed together in Step 3 by asking: if the external dependencies listed in the architecture fail, how does the system behave? A system that hard-depends on every external service has high blast radius and fragile reliability characteristics.
 Full reference: [principles/fault-isolation.md](principles/fault-isolation.md) · [principles/graceful-degradation.md](principles/graceful-degradation.md)
+
+**separation-of-concerns**
+Step 2 (gather system artifacts) and Step 3 (assess each active principle) together reveal whether the system's layers have stayed clean or have eroded over time. The most common brownfield finding is business logic that has migrated into the data layer (stored procedures, triggers, computed columns) or the delivery layer (thick controllers, middleware that enforces business rules), making the system hard to test and harder to change. Assess whether the team can explain in one sentence what each module is responsible for. If they can't — or the sentence contains "and" — that's an At Risk or Non-compliant finding.
+Full reference: [principles/separation-of-concerns.md](principles/separation-of-concerns.md)
+
+**bounded-contexts**
+Step 2 should include reading the data model schemas and service interface definitions to assess whether domain boundaries are explicit and respected. The most common finding is a "god service" or "platform team's database" that has accumulated entities from multiple domains because it was convenient — not because it represents a coherent bounded context. Assess: do teams outside this service's domain write directly to its data store? Are there entities in the schema that no single team owns? Do the same terms mean different things in different parts of the codebase?
+Full reference: [principles/bounded-contexts.md](principles/bounded-contexts.md)
+
+**fallacies-of-distributed-computing**
+Step 2 should include reviewing how the system handles network calls — timeouts, retry logic, circuit breakers, and error handling for each external dependency. The eight fallacies are a checklist: does the system assume network calls succeed? Does it have no timeout (assuming latency is negligible)? Does it assume the schema of an external API never changes? Does it trust that all internal calls come from trusted sources? For brownfield systems, these findings are often concentrated around the oldest integrations — the ones nobody has touched since launch.
+Full reference: [principles/fallacies-of-distributed-computing.md](principles/fallacies-of-distributed-computing.md)
+
+**idempotency-by-design**
+Step 3 should assess the write paths: are the system's state-mutating operations safe to retry? This is frequently a Non-compliant finding in brownfield systems that were not designed with at-least-once delivery in mind. Look specifically at: API endpoints that create or modify records (do they accept or generate idempotency keys?), message handlers (do they check for prior processing of the same message ID?), and scheduled jobs (can they be triggered twice safely?). Silent failures from duplicate processing are among the hardest to detect post-hoc.
+Full reference: [principles/idempotency-by-design.md](principles/idempotency-by-design.md)
+
+**api-contract-first**
+Step 2 should include reviewing the system's API surface: is there a machine-readable contract? Is it in sync with the implementation? Is there a versioning policy, and is it followed? The most common brownfield finding is an API that was designed code-first and reflects internal implementation details — field names that are database column names, operations named after internal functions, error responses that expose stack traces. Assess whether callers could generate a client from the contract alone, and whether breaking changes are made with or without a versioning protocol.
+Full reference: [principles/api-contract-first.md](principles/api-contract-first.md)
 
 ## Output Format
 

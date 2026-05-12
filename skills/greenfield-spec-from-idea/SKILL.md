@@ -19,6 +19,7 @@ exit_criteria:
 principles:
   - data-ownership
   - field-first
+  - bounded-contexts
 time_box: "30-60 minutes"
 tags: [planning, requirements, greenfield, spec]
 ---
@@ -91,6 +92,19 @@ What good looks like at spec time: "The primary data entity is `Inspection`, own
 What goes wrong when you skip it: two teams each store a version of the entity; a reporting pipeline reads from both; when either schema changes, the pipeline silently breaks. The incident at month four reveals that ownership was never decided — it was left ambiguous in the spec and both teams assumed the other had it.
 
 Full reference: [principles/data-ownership.md](principles/data-ownership.md)
+
+---
+
+**bounded-contexts**
+Step 5 is the first moment in the greenfield process where a domain boundary is either drawn or accidentally left open. When you name the primary data entity and its owner, you are implicitly defining the first bounded context: this entity belongs here, under this team's vocabulary, governed by these rules. The risk at spec time is not the entity itself — it's the phrase "other services will also need this." That phrase is the start of a shared model, and shared models are where bounded contexts collapse.
+
+Ask: is the data entity described the same way in all the contexts that will touch it? If billing calls it a "customer" and fulfillment calls it a "recipient" and support calls it a "contact," those are different concepts that happen to share a foreign key — not one entity owned by one team. Surface that at Step 5, not at integration time.
+
+What good looks like at spec time: the entity has one name, one owner, and one definition that holds across every team that will depend on it — or the spec explicitly names the translation that will happen at each boundary.
+
+What goes wrong when you skip it: the spec describes a single shared entity that three teams will each extend for their own use case. By the time those extensions conflict, the schema is live and the resolution costs are structural.
+
+Full reference: [principles/bounded-contexts.md](principles/bounded-contexts.md)
 
 ---
 

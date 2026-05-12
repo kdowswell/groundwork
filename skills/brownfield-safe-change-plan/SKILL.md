@@ -21,6 +21,7 @@ principles:
   - health-checks
   - feature-flags
   - blue-green-canary
+  - idempotency-by-design
 time_box: "60-120 minutes"
 tags: [brownfield, production, safety, deployment]
 ---
@@ -105,6 +106,10 @@ Full reference: [principles/feature-flags.md](principles/feature-flags.md)
 **blue-green-canary**
 Step 6 (deployment sequence) is where this principle applies. For high-blast-radius changes, canary deployment reduces the scope of a mistake from "all users" to "a small percentage of users."
 Full reference: [principles/blue-green-canary.md](principles/blue-green-canary.md)
+
+**idempotency-by-design**
+Steps 4 and 6 are where this principle is most relevant to safe change planning. Any change that modifies a write path — a new API endpoint, a modified message handler, a schema migration — must account for what happens if the deployment is partially applied and then rolled back. If the new code runs twice (once before rollback, once after redeployment), does it produce the same result or a duplicate side effect? For changes that involve migrations or external API calls with side effects, verify the write path is idempotent before shipping. If it isn't, make idempotency part of the test coverage plan in Step 5 — not a follow-up item.
+Full reference: [principles/idempotency-by-design.md](principles/idempotency-by-design.md)
 
 ## Output Format
 

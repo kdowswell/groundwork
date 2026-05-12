@@ -19,6 +19,9 @@ principles:
   - fault-isolation
   - structured-logging
   - secrets-management
+  - separation-of-concerns
+  - fallacies-of-distributed-computing
+  - idempotency-by-design
 time_box: "2-4 hours"
 tags: [exploration, prototype, code-review, architecture]
 ---
@@ -82,6 +85,18 @@ Full reference: [principles/structured-logging.md](principles/structured-logging
 **secrets-management**
 Step 2 (hardcoded values) and Step 5 (security surface) are where this principle is most load-bearing. Hardcoded credentials in a prototype are the most common security vulnerability that makes it from exploration to production.
 Full reference: [principles/secrets-management.md](principles/secrets-management.md)
+
+**separation-of-concerns**
+Step 6 (evaluate architecture against active principles) is where this principle applies most directly. Prototypes are characteristically built in a single layer — business logic, data access, and output formatting all in the same file or function — because that's the fastest way to answer the prototype's question. The review must distinguish between intentional shortcuts (acceptable in exploration) and structural entanglement that would propagate to production as unmaintainable code. If the "build on it" path is chosen, separation of concerns failures become the primary refactoring target.
+Full reference: [principles/separation-of-concerns.md](principles/separation-of-concerns.md)
+
+**fallacies-of-distributed-computing**
+Step 1 (clarify what the prototype was testing) should include: what distributed computing assumptions did this prototype make? Prototypes routinely hardcode timeouts (or have none), assume network calls succeed, and test only on localhost where latency is zero and the network is perfectly reliable. The review must surface which of those assumptions will be invalid in production. For a prototype that makes network calls, assess each one: is there a timeout? What happens on failure? Is the behavior tested with latency injected? The gap between prototype assumptions and production reality is often larger in the distributed layer than anywhere else.
+Full reference: [principles/fallacies-of-distributed-computing.md](principles/fallacies-of-distributed-computing.md)
+
+**idempotency-by-design**
+Step 3 (error handling) is where this principle applies. Prototypes that mutate state — write to a data store, call an external API that has side effects, send a message — are almost never idempotent. The review must ask: what happens if the client retries this operation? Is there a mechanism to detect and suppress duplicates, or will a retry create a second record, a second charge, a second message? If the path to production includes any state-mutating operation with at-least-once delivery or retry logic, idempotency cannot be left as a "we'll add it later" item — it affects the data model and the write path design.
+Full reference: [principles/idempotency-by-design.md](principles/idempotency-by-design.md)
 
 ## Output Format
 

@@ -20,6 +20,10 @@ principles:
   - fault-isolation
   - async-processing
   - horizontal-scaling
+  - separation-of-concerns
+  - bounded-contexts
+  - fallacies-of-distributed-computing
+  - api-contract-first
 time_box: "45-90 minutes"
 tags: [architecture, design, greenfield]
 ---
@@ -84,6 +88,26 @@ Full reference: [principles/async-processing.md](principles/async-processing.md)
 **horizontal-scaling**
 If the scale target in the project context is team-scale or enterprise, check the sketch against this principle at Step 7. Stateful components that can't be replicated become bottlenecks. The sketch should make stateful vs. stateless components explicit.
 Full reference: [principles/horizontal-scaling.md](principles/horizontal-scaling.md)
+
+**separation-of-concerns**
+Step 2 (naming components) and Step 3 (tracing the primary data flow) are where separation of concerns is either built in or lost. When naming components, check each responsibility statement: does it contain "and"? A component that persists data *and* enforces business rules *and* sends notifications has mixed concerns — those are three failure zones sharing a deployment unit. The flow trace in Step 3 should reveal clean handoffs between named concerns; if the trace skips through one component to reach another, that component may be doing too much.
+
+Step 6 (three highest-stakes decisions) is the right moment to make the concern boundaries explicit in an ADR if they are non-obvious.
+Full reference: [principles/separation-of-concerns.md](principles/separation-of-concerns.md)
+
+**bounded-contexts**
+Step 2 is where component responsibilities either align with domain boundaries or cut across them. If two components share vocabulary but use it to mean different things ("order" in the fulfilment component vs. "order" in the billing component), that's a bounded context seam that belongs in the architecture, not buried in shared data model code. When sketching components in Step 2, ask: does this component boundary correspond to a team boundary, a domain boundary, or both? If neither, its scope probably needs revisiting.
+
+Step 4 (external dependencies) is where relationships to *other* bounded contexts appear. Each external dependency is a context boundary — treat it as such in the failure-mode notes.
+Full reference: [principles/bounded-contexts.md](principles/bounded-contexts.md)
+
+**fallacies-of-distributed-computing**
+Steps 4 and 5 are where the eight fallacies are most load-bearing. Step 4 lists external dependencies — each one implicitly assumes the network is reliable, latency is low, and the remote system is available. For every dependency, challenge those assumptions explicitly in the failure-mode column: what happens when the network drops, when the call takes 10× longer than expected, when the remote system's schema changes without warning? Step 5 (sync/async boundary) is where latency and reliability assumptions are operationalized: a synchronous call to a slow external service inherits all of that service's latency variance directly into the user's response time.
+Full reference: [principles/fallacies-of-distributed-computing.md](principles/fallacies-of-distributed-computing.md)
+
+**api-contract-first**
+Step 6 (highest-stakes structural decisions) and the "critical interfaces" listed in the output format are where API contracts live. The most expensive contracts to change after code is written are the ones between components with independent deployment cycles — services owned by different teams, or a backend and a mobile client. For each critical interface identified in the sketch, note whether a contract has been defined or whether it's currently implied. Implied contracts become breaking changes nobody planned for.
+Full reference: [principles/api-contract-first.md](principles/api-contract-first.md)
 
 ## Output Format
 

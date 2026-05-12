@@ -19,6 +19,10 @@ principles:
   - feature-flags
   - health-checks
   - circuit-breakers
+  - bounded-contexts
+  - separation-of-concerns
+  - api-contract-first
+  - idempotency-by-design
 time_box: "2-4 hours (planning)"
 tags: [brownfield, migration, legacy, refactoring]
 ---
@@ -94,6 +98,22 @@ Full reference: [principles/health-checks.md](principles/health-checks.md)
 **circuit-breakers**
 The routing layer is a natural place to implement a circuit breaker on the new implementation. If the new implementation's error rate exceeds a threshold, the circuit breaker routes 100% of traffic back to the old implementation until the issue is resolved.
 Full reference: [principles/circuit-breakers.md](principles/circuit-breakers.md)
+
+**bounded-contexts**
+Step 1 (drawing the component boundary) is where the strangler fig reveals whether the component being replaced corresponds to a clean bounded context or cuts across multiple domains. A component that owns entities from several domains is harder to replace because "replace this component" actually means "simultaneously re-draw multiple domain boundaries." If the component boundary in Step 1 doesn't correspond to a coherent domain, the migration plan must decide: replace the whole component at once (riskier but cleaner) or split the replacement into multiple bounded-context migrations. That decision belongs in Step 4 as an explicit milestone seam.
+Full reference: [principles/bounded-contexts.md](principles/bounded-contexts.md)
+
+**separation-of-concerns**
+One of the implicit goals of a strangler fig migration is often to improve the separation of concerns that the legacy component violated. Step 1 (component boundary) should document not just what the component does today but what concerns it has mixed — business logic in the data layer, presentation logic in the service layer, configuration baked into business rules. The replacement's design should separate those concerns explicitly, and Step 4 (migration milestones) should sequence the migration to avoid importing the mixed-concern structure into the new implementation.
+Full reference: [principles/separation-of-concerns.md](principles/separation-of-concerns.md)
+
+**api-contract-first**
+Step 2 (routing layer design) depends entirely on the stability of the interface the legacy component exposes to its callers. If that interface is undocumented or implicit, the routing layer cannot be built without first making the contract explicit. Before designing the routing layer, write down the interface the component exposes — the request/response shape, the error vocabulary, the versioning (if any). That contract is what the routing layer intercepts, and it must remain stable for callers throughout the migration. Any breaking change to the contract must be negotiated with callers as a separate migration from the implementation migration.
+Full reference: [principles/api-contract-first.md](principles/api-contract-first.md)
+
+**idempotency-by-design**
+Step 5 (parity tests) must include idempotency verification for all state-mutating operations handled by the component being replaced. During the shadow mode phase, both implementations will receive the same requests — including requests that the original implementation handled idempotently. If the new implementation is not idempotent where the old one was, shadow mode will produce duplicate side effects (duplicate writes, duplicate charges, duplicate notifications). Verify idempotency parity before any traffic shifts, not as a post-migration cleanup item.
+Full reference: [principles/idempotency-by-design.md](principles/idempotency-by-design.md)
 
 ## Output Format
 
