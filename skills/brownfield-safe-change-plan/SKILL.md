@@ -69,6 +69,8 @@ The agent structures the plan by asking probing questions about the change's sco
    - Which teams must be notified
    
    If the change cannot be rolled back (e.g., a destructive schema migration), document that explicitly and ensure the deployment sequence reflects that this is a one-way door.
+   
+   **Complete this section before moving to Step 5.** If a rollback step cannot be determined yet, write it as a named gap: "Step 3: reverse the schema migration — requires confirmation that a reverse migration is safe given data written after cutover. Must be resolved before deployment proceeds." An incomplete rollback that names its gaps can be finished and reviewed; a missing rollback section is unusable under incident pressure.
 
 5. **Write the test coverage plan.** List what tests must exist before this change ships:
    - Tests for the changed behavior (new or modified)

@@ -1,0 +1,98 @@
+[
+  {
+    "id": "link-in-bio-tool",
+    "skill": "greenfield-spec-from-idea",
+    "task_description": "I want to build a tool where creators can share a single link that shows all their social media profiles and content links in one place. Think Linktree but with more customization options. I want to start building it this weekend.",
+    "rubric": [
+      {
+        "dimension": "problem_statement_quality",
+        "description": "1.0=one sentence naming a specific user and what they cannot do or do badly today — not a system capability statement; 0.5=user is mentioned but framing is solution-centric ('a tool that does X'); 0.0=no problem statement or is a feature description",
+        "weight": 0.25
+      },
+      {
+        "dimension": "success_criteria_measurability",
+        "description": "1.0=2-4 falsifiable or behavioral outcomes ('a creator can set up their page in under 5 minutes without technical help'); 0.5=criteria present but vague ('easy to use', 'fast', 'simple'); 0.0=no criteria or output-focused ('the page displays links')",
+        "weight": 0.25
+      },
+      {
+        "dimension": "non_goals_specificity",
+        "description": "1.0=explicit list of what is excluded from this deliverable (e.g., analytics, mobile app, team accounts, monetization); 0.5=implies limits without listing them; 0.0=no non-goals stated",
+        "weight": 0.20
+      },
+      {
+        "dimension": "riskiest_assumption_identified",
+        "description": "1.0=names the single most dangerous assumption as a falsifiable statement (e.g., 'We assume creators will prefer this over Linktree's free tier — false if switching cost exceeds perceived customization value'); 0.5=mentions uncertainty without ranking by risk; 0.0=no assumption identification",
+        "weight": 0.20
+      },
+      {
+        "dimension": "open_questions_categorized",
+        "description": "1.0=open questions listed and labeled as blocking (changes architecture) vs deferrable (can be decided during build); 0.5=questions listed without categorization; 0.0=no open questions",
+        "weight": 0.10
+      }
+    ]
+  },
+  {
+    "id": "field-inspection-app",
+    "skill": "greenfield-spec-from-idea",
+    "task_description": "Our company sends technicians into the field to inspect industrial equipment. They currently fill out paper inspection forms and then type everything into a database when they get back to the office — sometimes days later. We want to build a mobile app for this. The technicians work in remote locations with spotty connectivity.",
+    "rubric": [
+      {
+        "dimension": "problem_statement_quality",
+        "description": "1.0=names the technician's specific struggle (data entry delay, transcription errors, connectivity constraint) as the user's problem — not 'we need a mobile app'; 0.5=user mentioned but problem described as a system gap; 0.0=no user-centric problem statement",
+        "weight": 0.25
+      },
+      {
+        "dimension": "success_criteria_measurability",
+        "description": "1.0=criteria reflect field conditions (e.g., 'a technician can complete an inspection form and submit it offline, with data syncing within 60 seconds of reconnection'); 0.5=criteria present but office-context assumptions (assumes connectivity); 0.0=no measurable criteria",
+        "weight": 0.25
+      },
+      {
+        "dimension": "non_goals_specificity",
+        "description": "1.0=explicit exclusions stated (e.g., not replacing the back-office database system, no analytics dashboard in v1, no iOS/Android parity initially); 0.5=vague scope limits; 0.0=no non-goals",
+        "weight": 0.20
+      },
+      {
+        "dimension": "riskiest_assumption_identified",
+        "description": "1.0=names the riskiest assumption — likely offline sync correctness, or whether technicians will adopt the app vs. paper; should be falsifiable; 0.5=mentions risk areas without identifying the single most dangerous one; 0.0=no assumption identification",
+        "weight": 0.20
+      },
+      {
+        "dimension": "open_questions_categorized",
+        "description": "1.0=blocking questions (e.g., 'what does conflict resolution look like if two techs edit the same record offline?') separated from deferrable ones; 0.5=questions listed but not prioritized; 0.0=no open questions",
+        "weight": 0.10
+      }
+    ]
+  },
+  {
+    "id": "internal-alert-tool",
+    "skill": "greenfield-spec-from-idea",
+    "task_description": "Our platform generates reports for customers and right now we manually email them when their report is ready. It takes too long and we forget sometimes. We need a notification system.",
+    "rubric": [
+      {
+        "dimension": "problem_statement_quality",
+        "description": "1.0=frames the problem from the customer's perspective (customer doesn't know when their report is ready, must wait or follow up) and/or the operational perspective (manual process creates delays and errors) — not 'we need a notification system'; 0.5=operational framing without customer impact; 0.0=solution description only",
+        "weight": 0.25
+      },
+      {
+        "dimension": "success_criteria_measurability",
+        "description": "1.0=measurable outcomes for both the customer experience (notified within X minutes of report completion) and the operational burden (zero manual notifications required); 0.5=vague goals like 'automated notifications'; 0.0=no criteria",
+        "weight": 0.25
+      },
+      {
+        "dimension": "non_goals_specificity",
+        "description": "1.0=states what is explicitly out of scope (e.g., in-app notification center, SMS, push notifications, user preference management in v1); 0.5=implies limits without listing; 0.0=no non-goals",
+        "weight": 0.20
+      },
+      {
+        "dimension": "riskiest_assumption_identified",
+        "description": "1.0=identifies the most dangerous assumption (e.g., 'we assume customers want email notifications — false if customers check the platform directly and emails create noise'); 0.5=mentions risk without falsifiable framing; 0.0=no assumption named",
+        "weight": 0.20
+      },
+      {
+        "dimension": "open_questions_categorized",
+        "description": "1.0=blocking questions separated from deferrable (e.g., blocking: 'who owns the report-completion event — which service fires it?'; deferrable: 'should users be able to configure notification frequency?'); 0.5=questions listed without categories; 0.0=no open questions",
+        "weight": 0.10
+      }
+    ]
+  }
+]

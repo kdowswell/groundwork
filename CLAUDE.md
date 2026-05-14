@@ -90,6 +90,7 @@ groundwork/
 - `description` combines what + when: "Does X. Invoke when Y." — this is the only field agent runtimes read for auto-invocation
 - Steps use action verbs and are executable by an agent without further clarification
 - No technology names in Steps — use abstract terms (data store, identity provider, message queue)
+- No agent-runtime–specific tool names in Steps — describe the behavior abstractly (e.g., "enumerate choices for the user" not "call AskUserQuestion")
 - Checkpoints are real forks: each checkpoint changes something downstream based on the answer
 - Principle Application synthesizes how the principle applies in *this specific phase and context*
 - Output Format describes the artifact's structure, not its content

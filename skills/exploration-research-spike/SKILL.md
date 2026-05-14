@@ -50,6 +50,8 @@ The agent structures the investigation — defining the question, setting exit c
 
 5. **Run the investigation.** Follow the approach from Step 4. If you discover mid-spike that the approach is wrong, stop and document what you learned, then revise the approach rather than silently pivoting.
 
+   **Before proceeding to Step 6, write down at least three specific findings.** Findings must cite evidence: a benchmark result, a code path traced, a test output, an API response. "The library seems fast" is not a finding. "`redis-benchmark SET` measured 95,000 ops/sec at p99 < 2ms with a 100B payload" is a finding. If the time box expired before investigation completed, write a partial finding that names what was attempted and what blocked completion — then proceed to Step 6 with that partial evidence. Do not write a recommendation without findings.
+
 6. **Write the recommendation, not just the findings.** Findings describe what you observed. Recommendations say what to do about it. The output of a spike is a recommendation that unblocks the decision, supported by findings as evidence. "We found X, Y, and Z" is a memo. "Based on X, Y, and Z, we should do A rather than B" is a spike output.
 
 7. **Dispose of spike code.** Code written during a spike is exploration code, not production code. Delete it or clearly mark it as throwaway. The spike output is the recommendation document, not the code. If the code is worth keeping, it needs a real code review and real tests — it wasn't written to those standards.

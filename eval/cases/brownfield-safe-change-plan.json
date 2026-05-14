@@ -1,0 +1,99 @@
+[
+  {
+    "id": "auth-service-extraction",
+    "skill": "brownfield-safe-change-plan",
+    "task_description": "We need to extract our authentication module out of the Rails monolith into its own service. Auth is currently baked into the main app alongside billing and document logic. We had a 40-minute auth outage last year when a schema change broke session lookup and our deploy and rollback got out of sync. I want to do this right. We have 8,000 active users and 3 enterprise SAML customers who cannot have downtime.",
+    "context": "## Current System\n\nSingle Rails monolith on Heroku. PostgreSQL + Redis. Auth uses Devise + OmniAuth (Google) + SAML for enterprise. Sessions are cookie-based. Auth models (User, Team, Membership, SamlConfiguration) live alongside all other app models. The team is 4 engineers.\n\n## What We Want\n\nMove auth logic to a separate service. Long-term: swap in a managed auth provider (Clerk or WorkOS). Immediate need: mobile app launching in Q3 needs token-based auth, which is blocked on extracting sessions from the monolith.\n\n## Our Concerns\n\n- The schema migration / deploy desync that caused the last outage\n- SAML enterprise customers need zero downtime\n- No test coverage around session middleware or role-checking logic",
+    "rubric": [
+      {
+        "dimension": "blast_radius_specificity",
+        "description": "1.0=explicitly names what fails and who is affected with severity (e.g., Catastrophic: all login fails; Silent: role checks return wrong results); 0.5=mentions impact but not specific systems or severity levels; 0.0=does not assess blast radius at all",
+        "weight": 0.25
+      },
+      {
+        "dimension": "rollback_completeness",
+        "description": "1.0=step-by-step rollback including database migration state, session handling, and who to notify — executable without the author; 0.5=mentions rollback concept but steps are vague or say 'revert the deploy'; 0.0=no rollback plan",
+        "weight": 0.25
+      },
+      {
+        "dimension": "deployment_sequencing",
+        "description": "1.0=explicitly ordered stages with verification checks between steps, feature flags or dual-path operation for the migration period; 0.5=some staging mentioned but no verification gates; 0.0=single-step deploy or no deployment sequence",
+        "weight": 0.20
+      },
+      {
+        "dimension": "test_coverage_failure_modes",
+        "description": "1.0=covers changed behavior AND failure modes (session expiry mid-migration, partial migration state, provider timeout, SAML edge cases); 0.5=covers happy path tests only; 0.0=no test coverage plan",
+        "weight": 0.20
+      },
+      {
+        "dimension": "planning_before_implementation",
+        "description": "1.0=output contains only planning artifacts (blast radius, rollback, test plan, deployment sequence) and explicitly defers implementation; 0.5=mostly planning but drifts into code or architecture specifics; 0.0=jumps to implementation before planning is complete",
+        "weight": 0.10
+      }
+    ]
+  },
+  {
+    "id": "not-null-column-migration",
+    "skill": "brownfield-safe-change-plan",
+    "task_description": "I need to add a NOT NULL column `subscription_tier` with a default of 'free' to our users table. The table has 2.8 million rows. We're deploying this Friday. The column will be used by a new pricing feature launching the same day.",
+    "rubric": [
+      {
+        "dimension": "blast_radius_specificity",
+        "description": "1.0=explicitly names what fails and who is affected if the migration goes wrong (e.g., app startup fails, queries break, new feature returns wrong tier); 0.5=mentions risk but not specific failure scenarios; 0.0=does not assess blast radius",
+        "weight": 0.25
+      },
+      {
+        "dimension": "rollback_completeness",
+        "description": "1.0=step-by-step rollback addressing that dropping a NOT NULL column with data is a destructive operation — includes whether rollback is possible and what state the data would be in; 0.5=mentions rollback but doesn't address the one-way-door risk of data migrations; 0.0=no rollback plan",
+        "weight": 0.25
+      },
+      {
+        "dimension": "deployment_sequencing",
+        "description": "1.0=separates schema migration from application deploy, includes backfill strategy for 2.8M rows, addresses lock time on Postgres; 0.5=mentions staging but doesn't address large-table migration specifics; 0.0=single-step deploy or no sequencing",
+        "weight": 0.20
+      },
+      {
+        "dimension": "test_coverage_failure_modes",
+        "description": "1.0=covers migration rollback, partial backfill state, and the pricing feature receiving wrong tier values during migration window; 0.5=covers happy path only; 0.0=no test coverage plan",
+        "weight": 0.20
+      },
+      {
+        "dimension": "planning_before_implementation",
+        "description": "1.0=output is a plan only — blast radius, rollback, migration sequence, test coverage — no migration SQL or code written; 0.5=mostly planning with some implementation drift; 0.0=writes migration code before planning is complete",
+        "weight": 0.10
+      }
+    ]
+  },
+  {
+    "id": "payment-processor-swap",
+    "skill": "brownfield-safe-change-plan",
+    "task_description": "We need to switch our payment processor from Stripe to Braintree. We process about $2M/month across ~1,200 active subscriptions. Most subscriptions are monthly; about 80 are annual. I want to start implementation this sprint.",
+    "rubric": [
+      {
+        "dimension": "blast_radius_specificity",
+        "description": "1.0=explicitly names affected user segments (active subscribers, failed-payment retry queue, annual billing), what breaks if the swap fails mid-migration, and severity levels; 0.5=mentions payment risk without specifics; 0.0=no blast radius assessment",
+        "weight": 0.25
+      },
+      {
+        "dimension": "rollback_completeness",
+        "description": "1.0=rollback addresses whether Stripe customer records and payment methods can be recovered, how to handle subscriptions that partially migrated, and what to do with pending webhook events; 0.5=mentions rollback without addressing payment-specific complexity; 0.0=no rollback plan",
+        "weight": 0.25
+      },
+      {
+        "dimension": "deployment_sequencing",
+        "description": "1.0=stages new customer creation on Braintree first, then migrates existing subscriptions with dual-processing during transition, then deprecates Stripe — with explicit go/no-go criteria; 0.5=mentions dual-processing but not ordering or criteria; 0.0=big-bang cutover or no sequence",
+        "weight": 0.20
+      },
+      {
+        "dimension": "test_coverage_failure_modes",
+        "description": "1.0=covers failed charge scenarios, webhook delivery failures, partial migration state (some customers on each processor), and annual billing edge cases; 0.5=covers standard payment flows only; 0.0=no test coverage plan",
+        "weight": 0.20
+      },
+      {
+        "dimension": "planning_before_implementation",
+        "description": "1.0=output is planning artifacts only — defers Braintree integration code; 0.5=mostly planning with some implementation hints; 0.0=starts writing integration code before plan is documented",
+        "weight": 0.10
+      }
+    ]
+  }
+]

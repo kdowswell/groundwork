@@ -1,0 +1,86 @@
+[
+  {
+    "id": "microservices-migration",
+    "skill": "exploration-assumption-mapping",
+    "task_description": "Here's our plan: we're going to split our Rails monolith into microservices over 6 months. We'll extract User, Order, and Inventory into separate services. We're starting with the User service in sprint 1. The monolith currently does about 500 requests/second at peak. We're a team of 8 engineers.",
+    "follow_up": "Thanks for the questions. To answer them: the services will call each other synchronously via HTTP for now, we don't have distributed tracing set up yet, the team has built monoliths before but no one has run microservices in production, and we haven't done a formal data ownership analysis. Now please produce the complete assumption register — all assumptions listed with impact × uncertainty scores and validation plans for the top 5.",
+    "rubric": [
+      {
+        "dimension": "assumption_volume_and_variety",
+        "description": "1.0=15+ assumptions surfaced across multiple categories (user behavior, technical feasibility, scale, integration, business, team); 0.5=5-14 assumptions mostly in 1-2 categories; 0.0=fewer than 5 assumptions or only obvious ones listed",
+        "weight": 0.20
+      },
+      {
+        "dimension": "risk_scoring_rigor",
+        "description": "1.0=each assumption scored on two explicit dimensions (impact if wrong × current uncertainty) with numeric values, sorted by resulting risk score; 0.5=some ranking or prioritization without systematic impact×uncertainty scoring; 0.0=assumptions listed without any scoring or ranking",
+        "weight": 0.30
+      },
+      {
+        "dimension": "validation_plan_specificity",
+        "description": "1.0=top 3-5 assumptions each have a specific, cheap validation approach named (e.g., 'benchmark the User service API with synthetic load for 2 hours before cutting over', not 'build a prototype'); 0.5=validation mentioned but vague ('test it' or 'prototype'); 0.0=no validation plans",
+        "weight": 0.30
+      },
+      {
+        "dimension": "distributed_systems_coverage",
+        "description": "1.0=explicitly surfaces distributed systems assumptions: network reliability between services, data consistency across service boundaries, what happens during partial failures, schema compatibility; 0.5=mentions some technical concerns without naming distributed systems failure modes; 0.0=only business or organizational assumptions",
+        "weight": 0.20
+      }
+    ]
+  },
+  {
+    "id": "ai-search-feature",
+    "skill": "exploration-assumption-mapping",
+    "task_description": "Our spec says we'll add semantic search to our document management tool using embeddings. Users will be able to search by meaning, not just keywords. Estimated 3 weeks for a single engineer. We have about 2 million documents in our system, ranging from 1 page to 400 pages each.",
+    "follow_up": "Good questions. Here's what I know: we'll use OpenAI's embedding API, we haven't done any latency testing yet, users currently complain that keyword search misses relevant documents, and we don't have a vector database set up. The 3-week estimate came from the engineer who wrote the spec. Now please produce the full assumption register with impact × uncertainty scores for each assumption and specific validation plans for the top 5.",
+    "rubric": [
+      {
+        "dimension": "assumption_volume_and_variety",
+        "description": "1.0=15+ assumptions across technical (embedding quality, index size, latency), user behavior (will users understand semantic vs keyword), scale (embedding 2M docs), and business categories; 0.5=5-14 assumptions, mostly technical; 0.0=fewer than 5 assumptions",
+        "weight": 0.20
+      },
+      {
+        "dimension": "risk_scoring_rigor",
+        "description": "1.0=impact×uncertainty scoring applied to all assumptions, sorted by risk — the 3-week timeline assumption should surface as high-risk; 0.5=some prioritization without systematic scoring; 0.0=no scoring",
+        "weight": 0.30
+      },
+      {
+        "dimension": "validation_plan_specificity",
+        "description": "1.0=concrete validation approaches for top assumptions (e.g., 'embed a 1,000-document sample and measure query latency at p99 before committing to the architecture', 'run 20-user search task study to check if semantic results feel better than keyword'); 0.5=vague validation; 0.0=no plans",
+        "weight": 0.30
+      },
+      {
+        "dimension": "distributed_systems_coverage",
+        "description": "1.0=surfaces embedding infrastructure assumptions (embedding service reliability, index rebuild time, what happens to search during a re-index, chunking strategy for 400-page documents); 0.5=mentions some infrastructure concerns; 0.0=only user or product assumptions",
+        "weight": 0.20
+      }
+    ]
+  },
+  {
+    "id": "b2b-pricing-tier",
+    "skill": "exploration-assumption-mapping",
+    "task_description": "We're launching a B2B pricing tier for our project management tool. The plan: $500/month per team of up to 25 users, includes SSO and audit logs. We're targeting mid-market companies (50-500 employees). Shipping in Q2 (10 weeks). We currently have 4,200 individual users, no business customers.",
+    "follow_up": "To answer your questions: we haven't talked to any enterprise buyers yet, the $500/mo price came from a competitive benchmark not customer research, we're thinking SAML SSO but haven't scoped it, and we don't know if our current individual users would want to upgrade to team accounts. Now please produce the complete assumption register — all assumptions listed and scored on impact × uncertainty, with validation plans for the top 5.",
+    "rubric": [
+      {
+        "dimension": "assumption_volume_and_variety",
+        "description": "1.0=15+ assumptions across business (will companies pay $500/mo, is 25-seat limit right), technical (SSO implementation complexity, audit log storage), user behavior (do individuals want team features, will current users upgrade), regulatory (SOC2, enterprise compliance expectations); 0.5=5-14 assumptions; 0.0=fewer than 5",
+        "weight": 0.20
+      },
+      {
+        "dimension": "risk_scoring_rigor",
+        "description": "1.0=systematic impact×uncertainty scoring with the pricing assumption and the 10-week timeline as high-risk items prominently surfaced; 0.5=some ranking; 0.0=no scoring",
+        "weight": 0.30
+      },
+      {
+        "dimension": "validation_plan_specificity",
+        "description": "1.0=top assumptions have specific cheap validation (e.g., 'run 10 discovery calls with mid-market procurement contacts before building', 'survey existing power users on team willingness to pay'); 0.5=vague ('talk to customers'); 0.0=no validation plans",
+        "weight": 0.30
+      },
+      {
+        "dimension": "distributed_systems_coverage",
+        "description": "1.0=surfaces technical assumptions about SSO complexity (SAML vs OIDC, enterprise IdP compatibility), audit log scale, and account/team data model changes required — these are architectural commitments that the current plan treats as implementation details; 0.5=mentions SSO and audit logs as tasks without surfacing assumptions; 0.0=no technical assumptions",
+        "weight": 0.20
+      }
+    ]
+  }
+]

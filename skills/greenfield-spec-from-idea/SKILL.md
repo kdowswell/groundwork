@@ -29,9 +29,15 @@ tags: [planning, requirements, greenfield, spec]
 
 ## How This Skill Works
 
-This skill is a structured conversation: the agent asks, the human answers, and together they produce a `spec.md` that every downstream artifact — architecture sketch, ADRs, sprint plan — treats as the source of truth for scope and intent.
+This skill runs in two phases:
 
-The agent's primary job is to resist solution-first thinking. Most ideas arrive as "I want to build X" — which describes the solution, not the problem. Before any scope or success criteria can be written, the problem must be stated in one sentence from the user's perspective. If it can't be, the idea isn't ready to spec yet.
+**Phase 1 — Draft.** Produce a `spec.md` immediately from whatever information is available — partial, ambiguous, or incomplete. Use best-effort interpretation for gaps and flag them as open questions. Questions come after the draft, not before it: a spec with placeholders and named unknowns is immediately useful to review, critique, and build on; a list of questions is not a spec.
+
+**Phase 2 — Resolve.** After the draft exists, work through blocking questions interactively. Do not leave the skill without attempting to resolve the questions that would change the architecture. For questions with a natural option set, enumerate the choices explicitly so the user can respond with a selection (e.g., "Which platform? A) iOS only  B) Android only  C) Both  D) Not decided yet"). For open-ended questions with no natural options, ask directly in conversation. Gather answers in batches of 1–3, update the spec with each answer, and re-categorize any resolved blocking questions as answered. If a question genuinely cannot be answered now, mark it with an explicit owner — not "TBD."
+
+The two-phase approach exists because producing a draft first gives the human something concrete to react to, which surfaces better answers than asking abstract questions into a void. A human reading "Scope: offline-first mobile app" will answer "which platform?" more precisely than one who reads only "what device does your team use?"
+
+The agent's primary job in Phase 1 is to resist solution-first thinking. Most ideas arrive as "I want to build X" — which describes the solution, not the problem. Before scope or success criteria can be written, the problem must be stated in one sentence from the user's perspective. If the input doesn't state it, infer the most plausible interpretation and flag it for validation — do not block on a confirmed problem statement before producing the draft.
 
 The human's job is to answer questions honestly, including "I don't know." Open questions and deferred decisions are valid spec outputs. A spec that names its unknowns is more useful than one that papers over them.
 
@@ -44,7 +50,7 @@ The human's job is to answer questions honestly, including "I don't know." Open 
 
 ## Steps
 
-1. **Restate the problem, not the solution.** Before engaging with "what to build," articulate the problem it solves. Ask: "What is the user currently unable to do, or doing badly, that this changes?" Write one sentence. If you cannot write it, the idea isn't ready to spec yet — return to the developer and ask.
+1. **Restate the problem, not the solution.** Before engaging with "what to build," articulate the problem it solves in one sentence: what is the user currently unable to do, or doing badly, that this changes? If the input makes this clear, write it. If not, write the most plausible interpretation and flag it: "Problem statement (needs validation): ..." — then continue. Do not wait for a confirmed problem statement before producing the draft spec.
 
 2. **Identify the primary user and their context.** Name who experiences the problem. Where are they? What are they doing when they hit it? What's their constraint (time, attention, connectivity, tools)? This context will change every decision from data model to UI affordance.
 
@@ -61,7 +67,9 @@ The human's job is to answer questions honestly, including "I don't know." Open 
    - **Blocking** — the answer changes the architecture
    - **Deferrable** — can be decided during build without structural cost
 
-7. **Identify the riskiest assumption.** Pick the one assumption in the spec that, if wrong, would require the most rework. Write it as a falsifiable statement. This becomes the first thing to test or validate — before the architecture is locked.
+7. **Resolve blocking questions interactively.** After writing the spec, do not exit the skill with blocking questions still open if the user is present. Work through them in batches of no more than three at a time, starting with the most architecture-consequential question. For questions with a natural option set, enumerate the choices explicitly for the user to select (e.g., "Backend approach — A) Build new backend  B) Integrate with existing system  C) Not yet decided"). For fully open-ended questions with no natural options, ask directly in conversation. After each batch of answers, update the spec: move answered questions from the Open Questions table to the relevant spec section, and update entity ownership, scope, or success criteria as needed. If a question cannot be answered, record the owner explicitly (a name or role, not "TBD") and a condition under which it will be resolved.
+
+8. **Identify the riskiest assumption.** Pick the one assumption in the spec that, if wrong, would require the most rework. Write it as a falsifiable statement. This becomes the first thing to test or validate — before the architecture is locked.
 
 ## Checkpoints
 
@@ -73,6 +81,9 @@ If you write down the data entity and the developer hesitates on ownership ("I g
 
 **Is the operating context accounted for?**
 If the primary user is a field worker, mobile user, or anyone not sitting at a desk, verify the success criteria reflect their actual context (time constraints, connectivity, input method). Office-context success criteria silently fail in field conditions.
+
+**Are blocking questions still open after Phase 1?**
+If the spec contains blocking questions after the draft is written, Phase 2 must run — even if it feels premature. A spec with blocking questions is a draft, not an output. If running in a non-interactive or fully-automated context (no human available to answer), mark the spec explicitly as "Draft — blocking questions unresolved" at the top and record that Phase 2 must run before architecture begins. Do not pass a draft spec to the next phase as if it were complete.
 
 ## Principle Application
 

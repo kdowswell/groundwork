@@ -35,7 +35,7 @@ This skill produces a deliberate data model before implementation begins — not
 
 The data model is the most durable part of a system. Code can be rewritten in weeks; a deployed schema with live data can take months to migrate. The cost of schema decisions is paid forward for the lifetime of the system, which is why they are made deliberately here rather than discovered during the first feature.
 
-The agent asks the structural questions and models what the human describes. The human provides what the agent cannot derive: the real-world relationships between entities, the business rules that constrain them, and the expected evolution of the model as the product matures.
+The agent proposes a first-draft data model based on available context — the spec, existing system descriptions, or any artifacts provided — then the human corrects and refines it. Produce the draft first, ask second. A model with flagged uncertainties is immediately useful to review and correct; a list of questions about the model is not. The human provides what cannot be derived from context: the real-world relationships between entities, the business rules that constrain them, and the expected evolution of the model as the product matures.
 
 **Key concepts used in the Steps:**
 - **Entity** — a named thing the system stores, tracks, or transforms; the core unit of the data model
