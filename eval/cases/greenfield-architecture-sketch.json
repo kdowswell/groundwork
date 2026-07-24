@@ -1,0 +1,115 @@
+[
+  {
+    "id": "marketplace-order-fulfillment",
+    "skill": "greenfield-architecture-sketch",
+    "task_description": "We're a team of five building the order-fulfillment side of our handmade-goods marketplace. Once a buyer checks out we need to charge them, notify the seller, generate a shipping label, and keep the buyer updated on status. We have a spec, and honestly the team wants to just start coding this sprint, but nothing about the system's structure has been drawn or written down anywhere.",
+    "context": "## Spec Summary\n\nPrimary data entity: Order. Payments go through a third-party processor. Shipping labels come from a carrier API. Buyer/seller notifications go through an email-and-SMS provider. Sellers manage listings in an existing catalog service owned by another team. Target volume: 500 orders/day at launch, 5,000/day within a year.",
+    "rubric": [
+      {
+        "dimension": "system_boundary_clarity",
+        "description": "1.0=states the boundary as a sentence of the form 'this system is responsible for X and hands off Y to Z' — fulfillment owned here; catalog, payment processing, carrier, and notification delivery explicitly outside; 0.5=lists parts of the system without saying what is inside versus outside the boundary; 0.0=no boundary drawn — dives into components or code structure",
+        "weight": 0.15
+      },
+      {
+        "dimension": "component_responsibilities",
+        "description": "1.0=names 3-7 components each with a one-sentence responsibility, no two components sharing the same primary noun and no responsibility chaining unrelated concerns with 'and' (e.g., one component both charging payments and sending notifications); 0.5=components named but responsibilities overlap or sprawl past one sentence; 0.0=no component list with responsibilities",
+        "weight": 0.20
+      },
+      {
+        "dimension": "primary_data_flow_traced",
+        "description": "1.0=a numbered sequence tracing the Order from checkout through charge, seller notification, label generation, and buyer status updates — naming where it is stored, who reads it, and each hop between components; 0.5=prose narrative of the flow without ordered hops or storage points; 0.0=no data flow traced",
+        "weight": 0.15
+      },
+      {
+        "dimension": "dependency_failure_modes",
+        "description": "1.0=each external dependency (payment processor, carrier API, notification provider, catalog service) is listed with what this system needs from it, what happens when it is slow or down, and a Catastrophic-vs-Degraded severity call (e.g., payment down blocks checkout: catastrophic; notifications down: degraded); 0.5=dependencies listed but without failure behavior or severity; 0.0=external dependencies not enumerated",
+        "weight": 0.20
+      },
+      {
+        "dimension": "sync_async_boundary",
+        "description": "1.0=draws an explicit line between what must complete before the buyer sees order confirmation (the charge) and what happens in the background (label generation, notifications, status fan-out), with reasoning for anything slow left on the synchronous side; 0.5=mentions background jobs without a deliberate boundary; 0.0=everything implicitly synchronous, buyer response time coupled to carrier and email providers",
+        "weight": 0.15
+      },
+      {
+        "dimension": "structural_decisions_captured",
+        "description": "1.0=names roughly three highest-stakes, hardest-to-reverse decisions written as 'We will use X rather than Y because Z' and flags them for capture as decision records; 0.5=big choices implied in the sketch but never stated as decision statements; 0.0=no structural decisions surfaced before coding starts",
+        "weight": 0.15
+      }
+    ]
+  },
+  {
+    "id": "solo-podcast-analytics",
+    "skill": "greenfield-architecture-sketch",
+    "task_description": "I'm building a podcast analytics product by myself — podcasters connect their RSS feed and hosting provider, I pull download stats on a schedule, normalize them across providers, and show trends on a dashboard. My spec is written and I'm itching to start on the ingestion code tonight. Before I do, I want a picture of how the pieces fit so I don't paint myself into a corner.",
+    "rubric": [
+      {
+        "dimension": "system_boundary_clarity",
+        "description": "1.0=one sentence stating what this system owns (ingestion, normalization, trend presentation) and what it depends on externally (hosting-provider stats APIs, RSS feeds) — receiving raw stats, handing off nothing downstream; 0.5=describes features without separating inside from outside; 0.0=no boundary statement",
+        "weight": 0.15
+      },
+      {
+        "dimension": "component_responsibilities",
+        "description": "1.0=3-7 components (e.g., feed/provider connector, scheduled fetcher, normalizer, stats store, dashboard/API) each with a distinct one-sentence responsibility — ingestion and normalization not fused into one 'and'-joined blob; 0.5=components exist but responsibilities blur together or exceed one sentence; 0.0=no components named",
+        "weight": 0.20
+      },
+      {
+        "dimension": "primary_data_flow_traced",
+        "description": "1.0=numbered trace of a download stat from provider API/feed, through fetch and normalization, into storage, out to the dashboard read path — with each hop between components noted as a potential failure point; 0.5=flow described loosely without sequence or storage location; 0.0=no flow traced",
+        "weight": 0.15
+      },
+      {
+        "dimension": "dependency_failure_modes",
+        "description": "1.0=each provider API and feed source listed with its failure behavior — rate limits, stale or missing stats, provider API changes — and classified Catastrophic vs Degraded (one provider down should degrade that podcaster's data, not the product); 0.5=acknowledges providers can fail without per-dependency behavior or severity; 0.0=assumes providers are always available",
+        "weight": 0.20
+      },
+      {
+        "dimension": "sync_async_boundary",
+        "description": "1.0=explicitly puts provider polling and normalization on the asynchronous side and dashboard reads on the synchronous side, so a user loading trends never waits on a third-party stats API call; 0.5=scheduled jobs mentioned without stating the boundary rule; 0.0=dashboard requests fetch from providers inline",
+        "weight": 0.15
+      },
+      {
+        "dimension": "structural_decisions_captured",
+        "description": "1.0=states about three expensive-to-reverse choices as 'We will use X rather than Y because Z' (e.g., normalized canonical stats schema vs storing raw per-provider payloads, polling vs webhook ingestion) and marks them for decision records; 0.5=choices made implicitly inside the sketch without being surfaced; 0.0=no decisions identified",
+        "weight": 0.15
+      }
+    ]
+  },
+  {
+    "id": "insurance-claims-intake",
+    "skill": "greenfield-architecture-sketch",
+    "task_description": "Our insurance company is replacing the claims-intake front door: policyholders submit claims with photos and documents, we run a third-party fraud score, route the claim to adjusters, and everything has to be traceable for regulators. Five teams will eventually touch this system and we haven't agreed on where its edges are. Implementation is scheduled to start in three weeks and I need the structure on paper before then.",
+    "context": "## Constraints\n\n- Document and photo storage must stay in our existing regulated storage platform, owned by another team\n- Fraud scoring is an external vendor: ~2-second average response, occasional 30-second spikes, monthly maintenance windows\n- Adjusters work in an existing case-management system that must receive routed claims\n- Regulator requires 7-year auditability of intake events\n- Volume: ~20,000 claims/month, spiking 4x after catastrophic weather events",
+    "rubric": [
+      {
+        "dimension": "system_boundary_clarity",
+        "description": "1.0=one sentence establishing that this system owns claim intake, validation, fraud-score orchestration, and routing — and hands off document storage to the regulated storage platform and adjudication to the case-management system; 0.5=edges gestured at but storage or case management ambiguously half-inside; 0.0=no boundary — exactly the disagreement the five teams already have",
+        "weight": 0.15
+      },
+      {
+        "dimension": "component_responsibilities",
+        "description": "1.0=3-7 components with one-sentence responsibilities that map cleanly to team ownership seams (intake API, document handling, fraud-score orchestration, routing, audit trail), flagging any component two teams would both own as a structural problem; 0.5=components listed without ownership awareness or with overlapping responsibilities; 0.0=no component decomposition",
+        "weight": 0.20
+      },
+      {
+        "dimension": "primary_data_flow_traced",
+        "description": "1.0=numbered sequence following a claim from submission through document persistence, fraud scoring, routing into case management, and audit-event emission — every cross-component hop noted as a failure point; 0.5=partial flow that skips documents or the audit trail; 0.0=no traced flow",
+        "weight": 0.15
+      },
+      {
+        "dimension": "dependency_failure_modes",
+        "description": "1.0=fraud vendor, regulated storage platform, and case-management system each get what-we-need, failure behavior, and severity — specifically addressing the 30-second fraud-score spikes and maintenance windows (intake should degrade to accept-and-score-later, not block submission: catastrophic vs degraded made explicit); 0.5=dependencies listed but the fraud vendor's latency variance is not confronted; 0.0=no failure-mode analysis on dependencies",
+        "weight": 0.20
+      },
+      {
+        "dimension": "sync_async_boundary",
+        "description": "1.0=explicit boundary: submission acknowledgment is synchronous, while fraud scoring, routing, and audit persistence are asynchronous — justified by the vendor's latency spikes and the 4x catastrophe surge, so a claimant in a disaster never waits on the fraud vendor; 0.5=async mentioned but the fraud call left on the user's critical path without justification; 0.0=submission synchronously coupled to all downstream systems",
+        "weight": 0.15
+      },
+      {
+        "dimension": "structural_decisions_captured",
+        "description": "1.0=roughly three highest-stakes decisions stated as 'We will use X rather than Y because Z' (e.g., async fraud scoring vs inline, append-only audit event log vs derived audit reports for the 7-year requirement) and flagged for decision records; 0.5=decisions embedded in the sketch but not extracted as statements; 0.0=no structural decisions surfaced",
+        "weight": 0.15
+      }
+    ]
+  }
+]

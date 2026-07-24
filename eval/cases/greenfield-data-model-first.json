@@ -1,0 +1,109 @@
+[
+  {
+    "id": "solo-fitness-coaching-platform",
+    "skill": "greenfield-data-model-first",
+    "task_description": "I'm building a coaching platform on my own where personal trainers manage clients, assign workout programs, and track session results. I have my spec and I know trainers and clients are the central entities, but past that I've just been sketching tables in a notebook. I want to nail down the data design before I write the first migration, because my last project's schema turned into a mess I never recovered from.",
+    "rubric": [
+      {
+        "dimension": "entities_scoped",
+        "description": "1.0=lists 3-7 core entities as nouns with a one-sentence definition each (e.g., Trainer, Client, Program, Workout, SessionResult) — neither the whole fitness domain nor implementation-detail tables like join or settings tables promoted to entities; 0.5=entities named but undefined, or the list balloons past 10; 0.0=jumps straight to columns and DDL with no entity-level model",
+        "weight": 0.20
+      },
+      {
+        "dimension": "relationship_cardinality",
+        "description": "1.0=cardinality stated for every related pair (one-to-one, one-to-many, many-to-many) and the trainer-client many-to-many named as a first-class concept carrying its own meaning (e.g., a CoachingEngagement with start date and status), not a bare join table; 0.5=relationships drawn without cardinality, or the many-to-many left as an anonymous linking table; 0.0=no relationships modeled",
+        "weight": 0.20
+      },
+      {
+        "dimension": "ownership_assigned",
+        "description": "1.0=each entity has exactly one named authoritative source (which module or service is the system of record — e.g., trainer-authored Program templates vs client-generated SessionResults), so no entity can be written from two places by convenience; 0.5=ownership mentioned for some entities but others left orphaned; 0.0=no ownership assignment at all",
+        "weight": 0.15
+      },
+      {
+        "dimension": "access_patterns_validated",
+        "description": "1.0=lists 2-4 concrete read patterns per major entity ('session results by client_id ordered by date', 'active clients for a trainer', 'programs assigned to a client') with the fields involved, and flags any pattern that would require a full-table scan as a design signal; 0.5=generic statements like 'we'll query by user' without fields or ordering; 0.0=no access patterns — the model is never checked against its workload",
+        "weight": 0.25
+      },
+      {
+        "dimension": "schema_evolution_strategy",
+        "description": "1.0=explicitly picks one of additive-only, versioned, or migration-managed with reasoning tied to the situation (solo developer, no external consumers yet, single deployable) rather than defaulting silently to whatever the ORM does; 0.5=mentions a migrations tool without choosing and justifying a strategy; 0.0=no evolution strategy considered",
+        "weight": 0.20
+      }
+    ]
+  },
+  {
+    "id": "team-multiwarehouse-inventory",
+    "skill": "greenfield-data-model-first",
+    "task_description": "Our eight-person team is building inventory management for our e-commerce company: three warehouses today, each with its own stock counts, plus reservations when orders come in and periodic cycle counts to correct drift. The order service is owned by a separate team and will consume our stock data. We're supposed to start implementation next week and all we have is a whiteboard photo of some boxes and arrows.",
+    "rubric": [
+      {
+        "dimension": "entities_scoped",
+        "description": "1.0=3-7 core entities with one-sentence definitions (e.g., Product reference, Warehouse, StockLevel, Reservation, CycleCount/Adjustment) — notably modeling per-warehouse stock as its own entity rather than a quantity column on Product; 0.5=entities listed but per-warehouse stock or reservations missing or undefined; 0.0=no entity list before schema details",
+        "weight": 0.15
+      },
+      {
+        "dimension": "relationship_cardinality",
+        "description": "1.0=cardinality written for each pair (Warehouse-to-StockLevel one-to-many, Product-to-Warehouse many-to-many) with the many-to-many named as the first-class StockLevel-style entity that carries quantity and location meaning; 0.5=relationships present without cardinality or with the join concept left implicit; 0.0=relationships not modeled",
+        "weight": 0.15
+      },
+      {
+        "dimension": "ownership_assigned",
+        "description": "1.0=every entity has exactly one owner, with the boundary to the order team made explicit: this team owns StockLevel and Reservation, the order team owns Order, and orders appear in this model only as identifiers, not embedded records; 0.5=ownership stated for internal entities but the order-service boundary left fuzzy; 0.0=no ownership — the consuming team's write access is left undefined",
+        "weight": 0.15
+      },
+      {
+        "dimension": "access_patterns_validated",
+        "description": "1.0=2-4 concrete patterns per entity including the hot paths ('available stock by product across warehouses', 'reservations by order id', 'stock levels by warehouse for cycle count') with fields and any scan-shaped pattern flagged for restructuring now rather than in production; 0.5=a few patterns without fields or frequency notes; 0.0=no access-pattern validation",
+        "weight": 0.20
+      },
+      {
+        "dimension": "schema_evolution_strategy",
+        "description": "1.0=chooses additive-only, versioned, or migration-managed with reasoning that accounts for the external consumer — the order team reads this data, so the strategy must be set before their integration hardens, and the choice must match the team's ability to coordinate deploys; 0.5=strategy named but the external-consumer constraint ignored; 0.0=no strategy chosen",
+        "weight": 0.15
+      },
+      {
+        "dimension": "consistency_requirements",
+        "description": "1.0=for each boundary, states strong vs eventual consistency with reasoning: reservation-versus-available-stock must be strongly consistent to prevent overselling, while cycle-count corrections and cross-warehouse analytics can be eventually consistent and reconciled; 0.5=says 'use transactions' globally without per-boundary analysis; 0.0=consistency never addressed — oversell behavior discovered in production",
+        "weight": 0.20
+      }
+    ]
+  },
+  {
+    "id": "hospital-referral-platform",
+    "skill": "greenfield-data-model-first",
+    "task_description": "I'm the architect on a referral-management platform for a hospital network: primary-care physicians send specialist referrals, care coordinators track them to completion, and three existing systems all believe they own patient data. Two of our teams are already arguing over who owns the Referral entity itself. Leadership wants implementation started this quarter and I need the data design settled first.",
+    "context": "## Existing Systems\n\n- Patient records system (Team Alpha) — authoritative for patient demographics\n- Scheduling system (Team Beta) — owns appointments; wants write access to referral status when appointments are booked\n- Billing platform (external vendor) — consumes referral outcomes for claims\n\n## Constraints\n\n- HIPAA applies to all patient data\n- ~40,000 referrals/month across 12 hospitals\n- The new referral team and Team Beta both claim ownership of referral status updates",
+    "rubric": [
+      {
+        "dimension": "entities_scoped",
+        "description": "1.0=3-7 core entities with one-sentence definitions (Referral, ReferralStatus/StatusEvent, Specialist, CareCoordinator assignment — with Patient and Appointment recognized as externally owned), staying inside the referral domain rather than remodeling the whole hospital; 0.5=entity list mixes referral-domain entities with full re-definitions of externally owned ones; 0.0=no entity-level model",
+        "weight": 0.10
+      },
+      {
+        "dimension": "relationship_cardinality",
+        "description": "1.0=cardinality for each pair (Patient one-to-many Referral, Referral one-to-many StatusEvent, Referral-to-Appointment linkage) with any many-to-many named as a meaningful first-class entity; 0.5=relationships without cardinality; 0.0=no relationship modeling",
+        "weight": 0.15
+      },
+      {
+        "dimension": "ownership_conflict_surfaced",
+        "description": "1.0=every entity gets exactly one owner, the contested Referral-status ownership is surfaced as a blocking question requiring an organizational resolution before implementation — not papered over with shared write access — and a workable resolution is proposed (e.g., referral team owns Referral; scheduling emits appointment events the referral service consumes to update status); 0.5=owners assigned but the referral team/Team Beta contest is glossed over or both get write access; 0.0=no ownership assignment despite the stated conflict",
+        "weight": 0.25
+      },
+      {
+        "dimension": "external_entities_by_reference",
+        "description": "1.0=Patient and Appointment appear in the model only as identifiers referencing their owning systems, not as embedded copies of demographics or appointment records — with the HIPAA surface-area reduction that implies; 0.5=references used inconsistently, some external data duplicated into the referral store; 0.0=patient demographics and appointment data copied wholesale into the new model",
+        "weight": 0.15
+      },
+      {
+        "dimension": "access_patterns_validated",
+        "description": "1.0=concrete patterns for the working queries ('open referrals by coordinator', 'referrals by patient id', 'referrals awaiting scheduling older than N days', 'status history for a referral') with fields noted and scan-shaped patterns flagged at 40K/month scale; 0.5=patterns vague or missing the coordinator worklist; 0.0=no access patterns",
+        "weight": 0.15
+      },
+      {
+        "dimension": "evolution_and_consistency",
+        "description": "1.0=schema evolution strategy chosen with the external billing consumer in mind (breaking changes hit a vendor), and consistency stated per boundary — referral-to-status strongly consistent within the service, scheduling and billing integration eventually consistent via events with reconciliation, with reasoning; 0.5=only one of evolution strategy or consistency addressed; 0.0=neither addressed",
+        "weight": 0.20
+      }
+    ]
+  }
+]

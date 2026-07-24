@@ -1,0 +1,116 @@
+[
+  {
+    "id": "monolith-billing-module-extraction",
+    "skill": "brownfield-strangler-fig",
+    "task_description": "Our subscription billing logic lives deep inside a nine-year-old monolith, and it's the module everyone is afraid to touch — invoice generation, proration, dunning, tax lines. We want to move it into a dedicated service, but the last big-bang rewrite attempted here was abandoned after six months, and we can't pause billing for even one night while we migrate 11,000 active subscriptions. I need a plan that replaces this incrementally without a scary cutover moment.",
+    "context": "## Current System\n\nNine-year-old monolith. The billing module handles: invoice generation (nightly batch over ~11,000 active subscriptions), proration on plan changes, dunning retries for failed payments, and tax-line calculation.\n\n## Known Callers\n\n- Checkout flow (synchronous in-process calls on subscribe and upgrade)\n- Admin panel (manual invoice adjustments and refunds)\n- Nightly batch scheduler (invoice generation run)\n- Payment-provider webhook handler (payment success/failure updates)\n- At least three other modules read billing tables directly via SQL rather than through the module's functions\n\n## Constraints\n\n- Invoices must go out every night; a missed or duplicated charge cycle is unacceptable\n- Team of 7; the engineer who knows the dunning logic best leaves in 4 months",
+    "rubric": [
+      {
+        "dimension": "boundary_and_caller_inventory",
+        "description": "1.0=enumerates every caller (checkout, admin panel, nightly batch, webhook handler) and what crosses the boundary in both directions, and flags the direct SQL reads of billing tables as boundary crossings a routing layer cannot intercept without remediation; 0.5=covers the function-call callers but misses the direct table readers or the inbound webhook direction; 0.0=no boundary analysis — jumps straight to the new service design",
+        "weight": 0.20
+      },
+      {
+        "dimension": "routing_layer_design",
+        "description": "1.0=a routing mechanism (facade/dispatcher/flag) that keeps every caller's interface unchanged and supports gradual, non-binary shifting (per-subscription cohort or per-operation), with automatic reroute to the legacy path if the new implementation degrades; 0.5=proposes a single all-or-nothing switchover flag; 0.0=no routing layer — callers are cut over directly, repeating the big-bang pattern that failed before",
+        "weight": 0.15
+      },
+      {
+        "dimension": "seams_and_milestones",
+        "description": "1.0=migration decomposed into natural seams (e.g., read-only operations before writes, tax-line calculation before invoice generation, new subscriptions before existing, dunning last given the departing expert) — each seam with a measurable completion criterion, a verification method, and a per-seam rollback action; 0.5=phases listed without completion criteria or per-seam rollback; 0.0=a one-shot migration with no seams",
+        "weight": 0.20
+      },
+      {
+        "dimension": "parity_and_side_effect_safety",
+        "description": "1.0=a parity verification plan that confronts side effects: recognizes that naively shadow-running billing would double-charge and double-email, so the shadow path must suppress side effects (compute-and-compare invoices without issuing them) and includes idempotency verification for every write operation before any traffic shifts; 0.5=proposes shadow mode or parity tests without addressing side-effect suppression or idempotency; 0.0=no parity verification before shifting traffic",
+        "weight": 0.20
+      },
+      {
+        "dimension": "decommission_criteria",
+        "description": "1.0=explicit decommission conditions — 100% of traffic on the new service, parity clean for a stated number of nightly cycles, zero remaining direct table readers, runbooks updated — plus removal of the routing scaffolding afterward; 0.5=vague 'once we're confident' language; 0.0=no decommission criteria; the old module implicitly lives forever",
+        "weight": 0.15
+      },
+      {
+        "dimension": "transition_ownership_policy",
+        "description": "1.0=names who maintains the legacy billing module during the migration and sets a bug-fix policy (port to both / old only), explicitly sequencing dunning knowledge capture before the expert's departure in 4 months; 0.5=acknowledges the long coexistence without ownership or a bug-fix policy; 0.0=assumes the migration is quick and ignores dual maintenance entirely",
+        "weight": 0.10
+      }
+    ]
+  },
+  {
+    "id": "insurance-claims-engine-replacement",
+    "skill": "brownfield-strangler-fig",
+    "task_description": "I lead modernization at an insurer whose claims adjudication engine is twenty years old and runs on an unsupported runtime — and the two engineers who truly understand it both retire within a year. It processes about 9,000 claims a day in overnight batches plus a real-time pre-approval API, and regulators require every adjudication decision to be reproducible for seven years. A full rewrite was attempted in 2019 and cancelled after eighteen months with nothing shipped. I want an approach that replaces this thing gradually and provably.",
+    "context": "## Current System\n\nClaims adjudication engine, ~20 years old, on a runtime the vendor no longer supports. Two modes:\n- Overnight batch: ~9,000 claims/day arrive as files from intake systems and are adjudicated in a 4-hour window\n- Real-time pre-approval API: ~1,100 requests/day from the provider portal\n\n## Callers and Interfaces\n\n- Intake systems deliver fixed-format claim files to a shared drop location\n- The provider portal calls the pre-approval API\n- A downstream payment system consumes an adjudication-results file\n- Finance reporting reads the engine's database directly\n\n## Constraints\n\n- Regulators require every adjudication decision to be reproducible for 7 years; the new engine's decisions must match the old engine's to the penny for identical inputs\n- The two engineers who understand the rules tables retire within 12 months\n- A full rewrite attempt was cancelled in 2019 after 18 months with nothing shipped",
+    "rubric": [
+      {
+        "dimension": "boundary_and_caller_inventory",
+        "description": "1.0=inventories all four boundary crossings — inbound claim files, the pre-approval API, the outbound results file to payments, and finance's direct database reads — and flags the direct reads as a crossing the routing layer cannot intercept without a remediation step; 0.5=covers batch and API but misses the results file or the direct database reads; 0.0=no boundary inventory",
+        "weight": 0.20
+      },
+      {
+        "dimension": "routing_layer_design",
+        "description": "1.0=routing designed per interface type — file-level routing for the batch path, request-level routing for the pre-approval API — keeping caller interfaces (file formats, API contract) unchanged and supporting gradual shifting by claim type or intake source; 0.5=a single binary switch covering both modes; 0.0=no routing layer",
+        "weight": 0.15
+      },
+      {
+        "dimension": "seams_and_milestones",
+        "description": "1.0=seams that partition cleanly (e.g., pre-approval reads before batch adjudication writes; simple claim types before complex ones; one intake source at a time), each with a measurable completion criterion, verification method, and rollback action; 0.5=a phase list without criteria or rollback per seam; 0.0=one-shot replacement — the 2019 plan again",
+        "weight": 0.20
+      },
+      {
+        "dimension": "parity_and_shadow_verification",
+        "description": "1.0=exploits the engine's deterministic input-to-decision nature: shadow-run the new engine on full production claim volume and compare adjudication outputs to the penny, with divergence tracking, and gate each seam's cutover on a stated period of zero divergence — directly serving the regulatory reproducibility mandate; 0.5=mentions parity testing without a comparison mechanism or a divergence gate; 0.0=traffic shifts with no parity verification",
+        "weight": 0.20
+      },
+      {
+        "dimension": "decommission_criteria",
+        "description": "1.0=decommission conditions include 100% traffic, a stated divergence-free period, finance's direct reads migrated to a supported interface, runbooks updated, AND an answer for 7-year decision reproducibility after the old engine dies (archived engine, replay capability, or retained decision records); 0.5=standard criteria but silent on the 7-year reproducibility question; 0.0=no decommission criteria",
+        "weight": 0.15
+      },
+      {
+        "dimension": "transition_ownership_and_knowledge",
+        "description": "1.0=names the owning team for the legacy engine during a multi-year transition, sets a bug-fix policy for both implementations, and treats the retiring engineers as a scheduled dependency — rules-table documentation and parity coverage of their knowledge sequenced within their remaining 12 months; 0.5=acknowledges the retirements without sequencing any work against them; 0.0=no ownership plan; assumes the engine keeps running itself",
+        "weight": 0.10
+      }
+    ]
+  },
+  {
+    "id": "job-marketplace-search-engine-swap",
+    "skill": "brownfield-strangler-fig",
+    "task_description": "Our job marketplace's search service is eight years old, built on a text-indexing library that stopped receiving updates in 2019, with a custom ranking layer nobody has dared modify in two years. It serves 1.2 million searches a day across the main results page, an hourly recruiter-alert batch job, and a partner API with forty external integrators. Last year we tried a hard cutover to a replacement and rolled back within two hours after relevance regressions and partner complaints. This time I want a migration that shifts traffic gradually and can retreat safely.",
+    "context": "## Current System\n\nHome-grown search service, 8 years old, built on a text-indexing library unmaintained since 2019. Custom ranking layer (~30k lines) unmodified for 2 years. 1.2M searches/day.\n\n## Callers\n\n- Main web/mobile results page (synchronous; p95 must stay under 250ms)\n- Recruiter-alert batch job (hourly; re-executes ~200k saved searches)\n- Partner API (~40 external integrators; response format is contractual)\n\n## History\n\n- Last year the team attempted a hard cutover to a managed search product; relevance regressions on niche queries forced a rollback within 2 hours\n- The rollback was messy: during the cutover window the partner API returned a different response shape, and two partners filed support escalations",
+    "rubric": [
+      {
+        "dimension": "boundary_and_caller_inventory",
+        "description": "1.0=enumerates all three callers with their distinct constraints — the latency-bound results page, the hourly 200k-query batch, and the contract-bound partner API — and what crosses the boundary each way (queries in, ranked results out, index updates in); 0.5=treats 'search traffic' as one undifferentiated caller; 0.0=no boundary inventory",
+        "weight": 0.20
+      },
+      {
+        "dimension": "routing_layer_design",
+        "description": "1.0=routing keeps the partner API response shape byte-stable (the exact failure of last year's cutover), supports per-caller and percentage-based shifting, and defines an automatic rollback trigger — error-rate or latency threshold that reroutes to the legacy engine without human intervention; 0.5=gradual shifting but no contract-stability guarantee or automatic reroute trigger; 0.0=another hard cutover",
+        "weight": 0.15
+      },
+      {
+        "dimension": "seams_and_milestones",
+        "description": "1.0=seams partitioned by caller and query segment (e.g., recruiter-alert batch first as lowest-risk, results page ramped by percentage, partner API last; the niche-query segments that regressed last year staged explicitly), each with a measurable completion criterion, verification method, and rollback action; 0.5=caller-by-caller phases without criteria or per-seam rollback; 0.0=all traffic at once",
+        "weight": 0.20
+      },
+      {
+        "dimension": "parity_and_shadow_verification",
+        "description": "1.0=recognizes search is read-only and side-effect-free, making live shadow comparison feasible — defines concrete divergence metrics (top-N result overlap, zero-result rate, latency delta) with tolerances, and targets the niche-query segments that failed last year before any user-facing traffic shifts; 0.5=shadow mode mentioned without comparison metrics or tolerances; 0.0=no parity verification — relevance judged after users see it",
+        "weight": 0.20
+      },
+      {
+        "dimension": "decommission_criteria",
+        "description": "1.0=explicit conditions — 100% of all three callers migrated, divergence within tolerance for a stated period, no caller bypassing the routing layer, partner API verified on the new path, runbooks updated — then removal of the routing scaffolding; 0.5=vague confidence-based criteria; 0.0=none stated",
+        "weight": 0.15
+      },
+      {
+        "dimension": "transition_ownership_policy",
+        "description": "1.0=names who owns the legacy engine and its unmaintained indexing library during the transition, sets the policy for relevance bug fixes discovered mid-migration (port to both vs. old only), and names the owner of the routing layer and parity tooling; 0.5=acknowledges dual maintenance without assigning ownership or a fix policy; 0.0=ignores the coexistence period",
+        "weight": 0.10
+      }
+    ]
+  }
+]

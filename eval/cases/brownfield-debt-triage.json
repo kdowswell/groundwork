@@ -1,0 +1,106 @@
+[
+  {
+    "id": "solo-invoicing-saas-cleanup-day",
+    "skill": "brownfield-debt-triage",
+    "task_description": "I built my invoicing SaaS solo over three years and it makes real money now — about 900 paying customers. The codebase is full of shortcuts: 200-plus TODOs, no tests around the PDF generation customers complain about, and a nightly billing script I'm honestly scared to touch. I can spare about one day a week for cleanup while I build a client-portal feature. Help me figure out what's actually worth fixing and what I should stop feeling guilty about.",
+    "context": "## Known Debt (from a quick pass through the codebase and my own memory)\n\n- PDF invoice generation: no tests; regressions have shipped 3 times this year, each found by customer complaints\n- Nightly billing cron job: 800-line script, no error handling; when it fails I find out from missing revenue and re-run it by hand\n- ~200 TODO/FIXME comments, most of them in the reporting module (rarely changed)\n- Web framework one major version behind; support for the current version ends in 9 months\n- Admin dashboard query takes 30+ seconds; I use it daily, customers never see it\n- Signup flow has a copy-pasted validation block in 4 places; signup changes are rare\n\n## Capacity\n\nSolo; roughly one day per week available for non-feature work. Current feature focus: a client-portal feature that touches invoicing and PDF generation.",
+    "rubric": [
+      {
+        "dimension": "inventory_and_categorization",
+        "description": "1.0=works through the provided items (plus any obvious additions) and types each one as prudent, inadvertent, reckless, or architectural — with the type informing its priority (e.g., the untested billing script as reckless/architectural vs. the reporting TODOs as tolerable); 0.5=items listed but lumped into one generic 'tech debt' pile with no typing; 0.0=no per-item inventory, only general advice about managing debt",
+        "weight": 0.20
+      },
+      {
+        "dimension": "cost_to_carry_scoring",
+        "description": "1.0=each item scored on velocity tax, incident risk, and compounding rate on a stated scale with totals, grounded in the given signals (3 customer-found regressions, revenue-impacting cron failures, reporting module rarely changed); 0.5=items ranked by intuition or severity adjectives without dimensional scoring; 0.0=no scoring or ranking mechanism at all",
+        "weight": 0.25
+      },
+      {
+        "dimension": "bucket_decisions",
+        "description": "1.0=every item lands in exactly one bucket — pay now, schedule, accept, or delete — including explicit accept/delete calls (the reporting-module TODOs and rarely-touched signup duplication are candidates to accept, not fix); 0.5=only a 'fix first' list with no explicit accept or delete decisions; 0.0=no per-item disposition",
+        "weight": 0.20
+      },
+      {
+        "dimension": "pay_now_capacity_fit",
+        "description": "1.0=pay-now items carry effort estimates that fit one day per week and align with the client-portal focus (PDF and invoicing debt first, since the portal touches both), with overflow explicitly moved to schedule; 0.5=pay-now list has estimates but ignores the stated capacity or the feature focus; 0.0=pay-now bucket is an unsized wishlist",
+        "weight": 0.20
+      },
+      {
+        "dimension": "accepted_debt_rationale",
+        "description": "1.0=each accepted item gets a one-sentence documented reason plus a revisit condition ('the 30-second admin query stays — only I see it — revisit if I hire or it exceeds a minute'); 0.5=items are silently deprioritized rather than explicitly accepted with reasons; 0.0=nothing is consciously accepted — the output implies everything must eventually be fixed",
+        "weight": 0.15
+      }
+    ]
+  },
+  {
+    "id": "edtech-sprint-planning-standoff",
+    "skill": "brownfield-debt-triage",
+    "task_description": "I'm the engineering manager for a six-person team on a classroom quiz platform, and every sprint planning turns into the same argument between shipping the district-admin dashboard and fixing 'the mess.' The loudest complaints are a flaky fifteen-minute test suite, a notifications module everyone builds around instead of touching, and a grading service pinned to a runtime that just went end-of-life. I need us to make deliberate calls about this list instead of relitigating it every two weeks.",
+    "context": "## Known Debt\n\n- Test suite: 15-minute run, fails ~1 in 5 runs on unrelated flaky tests; engineers re-run until green\n- Notifications module: so convoluted that teams route around it — two features last quarter shipped their own ad-hoc email sending instead of using it\n- Grading service: pinned to a runtime that reached end-of-life last month; security patches no longer arrive\n- Quiz-editor state management: rewritten twice already, a third rewrite has been proposed; it works today but every editor feature is estimated at roughly 2x because of it\n- Two abandoned feature-flag experiments still in the codebase with dead code paths\n\n## Team Context\n\n6 engineers, 2-week sprints. A retro estimate puts ~20% of capacity lost to flaky-test reruns and notification workarounds. Sprint goal this quarter: ship the district-admin dashboard, which sends a high volume of notifications.",
+    "rubric": [
+      {
+        "dimension": "inventory_and_categorization",
+        "description": "1.0=each provided item typed as prudent, inadvertent, reckless, or architectural with the type shaping priority (e.g., the notifications module as architectural debt that is actively spawning new debt via ad-hoc email paths); 0.5=items listed without types; 0.0=no per-item inventory",
+        "weight": 0.15
+      },
+      {
+        "dimension": "cost_to_carry_scoring",
+        "description": "1.0=velocity tax, incident risk, and compounding scored per item on a stated scale with totals, using the given evidence (~20% capacity loss, EOL runtime with no security patches, 2x editor estimates); 0.5=gut-feel ranking with no dimensions; 0.0=no scoring mechanism",
+        "weight": 0.25
+      },
+      {
+        "dimension": "debt_vs_feature_distinction",
+        "description": "1.0=explicitly separates debt (works but resists change — flaky suite, notifications module) from rebuild/feature proposals (the third editor rewrite) and evaluates them on different grounds, per the works-but-hard-to-change test; 0.5=notes the distinction in passing but prioritizes everything as one list; 0.0=treats rewrites, features, and debt as interchangeable backlog items",
+        "weight": 0.10
+      },
+      {
+        "dimension": "bucket_decisions",
+        "description": "1.0=every item placed in exactly one of pay now / schedule / accept / delete, with the dead feature-flag code as an obvious delete candidate and explicit accept decisions rather than silence; 0.5=a priority order without accept/delete calls; 0.0=no dispositions",
+        "weight": 0.20
+      },
+      {
+        "dimension": "pay_now_capacity_fit",
+        "description": "1.0=pay-now selections fit within sprints alongside dashboard work and favor debt adjacent to the sprint goal (the notifications module, since the dashboard sends notifications; the flaky suite, since it taxes everything) with owners and effort estimates; 0.5=estimates present but selections ignore the sprint goal or exceed capacity without acknowledgment; 0.0=pay-now is a multi-sprint wishlist",
+        "weight": 0.15
+      },
+      {
+        "dimension": "accepted_debt_rationale",
+        "description": "1.0=each accepted item has a one-sentence reason and a revisit trigger, written to stop the biweekly relitigating (e.g., 'editor state management stays — third rewrite rejected — revisit if editor feature estimates exceed 3x'); 0.5=acceptance implied but undocumented; 0.0=no conscious acceptance, guaranteeing the argument recurs",
+        "weight": 0.15
+      }
+    ]
+  },
+  {
+    "id": "insurance-claims-platform-quarterly-triage",
+    "skill": "brownfield-debt-triage",
+    "task_description": "I own architecture for the claims platform at a mid-size insurer — about forty engineers across five teams. Our quarterly planning has a pile of competing debt: an internal audit finding with a deadline, a message broker losing security support, a cloud bill that grew 30% on flat traffic, and a manual data-reconciliation mess that eats a support engineer's week. Leadership has given us exactly one team-quarter of dedicated capacity. I need a defensible ranking of what we pay down now, what we schedule, and what we consciously live with.",
+    "context": "## Known Debt (from team submissions for quarterly planning)\n\n- Message broker: current version loses security support in 5 months; the upgrade requires coordinated downtime across 3 teams\n- Cloud bill: up 30% year-over-year on flat traffic; largest line items are an over-provisioned analytics cluster and cross-zone data transfer between one chatty service pair\n- Customer data duplicated across the claims, policy, and billing systems; the reconciliation job fails weekly and a support engineer fixes mismatches by hand (~6 hours/week)\n- Compliance finding (internal audit): access logs for the claims database are incomplete; remediation deadline in 2 quarters\n- 2 services still on a deployment pipeline the platform team wants to retire; migration estimated at 2 weeks each\n- A 'temporary' CSV export written for one enterprise customer in 2021, now load-bearing for 40 customers\n\n## Capacity\n\n5 teams of 8; leadership allocated one team-quarter of dedicated debt capacity this quarter. Focus area this quarter: claims-platform modernization.",
+    "rubric": [
+      {
+        "dimension": "inventory_and_categorization",
+        "description": "1.0=each item typed (prudent — the 2021 CSV export was a deliberate ship-fast tradeoff; architectural — the duplicated customer data; etc.) with the type informing priority; 0.5=items listed without types or with a single undifferentiated label; 0.0=no per-item inventory",
+        "weight": 0.20
+      },
+      {
+        "dimension": "cost_to_carry_scoring",
+        "description": "1.0=velocity tax, incident risk, and compounding scored per item on a stated scale with totals — and the 30% cloud-bill growth treated as a real cost-to-carry that surfaces only in the bill (not dismissed because it causes no incidents), with the 6 hours/week reconciliation toil quantified into the score; 0.5=severity labels without dimensional scoring, or infrastructure cost ignored entirely; 0.0=no scoring mechanism",
+        "weight": 0.25
+      },
+      {
+        "dimension": "bucket_decisions",
+        "description": "1.0=every item in exactly one of pay now / schedule / accept / delete, with deadline-bound items (broker support window, audit remediation) either paid or scheduled with target quarters — never silently accepted; 0.5=a ranking without explicit dispositions; 0.0=no per-item decisions",
+        "weight": 0.20
+      },
+      {
+        "dimension": "pay_now_capacity_fit",
+        "description": "1.0=pay-now bucket fits one team-quarter with per-item effort estimates and named owning teams, respects the hard deadlines and the claims-modernization focus, and explicitly moves the overflow to schedule with target quarters; 0.5=estimates exist but the plan exceeds the allocated capacity without acknowledging it; 0.0=recommends addressing everything with no capacity math",
+        "weight": 0.20
+      },
+      {
+        "dimension": "accepted_debt_rationale",
+        "description": "1.0=each accepted item carries a one-sentence rationale and a revisit condition (e.g., 'the legacy-pipeline services stay — 4 weeks of migration for no user-facing risk — revisit when the platform team announces a retirement date'); 0.5=items dropped from the plan without documented reasons; 0.0=no conscious acceptance decisions",
+        "weight": 0.15
+      }
+    ]
+  }
+]

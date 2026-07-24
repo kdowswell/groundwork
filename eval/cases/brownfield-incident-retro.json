@@ -1,0 +1,116 @@
+[
+  {
+    "id": "flash-sale-checkout-outage",
+    "skill": "brownfield-incident-retro",
+    "task_description": "We had a 47-minute checkout outage during our biggest flash sale of the year on Tuesday, and the team is rattled. A couple of people are quietly blaming the engineer who shipped a config change that morning, and leadership wants a written postmortem by Friday. I've pulled together the timestamps, alerts, and chat logs from the incident. I want us to actually learn from this instead of turning it into a witch hunt.",
+    "context": "## Raw materials from the incident window (Tuesday)\n\n- 09:58 — Deploy of a config change enabling the new discount engine in production (engineer: Dana)\n- 10:00 — Flash sale begins; traffic reaches 6x baseline within minutes\n- 10:04 — First checkout errors appear in logs (cache connection pool exhausted); no alert fires\n- 10:12 — Support tickets spike; complaints appear on social media\n- 10:19 — On-call engineer paged manually by the support lead\n- 10:31 — Rollback of the config change attempted; it fails because the rollback requires a second config value that was never versioned\n- 10:47 — Discount engine disabled via a manual database flag; checkout recovers\n\n## Additional facts\n\n- The checkout error-rate alert is configured to fire at 10% sustained over 15 minutes; error rate peaked at 9.4%\n- A similar incident occurred in March: cache connection pool exhaustion during a marketing campaign; that retro produced the action item 'right-size the cache connection pool', which was never completed\n- The discount engine had been tested at baseline traffic, not at flash-sale traffic",
+    "rubric": [
+      {
+        "dimension": "timeline_verifiability",
+        "description": "1.0=a chronological timeline with timestamps where every entry is factual and traceable to a provided artifact (deploy record, log excerpt, page, chat), and anything unverifiable is marked as per participant memory; 0.5=timeline present but entries mix interpretation ('the system started struggling') or lack timestamps; 0.0=a prose narrative with no timeline structure",
+        "weight": 0.20
+      },
+      {
+        "dimension": "blameless_framing",
+        "description": "1.0=no sentence pairs a person with a judgment; the config change is analyzed as system and process gaps (the rollback config was never versioned, no load test at sale traffic, no canary for config changes) rather than Dana's mistake; 0.5=mostly systemic but slips into judgment ('should have tested more carefully'); 0.0=assigns fault to the individual who shipped the change",
+        "weight": 0.15
+      },
+      {
+        "dimension": "contributing_factors_plurality",
+        "description": "1.0=multiple contributing factors identified and categorized as factual statements — e.g., latent defect (pool sizing), config/process gap (unversioned rollback config), monitoring gap (threshold never crossed), process gap (testing at baseline not peak) — explicitly rejecting a single root cause; 0.5=factors listed but the analysis collapses to 'the root cause was the config change'; 0.0=a single-cause narrative",
+        "weight": 0.20
+      },
+      {
+        "dimension": "detection_response_gap_analysis",
+        "description": "1.0=quantifies the gaps (failure began 10:04, humans detected via support at 10:19 — 15 minutes with no automated detection; mitigation at 10:47) and specifically flags that the 10%/15-minute alert threshold never fired at a 9.4% peak as a monitoring gap; 0.5=notes detection was slow without quantifying or connecting it to the threshold configuration; 0.0=no detection/response-time analysis",
+        "weight": 0.15
+      },
+      {
+        "dimension": "action_items_owned_and_verifiable",
+        "description": "1.0=every contributing factor and gap maps to at least one action item with a specific verifiable outcome (e.g., 'lower checkout error-rate alert to 3% over 5 minutes'), a named individual owner (not 'the team'), and a due date; 0.5=action items are directional ('improve alerting', 'version all configs') or lack owners/dates; 0.0=no action items",
+        "weight": 0.20
+      },
+      {
+        "dimension": "recurrence_check",
+        "description": "1.0=connects this incident to the March cache-pool incident, identifies why the prior action item failed to prevent recurrence (it was never completed), and creates a follow-up action addressing that failure mode (e.g., action-item tracking with review); 0.5=mentions the March incident without analyzing why its action item didn't help; 0.0=ignores the recurrence entirely",
+        "weight": 0.10
+      }
+    ]
+  },
+  {
+    "id": "patient-portal-stale-medications",
+    "skill": "brownfield-incident-retro",
+    "task_description": "Last Thursday our patient portal showed stale medication lists to about 1,200 patients for six hours, and nobody on our side noticed until a nurse at a partner clinic called about a missing blood-thinner prescription. The clinical safety review board needs a written incident report, and this is the kind of thing that can't happen again. I've collected the sync-job logs, the vendor's notice, and the support timeline. Help me turn this into a proper writeup with fixes we'll actually do.",
+    "context": "## Raw materials from the incident window (Thursday)\n\n- 02:10 — Upstream health-records vendor deployed a change renaming a field in the medication feed (per the vendor's after-the-fact notice)\n- 02:15 — Nightly medication sync job ran; per job logs, 1,204 patient records hit a parse error that was caught and skipped (a catch-and-continue block added in 2022); the job reported SUCCESS\n- 02:15-08:15 — Portal served each affected patient's medication list from the last successful sync; no alert exists on skipped-record counts\n- 08:15 — Nurse at a partner clinic called support: a recently discharged patient's new blood-thinner prescription was missing from the portal\n- 08:40 — Support escalated to the engineering on-call\n- 09:05 — On-call confirmed 1,204 stale records and correlated them with the vendor's field rename\n- 09:30 — Parser patched and sync re-run; all records current by 09:52\n- 10:15 — Clinical safety review board notified per policy\n\n## Additional facts\n\n- The sync job has reported SUCCESS on every run for 3 years; skipped-record counts are written to logs but not monitored\n- The vendor's contract requires 30-day notice for schema changes; no notice was given\n- No prior incident involving the medication sync is on record",
+    "rubric": [
+      {
+        "dimension": "timeline_verifiability",
+        "description": "1.0=timestamped timeline from 02:10 to 10:15 where each entry traces to a provided artifact (job logs, vendor notice, support record), with any unverifiable entry marked as per participant memory; 0.5=timeline present but with interpretive entries ('the sync job misbehaved') or missing timestamps; 0.0=narrative prose with no timeline",
+        "weight": 0.20
+      },
+      {
+        "dimension": "blameless_framing",
+        "description": "1.0=the 2022 catch-and-continue block and the vendor's unannounced change are treated as system and process gaps (error-handling policy, partial-failure semantics, contract enforcement, monitoring) with no individual — internal or vendor-side — paired with a judgment; 0.5=mostly systemic but includes lines like 'whoever wrote the catch block should have known better'; 0.0=frames the incident as someone's mistake",
+        "weight": 0.15
+      },
+      {
+        "dimension": "contributing_factors_plurality",
+        "description": "1.0=multiple categorized factors stated factually — dependency change without required notice (dependency/process), parse errors silently swallowed (latent defect), skipped-record count logged but unmonitored (monitoring gap), job status SUCCESS despite 1,204 skips (design gap) — with no single root cause; 0.5=factors listed but the vendor change is framed as 'the root cause'; 0.0=single-cause narrative",
+        "weight": 0.20
+      },
+      {
+        "dimension": "detection_response_gap_analysis",
+        "description": "1.0=quantifies the six-hour detection gap (02:15 first skipped records to 08:15 external report) and explicitly notes detection came from outside the organization, tying it to the missing skipped-record alert; also assesses the 08:15-to-08:40 escalation path; 0.5=notes detection was slow without quantifying or naming the specific missing signal; 0.0=no detection/response analysis",
+        "weight": 0.15
+      },
+      {
+        "dimension": "action_items_owned_and_verifiable",
+        "description": "1.0=action items with verifiable outcomes per factor — e.g., 'alert when medication-sync skipped-record count exceeds 0', 'fail the job when parse errors exceed a defined threshold instead of reporting SUCCESS', 'establish the vendor schema-change notice enforcement path' — each with a named owner and due date; 0.5=directional items ('improve sync monitoring') or missing owners/dates; 0.0=no action items",
+        "weight": 0.20
+      },
+      {
+        "dimension": "recurrence_check",
+        "description": "1.0=explicitly checks for prior similar incidents, records that none are on file, AND asks where the same catch-and-continue pattern exists in other integration jobs as a proactive follow-up action; 0.5=a cursory 'first occurrence' note with no wider pattern check; 0.0=no recurrence consideration",
+        "weight": 0.10
+      }
+    ]
+  },
+  {
+    "id": "dispatch-api-slo-breach",
+    "skill": "brownfield-incident-retro",
+    "task_description": "Our driver-dispatch API blew through its monthly latency SLO last week — p99 crept from 800 milliseconds to six seconds over four days, so there's no single outage moment to point at. The platform team blames the routing team's new geofence feature, and the routing team blames the platform team's database maintenance, and the finger-pointing is getting corrosive. I've assembled what we know from both teams' logs. I need a writeup that gets us past the blame and into fixes.",
+    "context": "## Raw materials (spread over four days)\n\n- Oct 6, 21:00 — Platform team ran scheduled database maintenance; a composite index on the geofence lookup table was dropped and its recreation silently failed (per maintenance logs)\n- Oct 7, 10:00 — Routing team ramped the new geofence-matching feature from 10% to 50% of dispatch requests via feature flag\n- Oct 7-10 — Dispatch API p99 rose from 800ms toward 6s in step with load on the unindexed lookup; the autoscaler added instances until reaching its configured maximum on Oct 9\n- Oct 9, 14:20 — First page fired: the SLO burn-rate alert is configured to fire only when 100% of the monthly error budget is consumed\n- Oct 10, 11:30 — Routing team reduced the feature flag to 10%; p99 improved to 2.1s\n- Oct 10, 16:45 — The failed index recreation was identified and the index rebuilt; p99 returned to 790ms\n- Monthly latency SLO breached on Oct 10; ~9% of dispatch requests exceeded the 3s threshold during the window\n\n## Team context\n\n- The platform and routing teams have separate on-call rotations and did not share a channel during the investigation\n- Each team's lead has separately told leadership that the other team's change caused the breach",
+    "rubric": [
+      {
+        "dimension": "timeline_verifiability",
+        "description": "1.0=a four-day timeline with date-and-time entries, each factual and traceable to the provided logs (maintenance record, flag ramp, autoscaler events, alert), with unverifiable entries marked as per participant memory; 0.5=timeline present but compresses the slow burn into vague phases or editorializes entries; 0.0=no timeline — the writeup argues about causes instead",
+        "weight": 0.20
+      },
+      {
+        "dimension": "blameless_framing",
+        "description": "1.0=treats the breach as the interaction of two independently reasonable changes plus monitoring and process gaps, with no sentence assigning fault to either team; 0.5=nominally blameless but implies one team's change was 'the real problem'; 0.0=names one team (or its lead's position) as the cause",
+        "weight": 0.15
+      },
+      {
+        "dimension": "contributing_factors_plurality",
+        "description": "1.0=captures the interaction as categorized factual factors — index recreation failed silently (latent defect/process gap), feature ramp multiplied load on the unindexed path (config change), burn-rate alert fires only at 100% budget (monitoring gap), no shared channel between rotations (process gap) — no single root cause; 0.5=lists factors but crowns one change as the root cause; 0.0=adopts one team's blame narrative",
+        "weight": 0.20
+      },
+      {
+        "dimension": "detection_response_gap_analysis",
+        "description": "1.0=quantifies the roughly two-day gap between degradation onset (Oct 7) and the first page (Oct 9, 14:20), attributes it to the 100%-budget alert configuration, and evaluates whether multi-window burn-rate thresholds would have caught the slow burn earlier; also notes the autoscaler masked the problem until it hit its maximum; 0.5=says 'we found out too late' without quantifying or naming the alert configuration; 0.0=no detection analysis",
+        "weight": 0.15
+      },
+      {
+        "dimension": "action_items_owned_and_verifiable",
+        "description": "1.0=action items with verifiable outcomes — e.g., 'maintenance runbook verifies index recreation before closing the change', 'add fast- and slow-burn SLO alerts at defined budget-consumption rates', 'establish a shared incident channel policy for cross-team degradations' — each with a named owner and a due date; 0.5=directional items or items assigned to 'both teams'; 0.0=no action items",
+        "weight": 0.20
+      },
+      {
+        "dimension": "recurrence_check",
+        "description": "1.0=checks whether silent maintenance failures or ramp-without-dependency-check patterns have appeared before, and either links prior occurrences with an analysis of why safeguards failed or records that none are on file after checking; 0.5=perfunctory recurrence mention with no evidence of checking; 0.0=no recurrence consideration",
+        "weight": 0.10
+      }
+    ]
+  }
+]
