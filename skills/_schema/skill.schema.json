@@ -29,6 +29,11 @@
       "type": "boolean",
       "description": "Agent Skills standard: if false, hide from user-facing menus; skill can only be triggered by the model."
     },
+    "argument-hint": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Provider extension (Claude Code and others): autocomplete hint shown for the skill's arguments, e.g. '[command] [target]'."
+    },
     "allowed-tools": {
       "oneOf": [
         {

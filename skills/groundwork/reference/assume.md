@@ -1,0 +1,129 @@
+<!-- generated from skills/exploration-assumption-mapping/SKILL.md by scripts/sync-router-references.ts.
+     Edit the source skill, then run: npm run sync:router -->
+
+# Assumption Mapping (`/groundwork assume`)
+
+**Phase:** Explore (exploration) · **Time box:** 60-90 minutes
+
+**Before you start:** load project context for this session if you have not already (see the
+router's Steps); honor active principles throughout. Entry criteria below must hold — if one
+does not, say which and route to the command that establishes it instead of proceeding.
+
+**Entry criteria:**
+- A plan, spec, or idea exists with enough detail to identify assumptions
+- The team is about to make a commitment (sprint planning, architecture lock, hiring)
+
+**Exit criteria:**
+- Assumptions are listed and categorized by type
+- Each assumption is scored for risk (impact × uncertainty)
+- The top 3 riskiest assumptions have a validation plan
+
+---
+
+## How This Skill Works
+
+This skill makes the invisible assumptions in a plan visible so they can be ranked by risk and tested before the plan is committed to. The output is an assumption register — a ranked list of beliefs the plan depends on, annotated with confidence level, failure impact, and a proposed validation approach.
+
+Every plan rests on assumptions. Some are well-founded; some are guesses dressed as facts. This skill separates them and surfaces the dangerous ones so the team tests before building, not discovers while operating.
+
+The agent elicits and categorizes assumptions by asking structured questions about the plan. The human provides the domain knowledge needed to assess which assumptions are grounded in evidence and which are untested beliefs the team has been treating as facts.
+
+**Key concepts used in the Steps:**
+- **Assumption** — a belief the plan depends on that has not been verified
+- **Confidence** — how well-evidenced the assumption is (high = tested or established; low = untested belief)
+- **Failure impact** — how much the plan changes if the assumption turns out to be wrong
+- **Risk rank** — a function of low confidence and high failure impact; high-risk assumptions are tested first
+- **Validation approach** — the cheapest, fastest way to confirm or disprove the assumption before building
+
+## Steps
+
+1. **List all the assumptions in the plan.** Read the spec, the architecture sketch, and any supporting documents. Write down every claim that is asserted without evidence. Common assumption categories:
+   - **User behavior** — "users will do X," "users care about Y"
+   - **Technical feasibility** — "this library supports X," "this API returns Y format"
+   - **Scale** — "the system will handle Z requests," "the data will fit in memory"
+   - **Integration** — "the third-party system is reliable," "the authentication flow works as documented"
+   - **Business** — "this is the right problem to solve," "customers will pay for this"
+   - **Regulatory** — "this complies with X," "this data can be stored in Y region"
+   
+   Aim for 15–30 assumptions. Fewer means the plan is either very small or assumptions are being missed.
+
+2. **Score each assumption on two dimensions:**
+   - **Impact if wrong** (1–5): How much work would need to be undone or redone if this assumption turned out to be false? 5 = architecture-level rewrite; 1 = one-line fix.
+   - **Current uncertainty** (1–5): How confident is the team that this assumption is true right now? 5 = pure guess; 1 = validated by evidence.
+   
+   Calculate **risk = impact × uncertainty**. Sort by risk descending.
+
+3. **Identify the top 5 highest-risk assumptions.** These are the assumptions most likely to break the plan at the highest cost. Write each as a falsifiable statement: "We assume X because Y. This would be false if Z."
+
+4. **Choose a validation method for the top 3.** For each high-risk assumption, pick the cheapest way to test it:
+   - **User interview** — for behavior and value assumptions
+   - **Technical spike** — for feasibility and performance assumptions
+   - **Paper prototype / mockup** — for UX and workflow assumptions
+   - **API/SDK test** — for integration assumptions
+   - **Legal/compliance check** — for regulatory assumptions
+   
+   The goal is to find the cheapest falsification, not the most thorough validation.
+
+5. **Set validation deadlines.** For each of the top 3 assumptions with a validation plan, set a date by which the assumption will be tested. If the deadline passes before validation, the assumption remains a known risk — it shouldn't silently become a certainty.
+
+6. **Document accepted risks.** For assumptions ranked 4 and below in your validation list, explicitly accept them as risks. Write: "We are proceeding with this assumption unvalidated. If it breaks, the estimated recovery cost is X." This is not a failure — it's a documented decision.
+
+## Checkpoints
+
+**Are any of the top assumptions about users being tested with users?**
+User behavior assumptions can only be validated by observing or interviewing actual users. Technical staff testing user assumptions by imagining what they would do is not validation. If a top assumption is about user behavior and the validation plan doesn't involve users, the plan is wrong.
+
+**Is the validation happening before the commitment, not during build?**
+If the validation deadlines are after the sprint starts or after architecture is locked, the validation can't change the plan — it can only confirm or deny it. Validation that can't change the outcome isn't validation; it's post-hoc reassurance.
+
+**Are any assumptions really constraints?**
+Some things that look like assumptions are actually constraints — things that are true regardless of what the team does. "We must comply with GDPR" is not an assumption; it's a constraint. Constraints should be noted as such and not subjected to risk scoring — they must be addressed, not validated.
+
+## Principle Application
+
+This skill surfaces which principles become load-bearing based on which assumptions are accepted. Specifically:
+
+If a high-risk assumption is related to **reliability** (third-party system reliability, network availability), the `fault-isolation` and `graceful-degradation` principles become load-bearing — the architecture must be designed to handle the assumption being wrong.
+
+If a high-risk assumption is about **data** (user data ownership, data format from external source), the `data-ownership` and `schema-evolution` principles become load-bearing — the data model must be designed to accommodate being wrong about the data.
+
+If a high-risk assumption is about **scale** (traffic volume, data size), validate it before the scalability principles are selected in `signal-driven-principles` — the right principles depend on the right scale target.
+
+**fallacies-of-distributed-computing**
+The eight fallacies are a named catalog of the most common false assumptions in distributed system design. Use them as a structured probe during Step 1 (listing assumptions) whenever the plan involves a network call, an external dependency, or inter-service communication. For each network-touching part of the plan, ask: does this plan assume the network is reliable? That latency is negligible? That the topology won't change? That all services are administered by the same team? Each yes is an assumption that belongs in the register and should be scored.
+
+In Step 3 (top 5 highest-risk assumptions), distributed computing assumptions tend to score high on impact (architecture-level change required if wrong) but vary on uncertainty — some teams have production evidence for their latency/reliability profile; others are working from development assumptions that have never been tested under load. Score honestly.
+Full reference: [principles/fallacies-of-distributed-computing.md](principles/fallacies-of-distributed-computing.md)
+
+**testing-strategy**
+The validation methods in Step 4 (technical spike, API/SDK test, paper prototype, user interview) correspond to different levels of testing fidelity applied to assumption validation. Use the cheapest form of falsification that can actually disprove the assumption: a feasibility assumption ("can this library do X?") needs only a unit-level spike — write a small targeted test, run it, get the answer. A performance assumption needs an integration-level test against real infrastructure. A user behavior assumption requires research with actual users — no technical test can falsify it. Over-investing in full-stack validation for a feasibility question wastes the time box; under-investing (asking engineers to imagine user behavior) cannot falsify a user behavior assumption. Match the test fidelity to the assumption type before committing to a validation approach.
+Full reference: [principles/testing-strategy.md](principles/testing-strategy.md)
+
+## Output Format
+
+An `assumption-map.md` file with:
+
+```markdown
+# Assumption Map: {{PLAN OR FEATURE NAME}}
+
+**Date:** YYYY-MM-DD
+**Plan version:** {{LINK TO SPEC}}
+
+## All Assumptions
+| # | Assumption | Category | Impact (1-5) | Uncertainty (1-5) | Risk |
+|---|---|---|---|---|---|
+| 1 | We assume users will... | User behavior | 4 | 3 | 12 |
+| ... | | | | | |
+
+## Top 5 Highest-Risk Assumptions
+1. **{{ASSUMPTION}}** — Risk: {{SCORE}}
+   - Validation method: {{METHOD}}
+   - Deadline: {{DATE}}
+   - Owner: {{WHO}}
+
+## Accepted Risks (Not Validating)
+- {{ASSUMPTION}} — Estimated recovery cost if wrong: {{EFFORT}}
+
+## Constraints (Not Assumptions)
+- {{CONSTRAINT}} — must be addressed; not subject to risk scoring
+```
