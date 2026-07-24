@@ -13,28 +13,49 @@ Skills reference principles. Principles know nothing about skills. The principle
 
 ```
 groundwork/
-├── principles/             Distilled architectural principle library (8 categories, 32+ files)
+├── principles/             Distilled architectural principle library (8 categories, 40 files)
 │   ├── _schema/            JSON Schema for principle frontmatter
 │   ├── reliability/        Circuit breakers, fault isolation, health checks, degradation, chaos
 │   ├── security/           Secrets, zero trust, least privilege, classification, supply chain
 │   ├── scalability/        Horizontal scaling, caching, partitioning, async processing
-│   ├── observability/      Structured logging, tracing, SLOs, alerting
+│   ├── observability/      Structured logging, tracing, SLOs, alerting, ML/AI observability
 │   ├── data/               Ownership, consistency models, event sourcing, schema evolution
-│   ├── design/             Field-first (hostile conditions UX)
-│   ├── delivery/           CI/CD, blue-green/canary, feature flags, IaC
-│   └── operations/         Incident response, runbooks, capacity planning, tech debt
+│   ├── design/             Contract-first, bounded contexts, Conway, idempotency, field-first…
+│   ├── delivery/           CI/CD, blue-green/canary, feature flags, IaC, testing strategy
+│   └── operations/         Incident response, runbooks, capacity, FinOps, tech debt
 ├── skills/                 Phase-prefixed skill workflows (Agent Skills standard, flat)
 │   ├── _schema/            JSON Schema for skill frontmatter
+│   ├── groundwork/         Router skill: /groundwork <command> (single entry point)
+│   │   ├── SKILL.md        Command table + routing rules; rule-marked (<!-- rule:... -->)
+│   │   ├── reference/      17 playbooks — 15 GENERATED from phase skills + init.md, doctor.md
+│   │   │   └── principles/ GENERATED trimmed principle copies (keeps relative links working)
+│   │   └── scripts/        context.mjs (session context loader), hook.mjs (detector hook)
 │   ├── greenfield-*/       Phase 1: 5 skills (greenfield-spec-from-idea, etc.)
 │   │   └── SKILL.md        Literal filename required by Agent Skills standard
 │   ├── exploration-*/      Phase 2: 4 skills
 │   └── brownfield-*/       Phase 3: 6 skills
+├── cli/                    npx groundwork CLI — plain ESM, ZERO runtime dependencies (ADR-005)
+│   ├── bin/groundwork.mjs  Commands: detect, doctor, install, update
+│   ├── engine/             Detector rules (each maps to a principle id), scanner, reporters
+│   ├── commands/           doctor.mjs, install.mjs
+│   └── data/               GENERATED principle index (sync:router)
+├── eval/                   Two harnesses:
+│   ├── harness.ts          Quality: skill-vs-baseline A/B with LLM judge (eval/cases/, 15 skills)
+│   └── behavior/           Behavior: real-model tool-trace assertions on router rules
+├── examples/case-study/    SlopMart before/after fixtures (detector tests + docs/case-study.md)
 ├── context/                Project context artifacts
 │   ├── project-context.template.md   Project context capture (principle selection input)
 │   └── discovery-questions.md        Question bank for gathering project context
+├── docs/
+│   ├── decisions/          ADRs — groundwork dogfoods its own adr-setup skill
+│   ├── case-study.md       Before/after walkthrough backed by CI-tested fixtures
+│   └── HARNESSES.md        Per-harness install targets and capabilities
+├── .groundwork/context.md  groundwork's own project context (dogfooded)
 └── scripts/
     ├── validate-principles.ts         Principle frontmatter schema validator (CI)
-    └── validate-skills.ts             Skill frontmatter schema validator (CI)
+    ├── validate-skills.ts             Skill frontmatter schema validator (CI)
+    ├── sync-skill-principles.ts       Syncs trimmed principles into skill dirs (CI-enforced)
+    └── sync-router-references.ts      Compiles phase skills → router playbooks (CI-enforced)
 ```
 
 ## Two Layers
@@ -95,11 +116,31 @@ groundwork/
 - Principle Application synthesizes how the principle applies in *this specific phase and context*
 - Output Format describes the artifact's structure, not its content
 
+## Router, Sync, and CLI Invariants
+
+- The 15 phase skills are the source of truth; `skills/groundwork/reference/*.md` (except
+  `init.md` and `doctor.md`) and `skills/groundwork/reference/principles/` are GENERATED.
+  Never edit generated files — edit the source skill, then run `npm run sync:router`.
+  CI fails if generated output is stale.
+- Every normative sentence in `skills/groundwork/SKILL.md` carries a `<!-- rule:... -->`
+  marker. Behavior tests in `eval/behavior/` reference these markers — if you change or
+  remove a rule, update the corresponding test.
+- The CLI (`cli/**`) is plain ESM with zero runtime dependencies (ADR-005). Do not add
+  imports beyond `node:` builtins. Every detector rule MUST carry a `principle` field naming
+  an existing principle id, and must prefer silence over false positives.
+- Detector rules need tests: unit coverage in `tests/detector.test.ts` and, when the rule is
+  broad, a trigger in `examples/case-study/before/` plus a clean pass in `after/`.
+- `.groundwork/context.md` at the repo root is groundwork's own dogfooded context; new
+  architecturally significant decisions get an ADR in `docs/decisions/`.
+
 ## Validation
 
 ```bash
 npm run validate          # validate principle frontmatter
 npm run validate:skills   # validate skill frontmatter
 npm run validate:all      # both
+npm run sync:all          # regenerate synced principles + router playbooks
 npm run typecheck         # TypeScript type checking on scripts
+npm test                  # vitest: detector, CLI, behavior (behavior skips without ANTHROPIC_API_KEY)
+npm run eval              # LLM-judged skill evals (costs tokens; not run in CI)
 ```

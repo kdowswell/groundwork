@@ -28,5 +28,19 @@ jobs:
       - name: Validate skills
         run: npm run validate:skills
 
+      - name: Generated output is fresh
+        run: |
+          npm run sync:all
+          git diff --exit-code -- skills cli/data || {
+            echo "::error::Generated files are stale. Run 'npm run sync:all' and commit the result."
+            exit 1
+          }
+
       - name: Run tests
         run: npm test
+
+      - name: Detector self-check on fixtures
+        run: |
+          # before must fail (findings), after must pass clean
+          ! node cli/bin/groundwork.mjs detect --json examples/case-study/before > /dev/null
+          node cli/bin/groundwork.mjs detect --json examples/case-study/after > /dev/null

@@ -1,0 +1,18 @@
+{
+  "name": "groundwork",
+  "owner": {
+    "name": "Kurt Dowswell",
+    "email": "kdowswell@gmail.com"
+  },
+  "plugins": [
+    {
+      "name": "groundwork",
+      "source": "./",
+      "description": "Phase-based architecture skills for production-grade software: /groundwork router with 17 commands, a 40-principle library, and a deterministic anti-slop detector.",
+      "version": "0.1.0",
+      "author": {
+        "name": "Kurt Dowswell"
+      }
+    }
+  ]
+}
