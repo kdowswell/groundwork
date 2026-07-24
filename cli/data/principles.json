@@ -1,0 +1,202 @@
+[
+  {
+    "id": "alerting-strategy",
+    "title": "Alerting Strategy",
+    "category": "observability"
+  },
+  {
+    "id": "api-contract-first",
+    "title": "API Contract-First Design",
+    "category": "design"
+  },
+  {
+    "id": "async-processing",
+    "title": "Asynchronous Processing and Decoupling",
+    "category": "scalability"
+  },
+  {
+    "id": "blue-green-canary",
+    "title": "Progressive Deployment Strategies",
+    "category": "delivery"
+  },
+  {
+    "id": "bounded-contexts",
+    "title": "Bounded Contexts",
+    "category": "design"
+  },
+  {
+    "id": "caching-strategy",
+    "title": "Caching Strategy and Invalidation",
+    "category": "scalability"
+  },
+  {
+    "id": "capacity-planning",
+    "title": "Capacity Planning",
+    "category": "operations"
+  },
+  {
+    "id": "chaos-engineering",
+    "title": "Chaos Engineering",
+    "category": "reliability"
+  },
+  {
+    "id": "ci-cd-pipeline",
+    "title": "CI/CD Pipeline as Code",
+    "category": "delivery"
+  },
+  {
+    "id": "circuit-breakers",
+    "title": "Circuit Breakers for External Dependencies",
+    "category": "reliability"
+  },
+  {
+    "id": "consistency-models",
+    "title": "Consistency Models",
+    "category": "data"
+  },
+  {
+    "id": "conways-law-organizational-alignment",
+    "title": "Organizational Alignment and Conway's Law",
+    "category": "design"
+  },
+  {
+    "id": "data-classification",
+    "title": "Data Classification",
+    "category": "security"
+  },
+  {
+    "id": "data-ownership",
+    "title": "Data Ownership and Service Boundaries",
+    "category": "data"
+  },
+  {
+    "id": "data-partitioning",
+    "title": "Data Partitioning and Sharding",
+    "category": "scalability"
+  },
+  {
+    "id": "distributed-tracing",
+    "title": "Distributed Tracing",
+    "category": "observability"
+  },
+  {
+    "id": "event-sourcing",
+    "title": "Event Sourcing",
+    "category": "data"
+  },
+  {
+    "id": "fallacies-of-distributed-computing",
+    "title": "Fallacies of Distributed Computing",
+    "category": "design"
+  },
+  {
+    "id": "fault-isolation",
+    "title": "Fault Isolation and Blast Radius",
+    "category": "reliability"
+  },
+  {
+    "id": "feature-flags",
+    "title": "Feature Flags and Release Decoupling",
+    "category": "delivery"
+  },
+  {
+    "id": "field-first",
+    "title": "Field-First Design for Hostile Operating Conditions",
+    "category": "design"
+  },
+  {
+    "id": "finops-cost-visibility",
+    "title": "FinOps and Cost Visibility",
+    "category": "operations"
+  },
+  {
+    "id": "graceful-degradation",
+    "title": "Graceful Degradation",
+    "category": "reliability"
+  },
+  {
+    "id": "health-checks",
+    "title": "Health Checks — Liveness, Readiness, and Dependency Reporting",
+    "category": "reliability"
+  },
+  {
+    "id": "horizontal-scaling",
+    "title": "Horizontal Scaling and Stateless Services",
+    "category": "scalability"
+  },
+  {
+    "id": "idempotency-by-design",
+    "title": "Idempotency by Design",
+    "category": "design"
+  },
+  {
+    "id": "incident-response",
+    "title": "Structured Incident Response",
+    "category": "operations"
+  },
+  {
+    "id": "infrastructure-as-code",
+    "title": "Infrastructure as Code",
+    "category": "delivery"
+  },
+  {
+    "id": "least-privilege",
+    "title": "Least Privilege",
+    "category": "security"
+  },
+  {
+    "id": "ml-ai-observability",
+    "title": "ML and AI System Observability",
+    "category": "observability"
+  },
+  {
+    "id": "runbooks",
+    "title": "Runbooks for Operational Procedures",
+    "category": "operations"
+  },
+  {
+    "id": "schema-evolution",
+    "title": "Schema Evolution and Compatibility",
+    "category": "data"
+  },
+  {
+    "id": "secrets-management",
+    "title": "Secrets Management",
+    "category": "security"
+  },
+  {
+    "id": "separation-of-concerns",
+    "title": "Separation of Concerns",
+    "category": "design"
+  },
+  {
+    "id": "slo-error-budgets",
+    "title": "SLOs and Error Budgets",
+    "category": "observability"
+  },
+  {
+    "id": "structured-logging",
+    "title": "Structured Logging",
+    "category": "observability"
+  },
+  {
+    "id": "supply-chain-security",
+    "title": "Supply Chain Security",
+    "category": "security"
+  },
+  {
+    "id": "tech-debt-management",
+    "title": "Tech Debt Management",
+    "category": "operations"
+  },
+  {
+    "id": "testing-strategy",
+    "title": "Testing Strategy and the Test Pyramid",
+    "category": "delivery"
+  },
+  {
+    "id": "zero-trust",
+    "title": "Zero Trust",
+    "category": "security"
+  }
+]
