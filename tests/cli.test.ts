@@ -1,5 +1,14 @@
 import { execFileSync } from "node:child_process";
-import { existsSync, mkdtempSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import {
+  existsSync,
+  mkdtempSync,
+  mkdirSync,
+  readFileSync,
+  readdirSync,
+  rmSync,
+  symlinkSync,
+  writeFileSync,
+} from "node:fs";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { afterAll, describe, expect, it } from "vitest";
@@ -421,6 +430,60 @@ describe("groundwork approve / verify", () => {
     expect(stale.status).toBe(1);
     expect(JSON.parse(stale.stdout).receipts[0].status).toBe("stale");
     expect(runCli(["approve", "docs/specs/orders.md"], { cwd: dir }).status).toBe(2);
+  });
+
+  it("never writes or reads through symlinks, and rejects artifacts outside the project", () => {
+    const outside = tempDir();
+    const victim = join(outside, "victim.txt");
+    writeFileSync(victim, "export SECRET=1\n");
+
+    // A planted receipt symlink is refused, and the target is untouched.
+    const dir = projectWithSpec();
+    mkdirSync(join(dir, ".groundwork/approvals"), { recursive: true });
+    symlinkSync(victim, join(dir, ".groundwork/approvals/docs__specs__orders.md.json"));
+    expect(() => approve(dir, "docs/specs/orders.md", { checkpoint: "scope" })).toThrow(/regular file/);
+    expect(readFileSync(victim, "utf8")).toBe("export SECRET=1\n");
+    // verify reports it without echoing the target's contents.
+    const report = verify(dir);
+    expect(report).toMatchObject({ ok: false, receipts: [{ status: "invalid" }] });
+    expect(JSON.stringify(report)).not.toContain("SECRET");
+
+    // A symlinked approvals directory pointing outside is refused.
+    const dir2 = projectWithSpec();
+    mkdirSync(join(dir2, ".groundwork"));
+    symlinkSync(outside, join(dir2, ".groundwork/approvals"));
+    expect(() => approve(dir2, "docs/specs/orders.md", { checkpoint: "scope" })).toThrow(/outside/);
+    expect(readdirSync(outside)).toEqual(["victim.txt"]);
+    expect(verify(dir2).ok).toBe(false);
+
+    // A symlinked artifact resolving outside the project is refused.
+    const dir3 = projectWithSpec();
+    symlinkSync(victim, join(dir3, "docs/specs/link.md"));
+    expect(() => approve(dir3, "docs/specs/link.md", { checkpoint: "scope" })).toThrow(/inside/);
+
+    // A receipt whose artifact path escapes the project is invalid, not hashed.
+    const dir4 = projectWithSpec();
+    mkdirSync(join(dir4, ".groundwork/approvals"), { recursive: true });
+    writeFileSync(
+      join(dir4, ".groundwork/approvals/escape.json"),
+      JSON.stringify({
+        artifact: "../victim.txt",
+        sha256: "0".repeat(64),
+        checkpoint: "scope",
+        decision: "approved",
+        decidedBy: "user",
+        date: "2026-10-22",
+      }),
+    );
+    expect(verify(dir4).receipts[0]).toMatchObject({ status: "invalid" });
+    expect(verify(dir4).receipts[0].message).toMatch(/escapes/);
+  });
+
+  it("leaves no temp files behind after writing a receipt", () => {
+    const dir = projectWithSpec();
+    approve(dir, "docs/specs/orders.md", { checkpoint: "scope", now: NOW });
+    approve(dir, "docs/specs/orders.md", { checkpoint: "scope", now: NOW });
+    expect(readdirSync(join(dir, ".groundwork/approvals"))).toEqual(["docs__specs__orders.md.json"]);
   });
 
   it("doctor reports stale approvals even without a context file", () => {
