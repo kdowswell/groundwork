@@ -1,0 +1,41 @@
+{
+  "description": "groundwork lifecycle hooks (ADR-006): context digest at session start, detector on edits, deep pass at stop. Fail-open.",
+  "hooks": {
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"${CLAUDE_PLUGIN_ROOT}/skills/groundwork/scripts/hook.mjs\"",
+            "timeout": 5
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Edit|Write|MultiEdit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"${CLAUDE_PLUGIN_ROOT}/skills/groundwork/scripts/hook.mjs\"",
+            "timeout": 10,
+            "statusMessage": "groundwork: checking edit"
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"${CLAUDE_PLUGIN_ROOT}/skills/groundwork/scripts/hook.mjs\"",
+            "timeout": 30,
+            "statusMessage": "groundwork: deep pass"
+          }
+        ]
+      }
+    ]
+  }
+}

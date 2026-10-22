@@ -42,7 +42,7 @@ Usage:
       --providers=a,b          ${Object.keys(PROVIDERS).join(", ")} (default: auto-detect)
       --all-skills             also install the 15 standalone phase skills
       --global                 user-level install (claude only)
-      --hooks                  install the Claude Code PostToolUse detector hook
+      --hooks                  install Claude Code lifecycle hooks (not needed with the plugin)
   groundwork update            refresh an existing install (same as install)
   groundwork help              this message
   groundwork version           print version

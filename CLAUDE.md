@@ -29,11 +29,12 @@ groundwork/
 │   │   ├── SKILL.md        Command table + routing rules; rule-marked (<!-- rule:... -->)
 │   │   ├── reference/      17 playbooks — 15 GENERATED from phase skills + init.md, doctor.md
 │   │   │   └── principles/ GENERATED trimmed principle copies (keeps relative links working)
-│   │   └── scripts/        context.mjs (session context loader), hook.mjs (detector hook)
+│   │   └── scripts/        context.mjs (session context loader), hook.mjs (lifecycle hook dispatcher)
 │   ├── greenfield-*/       Phase 1: 5 skills (greenfield-spec-from-idea, etc.)
 │   │   └── SKILL.md        Literal filename required by Agent Skills standard
 │   ├── exploration-*/      Phase 2: 4 skills
 │   └── brownfield-*/       Phase 3: 6 skills
+├── hooks/hooks.json        Plugin lifecycle hooks → hook.mjs (SessionStart/PostToolUse/Stop, ADR-006)
 ├── cli/                    npx groundwork CLI — plain ESM, ZERO runtime dependencies (ADR-005)
 │   ├── bin/groundwork.mjs  Commands: detect, doctor, install, update
 │   ├── engine/             Detector rules (each maps to a principle id), scanner, reporters
@@ -128,6 +129,9 @@ groundwork/
 - The CLI (`cli/**`) is plain ESM with zero runtime dependencies (ADR-005). Do not add
   imports beyond `node:` builtins. Every detector rule MUST carry a `principle` field naming
   an existing principle id, and must prefer silence over false positives.
+- Hooks (`hooks/hooks.json`, `install --hooks`) all route through `hook.mjs`, which must stay
+  fail-open (always exit 0) and may block only at Stop, only on `error` findings, and only once
+  per turn (`stop_hook_active`). See ADR-006.
 - Detector rules need tests: unit coverage in `tests/detector.test.ts` and, when the rule is
   broad, a trigger in `examples/case-study/before/` plus a clean pass in `after/`.
 - `.groundwork/context.md` at the repo root is groundwork's own dogfooded context; new

@@ -70,9 +70,16 @@ npx groundwork doctor                 # check .groundwork/context.md for drift
 ```
 
 Waive intentional findings inline (`// groundwork-disable <rule-id>: reason`, plus
-`-line` / `-next-line` variants) or via `.groundwork/config.json`. On Claude Code,
-`npx groundwork install --hooks` adds a PostToolUse hook that scans every edited file and
-surfaces findings back into the agent's context.
+`-line` / `-next-line` variants) or via `.groundwork/config.json`.
+
+On Claude Code, groundwork runs three lifecycle hooks
+([ADR-006](docs/decisions/ADR-006-plugin-lifecycle-hooks.md)): at **session start** it
+injects a digest of `.groundwork/context.md` (Active Principles, staleness, Proposed ADRs);
+**after each edit** it scans the edited file and feeds findings back to the agent; and at
+**stop** it re-scans every file changed that turn, blocking once if an `error` finding is
+still unresolved. The plugin ships them in `hooks/hooks.json`. Without the plugin,
+`npx groundwork install --hooks` registers the same hooks (use one or the other, not both).
+All hooks fail open: a broken hook never blocks the agent.
 
 See the before/after [case study](docs/case-study.md): the same service goes from 25
 findings (6 errors) to zero, with each fix mapped to a principle.
@@ -145,7 +152,7 @@ npx groundwork install                      # auto-detects harness dirs; router 
 npx groundwork install --all-skills         # also install the 15 standalone phase skills
 npx groundwork install --providers=claude,github,cursor,agents
 npx groundwork install --global             # user-level (~/.claude), Claude Code only
-npx groundwork install --hooks              # + Claude Code PostToolUse detector hook
+npx groundwork install --hooks              # + Claude Code lifecycle hooks (skip if using the plugin)
 npx groundwork update                       # refresh an existing install
 ```
 
@@ -205,10 +212,11 @@ groundwork/
 │   ├── groundwork/         The /groundwork router skill
 │   │   ├── SKILL.md        Command table + routing rules (rule-marked)
 │   │   ├── reference/      17 playbooks (15 compiled from phase skills + init, doctor)
-│   │   └── scripts/        context.mjs session loader, hook.mjs detector hook
+│   │   └── scripts/        context.mjs session loader, hook.mjs lifecycle hook dispatcher
 │   ├── greenfield-*/       0-to-1 skills (5) — source of truth for Define playbooks
 │   ├── exploration-*/      Research and prototype skills (4) — Explore playbooks
 │   └── brownfield-*/       Existing-system skills (6) — Evolve playbooks
+├── hooks/                  hooks.json — Claude Code plugin lifecycle hooks (ADR-006)
 ├── cli/                    npx groundwork — detect / doctor / install / update
 │   ├── engine/             Deterministic detector (zero runtime dependencies)
 │   └── data/               Generated principle index
