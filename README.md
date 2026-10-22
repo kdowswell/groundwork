@@ -217,6 +217,13 @@ approved artifact makes its receipt stale, so drift after approval shows up in `
 `doctor` instead of slipping silently into implementation. Delegated decisions are recorded
 as the agent's (`decidedBy: "agent-delegated"`), never as yours.
 
+Before asking you to accept a spec, sketch, or data model, the playbook runs a **builder
+check**. A fresh reviewer reads only the artifact, as the engineer who must build it, and lists
+what it would still need to ask. The agent fixes wording the reviewer misread, makes and labels
+calls that don't change what gets built, and brings you only the questions that do, in one
+round. On Claude Code the plugin's read-only `groundwork-builder` agent does the reading; other
+harnesses fall back to a deliberate cold read.
+
 ## Repo Structure
 
 ```
@@ -233,6 +240,7 @@ groundwork/
 │   ├── greenfield-*/       0-to-1 skills (5) — source of truth for Define playbooks
 │   ├── exploration-*/      Research and prototype skills (4) — Explore playbooks
 │   └── brownfield-*/       Existing-system skills (6) — Evolve playbooks
+├── agents/                 groundwork-builder — read-only builder-check reviewer (plugin)
 ├── hooks/                  hooks.json — Claude Code plugin lifecycle hooks (ADR-006)
 ├── cli/                    npx groundwork — detect / doctor / install / update
 │   ├── engine/             Deterministic detector (zero runtime dependencies)

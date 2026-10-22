@@ -62,7 +62,11 @@ Receipts are committed to the repository. They form the durable decision trail b
 with the router's Approvals rules (`router-approval-is-the-users`, `router-verify-handoff`,
 both covered by live behavior tests) and the hand-off chain spec → sketch → model. Each of
 those skills ends with an acceptance Checkpoint and a record step; sketch and model start by
-verifying their predecessor. The builder check follows as its own change.
+verifying their predecessor. The builder check followed as its own change. It runs in all
+three chain skills (spec, sketch, data model) just before the acceptance Checkpoint, and each
+artifact records it in a Builder Check section. The Claude Code plugin ships a read-only
+`groundwork-builder` reviewer agent (`agents/`) for the isolated read. Harnesses without
+subagents fall back to a deliberate cold read by the same agent.
 
 ## Consequences
 

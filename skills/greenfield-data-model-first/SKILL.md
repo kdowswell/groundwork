@@ -46,30 +46,37 @@ The agent proposes a first-draft data model based on available context — the s
 
 ## Steps
 
-1. **Confirm the spec you are building on is approved.** Run `groundwork verify <spec path>`, and also for the architecture sketch if one exists. Exit 0 means it is unchanged since the user accepted it (or delegated the choice): proceed. A non-zero exit means it is unapproved, changed since approval, or had changes requested. Tell the user which, summarize what changed if you can tell, and re-ask its acceptance Checkpoint before continuing. Never record the approval yourself to get past this step. If there is no spec file at all, say so and offer to write one first, or proceed only on assumptions the user explicitly accepts. If the CLI is unavailable, say the approval could not be verified and ask the user to confirm the spec is final.
+1. **List the core entities.** **First, if a spec file is named or present in the project, run `groundwork verify <spec path>` from the project root, and the same for an architecture sketch if one exists, and act on the first Checkpoint before writing anything else.** With no spec file, work from the request as given. Start from the primary data entity in the spec. Expand outward: what other things does the system need to know about? Write each entity as a noun with a one-sentence definition. Aim for 3–7 core entities. If you have more than 10, you are either modeling the whole domain (too broad) or modeling implementation details (too narrow).
 
-2. **List the core entities.** Start from the primary data entity in the spec. Expand outward: what other things does the system need to know about? Write each entity as a noun with a one-sentence definition. Aim for 3–7 core entities. If you have more than 10, you are either modeling the whole domain (too broad) or modeling implementation details (too narrow).
+2. **Draw relationships.** For each pair of related entities, write the cardinality: one-to-one, one-to-many, many-to-many. Where the relationship is many-to-many, name the join concept explicitly — it is almost always a first-class entity that carries meaning of its own.
 
-3. **Draw relationships.** For each pair of related entities, write the cardinality: one-to-one, one-to-many, many-to-many. Where the relationship is many-to-many, name the join concept explicitly — it is almost always a first-class entity that carries meaning of its own.
+3. **Assign ownership to each entity.** For each entity, name the service, team, or role that is the authoritative source of truth. No entity should have two owners. If two teams both feel they own an entity, that's an organizational boundary problem that will become a system boundary problem — surface it now.
 
-4. **Assign ownership to each entity.** For each entity, name the service, team, or role that is the authoritative source of truth. No entity should have two owners. If two teams both feel they own an entity, that's an organizational boundary problem that will become a system boundary problem — surface it now.
+4. **List the primary access patterns.** For each entity, write the 2–4 most common ways the system reads it: by which field, in what order, with what filters. This is how you validate the model against the queries it must serve. If an access pattern requires scanning the whole table, it's a design signal — not necessarily wrong, but worth a decision.
 
-5. **List the primary access patterns.** For each entity, write the 2–4 most common ways the system reads it: by which field, in what order, with what filters. This is how you validate the model against the queries it must serve. If an access pattern requires scanning the whole table, it's a design signal — not necessarily wrong, but worth a decision.
-
-6. **Choose a schema evolution strategy.** Pick one approach and document why:
+5. **Choose a schema evolution strategy.** Pick one approach and document why:
    - **Additive only** — new fields only; never remove or rename; consumers ignore unknown fields
    - **Versioned schemas** — explicit schema versions; consumers negotiate which version they speak
    - **Migration-managed** — explicit migration scripts; each change is coordinated and deployed
    
    The right choice depends on whether external consumers exist, how often schema changes are expected, and the team's operational capability.
 
-7. **Flag consistency requirements.** For each relationship that crosses a service or storage boundary, decide: does this need to be strongly consistent (two-phase commit, distributed transaction) or eventually consistent (event-driven, reconciliation)? Write the choice and the reasoning. "We'll figure it out" becomes "everything is broken" during an incident.
+6. **Flag consistency requirements.** For each relationship that crosses a service or storage boundary, decide: does this need to be strongly consistent (two-phase commit, distributed transaction) or eventually consistent (event-driven, reconciliation)? Write the choice and the reasoning. "We'll figure it out" becomes "everything is broken" during an incident.
 
-8. **Check the model against active principles.** For each principle in the active set that touches data (data-ownership, consistency-models, schema-evolution, data-classification), verify the model is compliant. Note any tensions.
+7. **Check the model against active principles.** For each principle in the active set that touches data (data-ownership, consistency-models, schema-evolution, data-classification), verify the model is compliant. Note any tensions.
+
+8. **Run a builder check before you ask the user anything.** It runs on the finished draft: write every earlier step in full first, and never open with questions. Do not defer it until open questions are resolved either. Its purpose is to gather every question into one round, asked at the end of the same response that delivers the complete data model, so the user is asked once. Hand the data model to a fresh reviewer: the data model file only, not this conversation. Give them this brief: "You will build exactly this. List every question you would need answered before you could start, and every place where two competent builders would build different things. Quote the line each question comes from. Do not suggest improvements." Use an isolated subagent if the runtime offers one. Otherwise do a deliberate cold read yourself, treating anything not written in the data model as unknown. Sort each question the reviewer returns into one of three groups:
+   - **Answered by the data model:** the reviewer missed it. Tighten the wording so the next reader won't.
+   - **Your call:** the answer doesn't change what gets built, or one option is clearly right. Decide, write the answer into the data model, and label it "Agent call:".
+   - **For the user:** the answer changes what gets built.
+   Bring the user only the last group, in one round. Record every question and its resolution in the data model's Builder Check section. The section is never left out; if the cold read finds nothing, write "No open questions."
 
 9. **Record the user's decision.** When the user answers the acceptance Checkpoint, run `groundwork approve <data model path> --checkpoint=greenfield-data-model-first/accept`, adding `--decision=changes-requested` if they asked for changes or `--decision=delegated` if they told you to decide. Record only an answer the user gave in this conversation. With no one available to answer, record nothing and leave the artifact marked as a draft. If the CLI is unavailable, write the decision and date at the top of the artifact instead and say it is unverified.
 
 ## Checkpoints
+
+**Is the spec you are building on approved and unchanged?**
+Decided by step 1's verify. **Exit 0:** the spec is unchanged since the user accepted it (or delegated the choice), so build on it as written. **Non-zero (unapproved, changed since approval, or changes requested):** tell the user which, summarize what changed if you can tell, and re-ask the spec's acceptance Checkpoint before going further. Never record the approval yourself to get past it. **A spec file exists but the CLI is unavailable or fails to run:** this is not the no-file case. Say the approval could not be verified, ask the user to confirm the spec is final, and stop there: do not draft from it until they answer. A path error from the CLI means you ran it from the wrong directory; rerun it from the project root before concluding anything. **No spec file available** (none named, none in the project, even if the user mentions one elsewhere): work from the request as given. List the requirements you assumed under "Working Spec (unapproved)" in the output, and keep going; the acceptance Checkpoint at the end covers them with this artifact. Never end a turn just to ask whether a spec exists.
 
 **Does any entity have no clear owner?**
 An ownerless entity is an orphan — it will be modified by whoever is most convenient at the time, which means it will eventually be inconsistent. If ownership is genuinely shared, that's an architectural smell: either the entity should be split, or one owner should be chosen with explicit read/write rules for others.
@@ -80,34 +87,37 @@ If a common read requires joining 4+ tables or scanning a large table with no in
 **Is the schema evolution strategy compatible with the deployment model?**
 Migration-managed evolution requires coordinated deploys and rollback capability. If the team can't reliably coordinate deployments, migration-managed schemas will break in production. The strategy must match the team's operational maturity, not just the theoretical best practice.
 
+**Did the builder check surface questions that change what gets built?**
+**Yes:** put them to the user before the acceptance Checkpoint, and fold each answer into the data model. Acceptance cannot be asked while any of them is open, because the user would be approving a data model that two builders would read differently. **No:** go straight to acceptance, and list the "Agent call:" decisions you made so the user can overturn any of them when they answer.
+
 **Does the user accept this data model as the basis for implementation?**
 Ask once the data model is complete. **Accepted:** record the approval; implementation may start from it, and any later edit to the data model makes the approval stale, so the next step re-asks. **Changes requested:** record that, revise, and ask again; nothing downstream starts from this version. **Delegated ("you decide"):** record it as delegated, state the calls you made in your next reply, and proceed. The agent never answers this Checkpoint on the user's behalf.
 
 ## Principle Application
 
 **data-ownership**
-Steps 2 and 4 are direct applications of this principle. Ask the ownership questions at Step 4 — any entity where ownership is unclear is a Blocking open question; do not proceed to implementation until it's resolved.
+Steps 1 and 3 are direct applications of this principle. Ask the ownership questions at Step 3 — any entity where ownership is unclear is a Blocking open question; do not proceed to implementation until it's resolved.
 Full reference: [principles/data-ownership.md](principles/data-ownership.md)
 
 **schema-evolution**
-Step 6 is where this principle is operationalized. The schema evolution strategy must be chosen before the first external consumer exists — changing it after consumers exist is breaking-change territory.
+Step 5 is where this principle is operationalized. The schema evolution strategy must be chosen before the first external consumer exists — changing it after consumers exist is breaking-change territory.
 Full reference: [principles/schema-evolution.md](principles/schema-evolution.md)
 
 **consistency-models**
-Step 7 applies this principle. If the project context signals offline-first or field deployment, strong consistency across all relationships is architecturally impossible — the model must be designed for eventual consistency from the start.
+Step 6 applies this principle. If the project context signals offline-first or field deployment, strong consistency across all relationships is architecturally impossible — the model must be designed for eventual consistency from the start.
 Full reference: [principles/consistency-models.md](principles/consistency-models.md)
 
 **bounded-contexts**
-Steps 2 and 4 together are where bounded context decisions crystallize. Listing entities forces the question of which entities belong to this model and which belong to a neighboring domain. Assigning ownership forces the question of where the boundary actually falls. A data model that contains entities owned by multiple distinct teams is not one model — it's several models that haven't been separated yet.
+Steps 1 and 3 together are where bounded context decisions crystallize. Listing entities forces the question of which entities belong to this model and which belong to a neighboring domain. Assigning ownership forces the question of where the boundary actually falls. A data model that contains entities owned by multiple distinct teams is not one model — it's several models that haven't been separated yet.
 
-When an entity's ownership is contested between two teams, that's not a personnel question — it's a signal that the two teams are working within the same conceptual space and the bounded context hasn't been properly drawn. Surface this in Step 4 rather than splitting ownership or creating shared write access as a workaround.
+When an entity's ownership is contested between two teams, that's not a personnel question — it's a signal that the two teams are working within the same conceptual space and the bounded context hasn't been properly drawn. Surface this in Step 3 rather than splitting ownership or creating shared write access as a workaround.
 
 What good looks like: every entity in the model has exactly one owner, and entities owned by other teams appear in the model only as identifiers (foreign keys to their bounded context) rather than as full embedded records.
 
 Full reference: [principles/bounded-contexts.md](principles/bounded-contexts.md)
 
 **conways-law-organizational-alignment**
-Step 4 (assign ownership to each entity) operationalizes this principle at the data layer. "No entity should have two owners" is simultaneously a data architecture rule and an organizational alignment rule: an entity with two owners has two teams that must coordinate on every schema change, which means its schema change rate is bounded by the coordination cost between those teams. When ownership is contested in Step 4, that is not a data modeling problem — it is a signal that team boundaries and service boundaries haven't been drawn in the right place, and the data model is inheriting that misalignment. Surface contested ownership as a Blocking open question and resolve it through the organizational conversation before proceeding. The resolution is often splitting the entity into two distinct domain entities each owned by one team, rather than forcing shared write access.
+Step 3 (assign ownership to each entity) operationalizes this principle at the data layer. "No entity should have two owners" is simultaneously a data architecture rule and an organizational alignment rule: an entity with two owners has two teams that must coordinate on every schema change, which means its schema change rate is bounded by the coordination cost between those teams. When ownership is contested in Step 3, that is not a data modeling problem — it is a signal that team boundaries and service boundaries haven't been drawn in the right place, and the data model is inheriting that misalignment. Surface contested ownership as a Blocking open question and resolve it through the organizational conversation before proceeding. The resolution is often splitting the entity into two distinct domain entities each owned by one team, rather than forcing shared write access.
 Full reference: [principles/conways-law-organizational-alignment.md](principles/conways-law-organizational-alignment.md)
 
 ## Output Format
@@ -143,4 +153,9 @@ Reason: ...
 
 ## Principle Compliance Notes
 - {{PRINCIPLE}}: ...
+
+## Builder Check
+| Question (from a cold read) | Resolution |
+|---|---|
+| ... | Answered in data model (wording tightened) / Agent call: ... / User: ... |
 ```

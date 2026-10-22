@@ -67,11 +67,17 @@ The human's job is to answer questions honestly, including "I don't know." Open 
    - **Blocking** — the answer changes the architecture
    - **Deferrable** — can be decided during build without structural cost
 
-7. **Resolve blocking questions interactively.** After writing the spec, do not exit the skill with blocking questions still open if the user is present. Work through them in batches of no more than three at a time, starting with the most architecture-consequential question. For questions with a natural option set, enumerate the choices explicitly for the user to select (e.g., "Backend approach — A) Build new backend  B) Integrate with existing system  C) Not yet decided"). For fully open-ended questions with no natural options, ask directly in conversation. After each batch of answers, update the spec: move answered questions from the Open Questions table to the relevant spec section, and update entity ownership, scope, or success criteria as needed. If a question cannot be answered, record the owner explicitly (a name or role, not "TBD") and a condition under which it will be resolved.
+7. **Run a builder check before you ask the user anything.** It runs on the finished draft: write every earlier step in full first, and never open with questions. Do not defer it until open questions are resolved either. Its purpose is to gather every question into one round, asked at the end of the same response that delivers the complete spec, so the user is asked once. Hand the spec to a fresh reviewer: the spec file only, not this conversation. Give them this brief: "You will build exactly this. List every question you would need answered before you could start, and every place where two competent builders would build different things. Quote the line each question comes from. Do not suggest improvements." Use an isolated subagent if the runtime offers one. Otherwise do a deliberate cold read yourself, treating anything not written in the spec as unknown. Sort each question the reviewer returns into one of three groups:
+   - **Answered by the spec:** the reviewer missed it. Tighten the wording so the next reader won't.
+   - **Your call:** the answer doesn't change what gets built, or one option is clearly right. Decide, write the answer into the spec, and label it "Agent call:".
+   - **For the user:** the answer changes what gets built.
+   Bring the user only the last group, in one round, merged with any blocking questions still open (Step 8). Record every question and its resolution in the spec's Builder Check section. The section is never left out; if the cold read finds nothing, write "No open questions."
 
-8. **Identify the riskiest assumption.** Pick the one assumption in the spec that, if wrong, would require the most rework. Write it as a falsifiable statement. This becomes the first thing to test or validate — before the architecture is locked.
+8. **Resolve blocking questions interactively.** After writing the spec, do not exit the skill with blocking questions still open if the user is present. Work through them in batches of no more than three at a time, starting with the most architecture-consequential question. For questions with a natural option set, enumerate the choices explicitly for the user to select (e.g., "Backend approach — A) Build new backend  B) Integrate with existing system  C) Not yet decided"). For fully open-ended questions with no natural options, ask directly in conversation. After each batch of answers, update the spec: move answered questions from the Open Questions table to the relevant spec section, and update entity ownership, scope, or success criteria as needed. If a question cannot be answered, record the owner explicitly (a name or role, not "TBD") and a condition under which it will be resolved.
 
-9. **Record the user's decision.** When the user answers the acceptance Checkpoint, run `groundwork approve <spec path> --checkpoint=greenfield-spec-from-idea/accept`, adding `--decision=changes-requested` if they asked for changes or `--decision=delegated` if they told you to decide. Record only an answer the user gave in this conversation. With no one available to answer, record nothing and leave the artifact marked as a draft. If the CLI is unavailable, write the decision and date at the top of the artifact instead and say it is unverified.
+9. **Identify the riskiest assumption.** Pick the one assumption in the spec that, if wrong, would require the most rework. Write it as a falsifiable statement. This becomes the first thing to test or validate — before the architecture is locked.
+
+10. **Record the user's decision.** When the user answers the acceptance Checkpoint, run `groundwork approve <spec path> --checkpoint=greenfield-spec-from-idea/accept`, adding `--decision=changes-requested` if they asked for changes or `--decision=delegated` if they told you to decide. Record only an answer the user gave in this conversation. With no one available to answer, record nothing and leave the artifact marked as a draft. If the CLI is unavailable, write the decision and date at the top of the artifact instead and say it is unverified.
 
 ## Checkpoints
 
@@ -86,6 +92,9 @@ If the primary user is a field worker, mobile user, or anyone not sitting at a d
 
 **Are blocking questions still open after Phase 1?**
 If the spec contains blocking questions after the draft is written, Phase 2 must run — even if it feels premature. A spec with blocking questions is a draft, not an output. If running in a non-interactive or fully-automated context (no human available to answer), mark the spec explicitly as "Draft — blocking questions unresolved" at the top and record that Phase 2 must run before architecture begins. Do not pass a draft spec to the next phase as if it were complete.
+
+**Did the builder check surface questions that change what gets built?**
+**Yes:** put them to the user before the acceptance Checkpoint, and fold each answer into the spec. Acceptance cannot be asked while any of them is open, because the user would be approving a spec that two builders would read differently. **No:** go straight to acceptance, and list the "Agent call:" decisions you made so the user can overturn any of them when they answer.
 
 **Does the user accept this spec as the basis for architecture and data modeling?**
 Ask once the spec is complete. **Accepted:** record the approval; architecture and data modeling may start from it, and any later edit to the spec makes the approval stale, so the next step re-asks. **Changes requested:** record that, revise, and ask again; nothing downstream starts from this version. **Delegated ("you decide"):** record it as delegated, state the calls you made in your next reply, and proceed. The agent never answers this Checkpoint on the user's behalf.
@@ -186,4 +195,9 @@ Owner: {{TEAM, SERVICE, OR ROLE}}
 
 ## Riskiest Assumption
 {{STATE THE ASSUMPTION AS A FALSIFIABLE CLAIM}}
+
+## Builder Check
+| Question (from a cold read) | Resolution |
+|---|---|
+| ... | Answered in spec (wording tightened) / Agent call: ... / User: ... |
 ```

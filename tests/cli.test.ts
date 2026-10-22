@@ -506,3 +506,13 @@ describe("plugin hooks manifest", () => {
     expect(existsSync(join(ROOT, "skills/groundwork/scripts/hook.mjs"))).toBe(true);
   });
 });
+
+describe("plugin agents", () => {
+  it("groundwork-builder is read-only and named after its file", () => {
+    const raw = readFileSync(join(ROOT, "agents/groundwork-builder.md"), "utf8");
+    const frontmatter = raw.split(/^---$/m)[1];
+    expect(frontmatter).toMatch(/^name: groundwork-builder$/m);
+    expect(frontmatter).toMatch(/^tools: Read$/m);
+    expect(frontmatter).toMatch(/^description: .*builder check/m);
+  });
+});

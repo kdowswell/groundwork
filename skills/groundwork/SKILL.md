@@ -29,7 +29,11 @@ what the request needs — never preload multiple playbooks. <!-- rule:router-pr
    exists. <!-- rule:router-context-first -->
 2. **Route the request** using the Commands table and Routing rules below. Load exactly one
    playbook from `reference/` and follow it. <!-- rule:router-one-playbook -->
-3. **Honor active principles.** If project context names active principles, they constrain every
+3. **Verify artifacts you will build on.** If the playbook starts from an existing spec,
+   sketch, or data model file (named in the request or present in the project), run
+   `groundwork verify <file>` from the project root before following the playbook, and act on
+   the result as the Approvals section says. <!-- rule:router-verify-handoff -->
+4. **Honor active principles.** If project context names active principles, they constrain every
    command's output; synced copies live in `reference/principles/`. <!-- rule:router-honor-principles -->
 
 ## Commands
@@ -106,4 +110,6 @@ ten-year-old codebase is still Define work. <!-- rule:router-phase-from-request 
   approval, or changes requested), tell the user which and re-ask that artifact's acceptance
   Checkpoint before continuing. Do not proceed silently, and do not approve it yourself to get
   past the check. If the CLI is unavailable, say the approval could not be verified and ask
-  the user to confirm. <!-- rule:router-verify-handoff -->
+  the user to confirm. When no such artifact exists, the request itself is the input: draft
+  from it, stating the requirements you assumed, rather than stopping to ask for one.
+  <!-- rule:router-verify-handoff -->
