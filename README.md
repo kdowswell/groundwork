@@ -224,6 +224,24 @@ calls that don't change what gets built, and brings you only the questions that 
 round. On Claude Code the plugin's read-only `groundwork-builder` agent does the reading; other
 harnesses fall back to a deliberate cold read.
 
+### Review pages
+
+Long artifacts are easier to judge as a page than in a terminal:
+
+```bash
+npx groundwork render docs/spec.md           # writes .groundwork/review/docs__spec.md.html
+npx groundwork render docs/spec.md --serve   # same page on 127.0.0.1, with Approve / Request changes
+```
+
+The page puts the document beside a decision panel: approval status, open questions for you,
+cited principles, and detector findings for files the artifact names. With `--serve`, your
+decision is recorded as an approval receipt pinned to exactly the version you read; if the
+file changes before you click, nothing is recorded. The Markdown stays the source of truth.
+Pages are generated, git-ignored, and contain no scripts
+([ADR-008](docs/decisions/ADR-008-generated-html-review-views.md)). When a spec, sketch, or
+data model is long or still has open questions, `/groundwork` offers the page at the
+acceptance Checkpoint.
+
 ## Repo Structure
 
 ```

@@ -1,7 +1,7 @@
 # ADR-008: Generated HTML review views over Markdown sources
 
 **Date:** 2026-10-22
-**Status:** Proposed
+**Status:** Accepted
 
 ## Context
 
@@ -22,19 +22,36 @@ rather than HTML written for humans. Both are right, for different readers.
 Markdown stays the single source of truth. HTML is a **generated, disposable view** of it,
 the same source-to-generated relationship ADR-003 uses for router playbooks.
 
-- `groundwork review <artifact.md>` renders a self-contained HTML page into
-  `.groundwork/review/` (gitignored): inline CSS, light/dark via `prefers-color-scheme`, no
-  external scripts, fonts or network requests, built with `node:` builtins only (ADR-005).
-- The page presents structure the Markdown implies: Checkpoints as decision cards with
-  their options and downstream consequences, cited principles linked to their files, open
-  questions from the builder check (ADR-007), and current detector findings for files the
-  artifact names.
-- `groundwork review --serve` starts a localhost-only server on an ephemeral port. Its
-  approve / request-changes controls write the ADR-007 receipt, pinned to the digest of the
-  Markdown that was rendered. If the source changed since render, the server refuses the
-  approval and asks for a re-render. Without `--serve`, the page is read-only.
-- Agents never read the HTML. Playbooks continue to reference the Markdown, and the router
-  offers `review` at Checkpoints only when an artifact is long enough to benefit.
+- `groundwork render <artifact.md>` renders a self-contained HTML page into
+  `.groundwork/review/` (git-ignored by a generated `.gitignore`): inline CSS, light/dark via
+  `prefers-color-scheme`, no scripts, fonts or network requests (enforced by a
+  Content-Security-Policy), built with `node:` builtins only (ADR-005). The command is named
+  `render`, not `review`, because `/groundwork review` is already the router's brownfield
+  architecture-review command.
+- The renderer supports a deliberate Markdown subset and treats the artifact as untrusted:
+  all text is HTML-escaped, raw HTML (including inline SVG, which can carry script) is never
+  passed through, and links survive only for http(s), mailto, anchors and relative paths.
+- Beside the document, a decision panel shows what a reviewer needs to accept or push back:
+  current approval status (ADR-007), open questions for the user (builder-check rows
+  resolved as "User:" and blocking open questions), whether the artifact rests on a
+  "Working Spec (unapproved)", the principles it cites (exact principle ids), and detector
+  findings for project files it names.
+- `groundwork render --serve` serves the page on 127.0.0.1 at an ephemeral port. Approve /
+  Request changes are plain form posts that write the ADR-007 receipt with
+  `decidedBy: "user"`. There is no delegate button: the browser is the human's channel.
+  The server requires a per-session random token, accepts only its own Host and Origin
+  (against DNS rebinding and cross-site posts), and refuses the decision when the file's
+  digest no longer matches what was rendered. It exits after one decision or 30 idle
+  minutes. Without `--serve`, the page is read-only and shows the commands to decide.
+- The checkpoint an approval records comes from the artifact's title (`Spec:`,
+  `Architecture:`, `Data Model:` map to the three chain skills' `/accept` checkpoints), or
+  from `--checkpoint`.
+- Agents never read the HTML. Playbooks keep referencing the Markdown. At a spec, sketch, or
+  data model's acceptance Checkpoint, the router and the three chain skills offer the page
+  once, but only when the artifact is long (about 80+ lines) or has open questions for the
+  user (`rule:router-offer-render`). The agent starts the server only with the user's
+  go-ahead and never submits the form. A decision made in the page is already recorded, so
+  the agent confirms it with `verify` rather than recording it again.
 
 ## Consequences
 
@@ -43,10 +60,11 @@ sources. The approval path from ADR-007 gets a human-friendly front end that can
 something other than what was shown.
 **Negative:** a Markdown-to-HTML renderer must be written and maintained without
 dependencies, so it will support a deliberate subset of Markdown. A local server is new
-attack surface; it is bound to loopback, unauthenticated, and exits after one decision or
-an idle timeout.
-**Neutral:** diagrams are rendered only when the source already contains them as inline SVG.
-Generating diagrams from prose is out of scope for this ADR.
+attack surface; it is bound to loopback, gated by a per-session token plus Host/Origin
+checks, and exits after one decision or an idle timeout.
+**Neutral:** no diagrams in this version. Inline SVG from the source is escaped rather than
+rendered, because passing it through would reopen script injection; a sanitizing path or
+diagrams generated from structured data are future decisions.
 
 ## Alternatives Considered
 

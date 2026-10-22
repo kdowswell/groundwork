@@ -19,4 +19,4 @@ Never edit an accepted ADR's decision — write a new one that supersedes it.
 - [ADR-005: Deterministic detector CLI in dependency-free ESM](ADR-005-deterministic-detector-cli.md)
 - [ADR-006: Plugin-shipped lifecycle hooks with a single fail-open dispatcher](ADR-006-plugin-lifecycle-hooks.md)
 - [ADR-007: Hash-pinned checkpoint approvals and a builder check](ADR-007-hash-pinned-checkpoint-approvals.md)
-- [ADR-008: Generated HTML review views over Markdown sources](ADR-008-generated-html-review-views.md) (Proposed)
+- [ADR-008: Generated HTML review views over Markdown sources](ADR-008-generated-html-review-views.md)

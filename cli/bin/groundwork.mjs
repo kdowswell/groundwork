@@ -8,9 +8,10 @@
  *   npx groundwork update  (same as install; idempotent)
  *   npx groundwork approve <artifact> --checkpoint=<id> [--decision=...] [--notes=...]
  *   npx groundwork verify [artifact] [--json]
+ *   npx groundwork render <artifact> [--serve] [--checkpoint=<id>] [--port=<n>]
  */
 import { readFileSync } from "node:fs";
-import { join, resolve, dirname } from "node:path";
+import { join, relative, resolve, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 import { detect, countBySeverity } from "../engine/detect.mjs";
 import { formatHuman, formatJson } from "../engine/report.mjs";
@@ -23,6 +24,7 @@ import {
   formatVerifyHuman,
   DECISIONS,
 } from "../commands/approvals.mjs";
+import { render, serve } from "../commands/render.mjs";
 
 const PACKAGE_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "../..");
 
@@ -62,6 +64,12 @@ Usage:
   groundwork verify [file]     report approval receipts that are stale or missing their file;
                                with a file, exit 0 only if it has a fresh, non-rejected receipt
       --json                   JSON output
+  groundwork render <file>     write a review page for a spec, sketch, or data model
+                               to .groundwork/review/ (self-contained HTML)
+      --serve                  serve it on 127.0.0.1 with Approve / Request changes;
+                               the decision is recorded as an approval receipt
+      --checkpoint=<id>        checkpoint to record (default: from the artifact's title)
+      --port=<n>               port for --serve (default: any free port)
   groundwork help              this message
   groundwork version           print version
 
@@ -71,7 +79,7 @@ or per line with groundwork-disable-line / groundwork-disable-next-line, or via
 .groundwork/config.json: {"detector": {"ignoreRules": [], "ignoreFiles": []}}
 `;
 
-function main() {
+async function main() {
   const args = parseArgs(process.argv.slice(2));
   const command = args._[0] ?? "help";
 
@@ -133,6 +141,28 @@ function main() {
       process.exit(result.ok ? 0 : 1);
       break;
     }
+    case "render": {
+      const artifact = args._[1];
+      if (!artifact) throw new Error("render needs an artifact path");
+      const checkpoint = typeof args.flags.checkpoint === "string" ? args.flags.checkpoint : undefined;
+      if (!args.flags.serve) {
+        const result = render(process.cwd(), artifact, { checkpoint });
+        console.log(`✓ Review page for ${result.artifactPath}: ${relative(process.cwd(), result.path)}`);
+        console.log("  Open it in a browser. Re-run with --serve to approve or request changes from the page.");
+        break;
+      }
+      const port = typeof args.flags.port === "string" ? Number(args.flags.port) : undefined;
+      const { url, done, rendered } = await serve(process.cwd(), artifact, { checkpoint, port });
+      console.log(`Reviewing ${rendered.artifactPath} at ${url}`);
+      console.log("Open it in a browser and decide there. Ctrl+C to stop without deciding.");
+      const outcome = await done;
+      console.log(
+        outcome.decision
+          ? `✓ Recorded ${outcome.decision} for ${rendered.artifactPath} at ${rendered.checkpoint}`
+          : "· No decision recorded (server idled out).",
+      );
+      break;
+    }
     case "version": {
       const pkg = JSON.parse(readFileSync(join(PACKAGE_ROOT, "package.json"), "utf8"));
       console.log(pkg.version);
@@ -150,7 +180,7 @@ function main() {
 }
 
 try {
-  main();
+  await main();
 } catch (err) {
   console.error(`groundwork: ${err.message}`);
   process.exit(2);
