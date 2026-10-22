@@ -1,0 +1,99 @@
+[
+  {
+    "id": "solo-invoicing-monolith-decision",
+    "skill": "greenfield-adr-setup",
+    "task_description": "I'm a solo founder building an invoicing tool for freelancers. I just decided to go with a single relational database and a monolith instead of the serverless setup I originally planned, and I've flip-flopped on this twice already. I want to start keeping a record of decisions like this so future-me, and any engineer I eventually hire, knows why things are the way they are. What should I set up?",
+    "rubric": [
+      {
+        "dimension": "adr_format_completeness",
+        "description": "1.0=establishes a numbered, sequential ADR template (e.g., ADR-001-<slug>.md in a docs/decisions directory) that includes date, a status field (Proposed/Accepted/Deprecated/Superseded), context, decision, consequences, and an alternatives-considered section; 0.5=a template exists but omits the status field or the alternatives-considered section; 0.0=no defined format — just advises 'write your decisions down'",
+        "weight": 0.25
+      },
+      {
+        "dimension": "first_adr_written",
+        "description": "1.0=drafts the actual first ADR for the monolith-plus-relational-database decision, with the decision stated as a declarative sentence ('We will use X rather than Y') and the rejected serverless option recorded with the reason it lost; 0.5=creates a template or stub ADR but leaves the alternatives section empty or the decision vague; 0.0=no ADR is actually written",
+        "weight": 0.25
+      },
+      {
+        "dimension": "threshold_criteria_defined",
+        "description": "1.0=documents concrete, testable criteria for when a future decision deserves an ADR (expensive to reverse, surprised the author, involved a tradeoff future developers need, a reasonable engineer would ask why) and implies most small decisions do not; 0.5=says 'document important decisions' without a usable test; 0.0=no threshold — implies every decision or no decision gets an ADR",
+        "weight": 0.20
+      },
+      {
+        "dimension": "workflow_integration",
+        "description": "1.0=names a specific trigger for writing ADRs (at the moment the decision is made) and makes the directory discoverable by referencing it from the README or agent instructions file; 0.5=says to 'keep ADRs up to date' without a trigger or discoverability step; 0.0=no integration into how the founder actually works",
+        "weight": 0.15
+      },
+      {
+        "dimension": "lightweight_and_forward_looking",
+        "description": "1.0=template stays at or under about 7 sections and is fillable in 15-20 minutes, lives in the repository with the code, and explicitly avoids backfilling months of past decisions from memory; 0.5=format is heavier than needed for one person, or suggests retroactively documenting old decisions; 0.0=proposes heavyweight tooling or a documentation process a solo developer will abandon in a week",
+        "weight": 0.15
+      }
+    ]
+  },
+  {
+    "id": "logistics-team-relitigated-decisions",
+    "skill": "greenfield-adr-setup",
+    "task_description": "Our six-person engineering team at a logistics startup keeps relitigating the same architectural arguments. Last month we debated event-driven versus direct REST calls between our dispatch and tracking services, settled on events, and this week the same debate restarted in a PR thread because nobody wrote down why we chose events or what would make us revisit it. I want to fix this before we make the next big call, which is how the driver mobile app syncs with the backend.",
+    "context": "## Team and System\n\nSix engineers, one monorepo containing two services (dispatch, tracking) and a driver mobile app. Team documentation currently lives in a wiki that engineers rarely open; code review happens in pull requests.\n\n## Decision Backlog\n\n- Settled but undocumented: event bus between dispatch and tracking (chosen ~1 month ago after a long debate)\n- Being made now: sync strategy for the driver mobile app (intermittent connectivity on the road)",
+    "rubric": [
+      {
+        "dimension": "adr_format_completeness",
+        "description": "1.0=establishes numbered ADR files with date, status (Proposed/Accepted/Deprecated/Superseded, including superseded-by linking so a reversed decision points at its replacement), context, decision, consequences, and alternatives considered; 0.5=format defined but missing status lifecycle or alternatives; 0.0=no concrete format established",
+        "weight": 0.20
+      },
+      {
+        "dimension": "first_adr_written",
+        "description": "1.0=writes at least one real ADR for a current decision — the driver-app sync strategy (as Proposed) and/or the still-fresh event-bus choice — capturing the REST-vs-events alternatives with the reasons REST was rejected, so the PR-thread debate has a citable answer; 0.5=recommends which decisions to capture but produces only an empty template; 0.0=no ADR written",
+        "weight": 0.25
+      },
+      {
+        "dimension": "threshold_criteria_defined",
+        "description": "1.0=gives the team an explicit shared threshold for ADR-worthiness (expensive to reverse — more than about a week of work, non-obvious or surprising, carries a tradeoff, would be questioned without context) so six engineers apply it consistently; 0.5=vague 'big decisions get ADRs' guidance; 0.0=no threshold stated",
+        "weight": 0.20
+      },
+      {
+        "dimension": "location_and_discoverability",
+        "description": "1.0=puts ADRs in the monorepo (e.g., docs/decisions/) rather than the neglected wiki, with explicit reasoning that ADRs living apart from code drift, and links the directory from the README so new engineers and reviewers find it; 0.5=picks a location without justifying it against the wiki alternative or without a discoverability step; 0.0=no location decision, or defaults to the wiki nobody reads",
+        "weight": 0.20
+      },
+      {
+        "dimension": "workflow_integration",
+        "description": "1.0=defines when ADRs get written in this team's flow (at decision time, with PR review as the natural checkpoint — e.g., a reviewer can ask 'where's the ADR?' instead of relitigating in the thread); 0.5=says ADRs should become a habit without naming the trigger point; 0.0=no process for how the next decision produces an ADR",
+        "weight": 0.15
+      }
+    ]
+  },
+  {
+    "id": "bank-mainframe-integration-choice",
+    "skill": "greenfield-adr-setup",
+    "task_description": "I lead a platform team at a bank and we're about to choose how our new customer-onboarding system integrates with the core mainframe — the options on the table are nightly batch file exchange, a message-queue bridge, or a vendor API gateway. Whatever we pick will be nearly impossible to unwind, and our last big integration choice is now tribal knowledge held by two engineers who retire this year. Auditors also periodically ask us to show why technical decisions were made. I want decision documentation in place before we commit.",
+    "rubric": [
+      {
+        "dimension": "adr_format_completeness",
+        "description": "1.0=establishes a numbered ADR format with date, status field (with the pending integration choice entering as Proposed and moving to Accepted), context describing the forces that made the decision necessary, the decision as a declarative sentence, consequences (positive/negative), and alternatives considered; 0.5=format present but no status lifecycle or no alternatives section; 0.0=no defined format",
+        "weight": 0.25
+      },
+      {
+        "dimension": "first_adr_written",
+        "description": "1.0=drafts the ADR for the mainframe integration decision itself, recording all three candidate approaches (batch file exchange, message-queue bridge, vendor gateway) with explicit rejection reasoning for the ones not chosen — the section auditors and future engineers will actually need; 0.5=ADR drafted but only the winning option is discussed, alternatives thin or absent; 0.0=no ADR produced for the current decision",
+        "weight": 0.25
+      },
+      {
+        "dimension": "threshold_criteria_defined",
+        "description": "1.0=documents when this team writes an ADR using concrete criteria (costly to reverse, surprising, tradeoff-laden, or likely to be questioned — which the mainframe choice satisfies on every count) so the practice survives beyond this one decision; 0.5=threshold gestured at but not written as usable criteria; 0.0=no threshold",
+        "weight": 0.15
+      },
+      {
+        "dimension": "no_retroactive_reconstruction",
+        "description": "1.0=explicitly declines to reconstruct the retiring engineers' historical decisions from memory as backdated ADRs (unreliable records), instead starting the record from now — at most capturing current understanding of legacy constraints as context in new ADRs; 0.5=suggests interviewing the retirees but blurs the line between context capture and fabricating historical ADRs; 0.0=proposes retroactively writing months or years of past ADRs from recollection",
+        "weight": 0.15
+      },
+      {
+        "dimension": "workflow_and_audit_fit",
+        "description": "1.0=defines where ADRs live (with the code or an equally durable versioned location), when they get written (at decision time or in architecture review), and how the numbered, dated, statused trail serves the auditor's 'show us why' question without inventing a parallel heavyweight governance process; 0.5=addresses either the workflow trigger or the audit need but not both; 0.0=no integration into how decisions actually get made and reviewed",
+        "weight": 0.20
+      }
+    ]
+  }
+]

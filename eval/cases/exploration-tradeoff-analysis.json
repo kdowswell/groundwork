@@ -1,0 +1,105 @@
+[
+  {
+    "id": "solo-saas-media-processing",
+    "skill": "exploration-tradeoff-analysis",
+    "task_description": "I run a podcast-tools SaaS by myself — creators upload episodes and get shareable audiogram clips. Right now audio processing happens synchronously in the upload request, and long episodes are starting to hit timeouts. I keep flip-flopping between adding a background job system or just paying for a managed media-processing service, and I've rebuilt this decision in my head a dozen times. I want to settle it properly and write down why, so I stop second-guessing myself.",
+    "rubric": [
+      {
+        "dimension": "decision_statement_precision",
+        "description": "1.0=opens with one precise decision sentence (e.g., 'we are deciding whether audio processing runs synchronously in the request path, in a self-managed background job system, or in a managed media-processing service') that a reader could understand a year later; 0.5=decision stated but vague ('deciding how to handle processing'); 0.0=no explicit decision statement — jumps straight into comparing options",
+        "weight": 0.15
+      },
+      {
+        "dimension": "criteria_relevance",
+        "description": "1.0=4-7 criteria specific to this decision — behavior when processing exceeds request limits, operational burden for a solo operator, cost per processed episode at 10x current volume, failure recovery and retry story — with importance weighting; 0.5=criteria are generic (developer experience, community support, popularity); 0.0=no explicit criteria; comparison is unstructured prose",
+        "weight": 0.20
+      },
+      {
+        "dimension": "evaluation_reasoning_quality",
+        "description": "1.0=all approaches scored against the same criteria on a consistent scale (Strong/Adequate/Weak or numeric), with a stated reason for every score; 0.5=scores present but reasons missing, or approaches evaluated against different criteria; 0.0=no structured evaluation — just pros/cons lists of different shapes per option",
+        "weight": 0.25
+      },
+      {
+        "dimension": "recommendation_follows_evaluation",
+        "description": "1.0=commits to one approach with rationale that traces directly to the criterion scores, such that a different evaluator would reach the same conclusion from the same table; 0.5=recommendation present but justified by factors that never appeared in the evaluation; 0.0=no recommendation, or 'it depends' with no commitment",
+        "weight": 0.20
+      },
+      {
+        "dimension": "reversal_conditions_specificity",
+        "description": "1.0=two or more observable reversal conditions with thresholds ('revisit if concurrent uploads exceed N and queue wait exceeds M minutes', 'revisit if the managed service's per-minute pricing pushes processing cost above X% of revenue'); 0.5=reversal mentioned but vague ('revisit as we scale', 'if things change'); 0.0=no reversal conditions documented",
+        "weight": 0.20
+      }
+    ]
+  },
+  {
+    "id": "fintech-ledger-event-sourcing",
+    "skill": "exploration-tradeoff-analysis",
+    "task_description": "Our six-person team is building the ledger service for our expense-management product, and we're split down the middle: half the team wants event sourcing, the other half wants a conventional relational schema with an append-only audit table. We move real money and external auditors review us annually. This argument has stalled two sprint plannings, and I need something written down that ends it — including what would make us revisit the choice later.",
+    "context": "## Situation\n\nSix-engineer team building the ledger service for a B2B expense-management product. The ledger records money movements (reimbursements, card settlements, corrections). External auditors review it annually, and regulators require a complete, tamper-evident history of every balance change.\n\n## The Two Camps\n\n- Event sourcing: append-only event log as the source of truth, balances derived by replay. Two engineers have read about it; none have run it in production.\n- Conventional relational schema with an append-only audit table maintained alongside writes. The whole team has shipped this pattern before.\n\n## Constraints\n\n- Corrections happen: about 2% of entries are adjusted after posting, and auditors need to see both the original and the correction\n- The product must answer point-in-time balance queries ('what was this account's balance on March 31')\n- On-call is already stretched; the team operates everything themselves",
+    "rubric": [
+      {
+        "dimension": "decision_statement_precision",
+        "description": "1.0=one precise decision sentence naming the actual choice ('we are deciding whether the ledger's source of truth is an event log with derived balances or a relational schema with an append-only audit table'); 0.5=decision framed loosely ('deciding our data architecture'); 0.0=no explicit decision statement",
+        "weight": 0.10
+      },
+      {
+        "dimension": "criteria_relevance",
+        "description": "1.0=criteria are specific to a money ledger — tamper-evidence and auditability, point-in-time balance queries, correction/adjustment semantics for the 2% adjusted entries, operational complexity for a stretched on-call, team production experience, cost of reversing the choice later; 0.5=criteria present but dominated by generic ones (scalability, flexibility, developer experience); 0.0=no explicit criteria",
+        "weight": 0.20
+      },
+      {
+        "dimension": "evaluation_reasoning_quality",
+        "description": "1.0=both approaches scored against every criterion on a consistent scale with a stated reason per score, including honest weaknesses of both (e.g., replay complexity vs. audit-table drift risk); 0.5=scores without reasons, or one approach evaluated in more depth than the other; 0.0=no structured evaluation",
+        "weight": 0.20
+      },
+      {
+        "dimension": "non_negotiables_check",
+        "description": "1.0=explicitly tests whether any criterion is disqualifying — e.g., whether the tamper-evident-history or point-in-time-query requirement rules an approach out — and either disqualifies one with reasoning or states that neither is disqualified; 0.5=mentions the audit requirement as just another criterion without asking whether it is disqualifying; 0.0=no non-negotiable analysis",
+        "weight": 0.15
+      },
+      {
+        "dimension": "recommendation_follows_evaluation",
+        "description": "1.0=commits to one approach with rationale traceable to the scores, and does not read as a predetermined pick with backfilled scores — the evaluation acknowledges real weaknesses in the recommended approach; 0.5=recommendation invokes factors absent from the evaluation, or the scoring uniformly favors the pick with no conceded weaknesses; 0.0=no recommendation or refuses to choose",
+        "weight": 0.20
+      },
+      {
+        "dimension": "reversal_conditions_specificity",
+        "description": "1.0=observable reversal conditions with thresholds ('revisit if audit findings require event-level replay we cannot produce', 'revisit if correction volume exceeds N% and audit-table reconciliation becomes a recurring incident source'); 0.5=vague reversal language ('if requirements change'); 0.0=no reversal conditions — the exact thing the requester asked for",
+        "weight": 0.15
+      }
+    ]
+  },
+  {
+    "id": "freight-route-optimizer-buy-vs-build",
+    "skill": "exploration-tradeoff-analysis",
+    "task_description": "I'm the architect at a freight brokerage and we're replacing our nine-year-old route-optimization rules engine — planners currently override 30% of its suggestions. The options on the table are building a new engine in-house, licensing a commercial optimizer, or using our cloud provider's managed optimization service. The architecture board will hold us to this decision for at least three years, so I need the comparison done rigorously, not just the loudest opinion winning.",
+    "context": "## Situation\n\nFreight brokerage, ~2,000 contracted carriers, ~40 engineers. Route optimization currently runs on a rules engine written in-house 9 years ago; planners override about 30% of its suggestions manually.\n\n## Options Under Consideration\n\n1. Build a new optimization engine in-house\n2. License a commercial optimizer\n3. Use the cloud provider's managed optimization service\n\n## Constraints\n\n- No one on staff has operations-research expertise; the requisition for that role has been open for 8 months\n- EU carrier data must stay in-region\n- Peak season (Nov-Dec) runs ~40,000 optimization requests/day, roughly 6x baseline\n- Dispatch decisions must return within 30 seconds or planners fall back to manual routing\n- The architecture board will hold the team to this choice for at least 3 years",
+    "rubric": [
+      {
+        "dimension": "decision_statement_precision",
+        "description": "1.0=one precise decision sentence scoping exactly what is being decided (the sourcing of the route-optimization engine, not 'our routing architecture' broadly); 0.5=decision stated but blurry about scope; 0.0=no explicit decision statement",
+        "weight": 0.15
+      },
+      {
+        "dimension": "criteria_relevance",
+        "description": "1.0=criteria map to the stated constraints — absence of in-house OR expertise, EU data residency, the 30-second latency bound, cost per optimization run at 6x peak load (not current load), and lock-in/cost of reversal over the 3-year commitment — with weights; 0.5=constraint-driven criteria mixed with or outweighed by generic ones (maturity, ease of use, community); 0.0=no explicit criteria",
+        "weight": 0.20
+      },
+      {
+        "dimension": "evaluation_reasoning_quality",
+        "description": "1.0=all three options scored against every criterion on one consistent scale with a stated reason per score (e.g., build-in-house scores Weak on expertise because the OR role has been unfilled for 8 months); 0.5=scores without reasons or inconsistent criteria across options; 0.0=no structured evaluation",
+        "weight": 0.25
+      },
+      {
+        "dimension": "recommendation_follows_evaluation",
+        "description": "1.0=one recommended option whose rationale traces to the scores, with disqualifying criteria handled first (e.g., if the managed service cannot satisfy EU residency, it is eliminated before further comparison rather than kept in the table); 0.5=recommendation present but the evaluation reads as backfill — every criterion conveniently favors the pick; 0.0=no recommendation or a hedge across all three",
+        "weight": 0.20
+      },
+      {
+        "dimension": "reversal_conditions_specificity",
+        "description": "1.0=reversal conditions with observable thresholds ('revisit licensing if the OR hire lands and planner override rate stays above 20%', 'revisit the managed service if per-request pricing at peak volume exceeds the licensed alternative's annual cost'); 0.5=reversal conditions listed but unobservable ('if our needs evolve'); 0.0=no reversal conditions",
+        "weight": 0.20
+      }
+    ]
+  }
+]

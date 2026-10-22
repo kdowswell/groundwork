@@ -1,0 +1,98 @@
+[
+  {
+    "id": "weekend-ai-mealplanner-prototype",
+    "skill": "greenfield-signal-driven-principles",
+    "task_description": "I'm hacking together a weekend prototype of an AI meal-planning app — just me, maybe twenty test users from a Discord group, and I fully expect to throw most of it away. I keep reading about all the architectural best practices I supposedly need and it's paralyzing. Help me figure out which concerns actually matter for what I'm doing right now and which ones I can consciously skip.",
+    "rubric": [
+      {
+        "dimension": "signals_extracted",
+        "description": "1.0=explicitly reads the project's facts as signals — solo developer, prototype/throwaway stage, ~20 users, no stated compliance regime — and marks unknowns as unknown (e.g., whether dietary or health data raises privacy stakes) instead of assuming; 0.5=registers 'prototype' but never systematically walks the other facts; 0.0=generic best-practice advice with no reference to this project's characteristics",
+        "weight": 0.25
+      },
+      {
+        "dimension": "selection_matches_signals",
+        "description": "1.0=the kept set is small and traceable to a firing signal — each selected concern names the project fact that makes it load-bearing at this stage — and nothing enterprise-scale is mandated for a solo weekend build; 0.5=a reasonable short list but with items that no stated signal justifies; 0.0=recites the full catalog (tracing, SLOs, chaos testing, multi-region) indiscriminately",
+        "weight": 0.25
+      },
+      {
+        "dimension": "suppression_explicit",
+        "description": "1.0=names the specific practices deliberately excluded with a one-line reason each (e.g., chaos engineering, canary deploys, distributed tracing, capacity planning — premature for one developer and twenty users), making the skips conscious decisions; 0.5=says 'skip the heavy stuff' without naming what is skipped or why; 0.0=no explicit exclusions — everything is implicitly in or out",
+        "weight": 0.20
+      },
+      {
+        "dimension": "rationale_per_selection",
+        "description": "1.0=every kept principle carries a one-sentence rationale specific to this project ('secrets out of source because the prototype calls a paid model API'), ordered by how much each constrains later decisions; 0.5=selections listed with boilerplate rationale ('logging is important'); 0.0=a bare list with no rationale",
+        "weight": 0.20
+      },
+      {
+        "dimension": "unknowns_and_tensions_flagged",
+        "description": "1.0=flags the open questions that would change the selection — does the app store health-adjacent dietary data, will the prototype graduate to real users — and asks rather than silently guessing; 0.5=notes uncertainty vaguely without tying it to the selection; 0.0=treats every unknown as decided",
+        "weight": 0.10
+      }
+    ]
+  },
+  {
+    "id": "home-health-nurse-visits-app",
+    "skill": "greenfield-signal-driven-principles",
+    "task_description": "Our four-engineer team is starting on a mobile app for home-health nurses who document patient visits in people's houses — often in basements or rural areas with no signal. We handle protected health information, so HIPAA is in scope, and nobody on the team has ever run an on-call rotation. Before we write the spec I want us to agree on which architectural concerns are non-negotiable for this system and which are nice-to-have.",
+    "rubric": [
+      {
+        "dimension": "signals_extracted",
+        "description": "1.0=identifies every stated signal explicitly: named compliance regime (HIPAA), offline/intermittent-connectivity operation, workers using the product during physical tasks in the field, and a small team with no SRE or on-call experience; 0.5=catches HIPAA and offline but misses the field-use or no-SRE signals; 0.0=no signal reading — jumps to a generic architecture checklist",
+        "weight": 0.25
+      },
+      {
+        "dimension": "mandatory_mapping",
+        "description": "1.0=maps each signal to the concerns it mandates and treats them as non-negotiable: HIPAA drives secrets management and data classification/ownership; no-signal operation drives an explicit consistency model for offline capture and sync; field use drives hostile-conditions UX (gloves, glare, interruptions); small team with no SRE drives structured logging and actionable alerting; 0.5=selects several of these without connecting them to the signal that mandates them; 0.0=selection contradicts stated signals (e.g., no offline/consistency concern despite dead zones, or HIPAA unaddressed)",
+        "weight": 0.30
+      },
+      {
+        "dimension": "suppression_explicit",
+        "description": "1.0=explicitly excludes what the signals do not justify, each with a one-line reason (e.g., horizontal-scaling and partitioning concerns at a four-engineer, modest-user-count stage; chaos engineering before there is an on-call practice to absorb it); 0.5=implies some things can wait without naming them; 0.0=either includes everything or omits things silently",
+        "weight": 0.15
+      },
+      {
+        "dimension": "rationale_per_selection",
+        "description": "1.0=each non-negotiable carries a project-specific one-line rationale ('offline consistency: a nurse's visit notes must survive a dead zone without data loss'), and the set is ranked so the concerns constraining the data model and sync design come first; 0.5=rationales present but generic and unranked; 0.0=no rationale attached",
+        "weight": 0.20
+      },
+      {
+        "dimension": "unknowns_and_tensions_flagged",
+        "description": "1.0=flags real tensions and unknowns rather than gliding past them — offline-first capture versus strong consistency of the patient record, HIPAA audit expectations versus a team with no ops experience — and states what the team must decide consciously; 0.5=mentions tradeoffs abstractly; 0.0=presents the selection as tension-free",
+        "weight": 0.10
+      }
+    ]
+  },
+  {
+    "id": "flash-sale-ticketing-platform",
+    "skill": "greenfield-signal-driven-principles",
+    "task_description": "We're building the ticket-sales platform for a live-events company that regularly runs on-sales where 300,000 fans hit the site in the first ten minutes. The design includes a virtual waiting room for high-demand drops and background fulfillment for ticket delivery, and we're a 30-person engineering org with a dedicated platform team. I've been asked to write down the architectural ground rules before teams start their design docs — and to justify why each rule is there so it doesn't read as dogma.",
+    "rubric": [
+      {
+        "dimension": "signals_extracted",
+        "description": "1.0=explicitly registers the large-scale signal (300K concurrent burst — far past any 100K threshold), the async-processing signal (waiting room, background fulfillment), and the org-scale signal (30 engineers, multiple teams, platform team), plus unknowns like payment compliance scope; 0.5=notes 'high traffic' but does not treat waiting room/fulfillment or org size as distinct signals; 0.0=no signal analysis",
+        "weight": 0.25
+      },
+      {
+        "dimension": "mandatory_mapping",
+        "description": "1.0=large scale pulls in the full scalability set (horizontal scaling, caching, partitioning) AND the full observability set (structured logging, tracing, SLOs, alerting) as non-negotiable — with async-processing mandated by the queue/fulfillment design — none droppable by team preference; 0.5=scalability covered but observability treated as optional, or vice versa; 0.0=ground rules ignore the burst-load reality",
+        "weight": 0.30
+      },
+      {
+        "dimension": "suppression_explicit",
+        "description": "1.0=names what is deliberately out with reasons (e.g., offline-first consistency and hostile-environment field UX — consumers on modern devices with connectivity; no named regulatory regime beyond payments until compliance scope is confirmed); 0.5=exclusions implied but unnamed; 0.0=no exclusions — the ground rules read as the entire library",
+        "weight": 0.15
+      },
+      {
+        "dimension": "rationale_per_selection",
+        "description": "1.0=every ground rule has a one-sentence justification tied to this platform ('partitioning: a single hot event must not exhaust one database's write capacity during an on-sale'), ranked by how many downstream design-doc decisions it constrains — directly serving the 'not dogma' request; 0.5=rules listed with generic justifications; 0.0=rules asserted without rationale",
+        "weight": 0.20
+      },
+      {
+        "dimension": "unknowns_and_tensions_flagged",
+        "description": "1.0=flags tensions the teams must resolve consciously — strict inventory consistency (no double-sold seats) versus horizontal scaling and caching during a spike, queue fairness versus latency — rather than silently picking a side; 0.5=tensions acknowledged in passing without naming what decision they force; 0.0=no tensions surfaced",
+        "weight": 0.10
+      }
+    ]
+  }
+]

@@ -14,6 +14,69 @@ groundwork is a two-layer library:
 
 **Skills** — executable process workflows organized by development phase. Skills tell an agent *how to do something*; principles tell it *what good looks like when done*. Skills reference principles — principles are independent.
 
+Around those two layers sits a toolkit: a single `/groundwork` router command, a durable
+per-project context file, and a deterministic detector that enforces what the skills teach.
+
+## Quick Start
+
+```bash
+# from your project root
+npx groundwork install        # installs the /groundwork skill into detected harnesses
+```
+
+Then, inside your AI coding tool:
+
+```
+/groundwork init              # one-time: capture project context + active principles
+/groundwork                   # menu of all commands
+/groundwork plan <change>     # e.g. plan a safe production change
+```
+
+And in CI or locally, no LLM required:
+
+```bash
+npx groundwork detect .       # deterministic production-readiness + AI-slop scan
+```
+
+## The /groundwork Router
+
+One skill, seventeen commands. The router loads project context once per session, routes to
+exactly one playbook per request, and never runs work from a bare `/groundwork` (you get a
+menu). Choose the phase from the request, not the repo's age — a new feature spec in a
+ten-year-old codebase is still Define work.
+
+| Category | Commands |
+|---|---|
+| **Setup** | `init` (write project context), `doctor` (report/repair context drift) |
+| **Define** | `spec`, `sketch`, `model`, `principles`, `adr` |
+| **Explore** | `spike`, `assume`, `compare`, `vet` |
+| **Evolve** | `review`, `triage`, `upgrade`, `retro`, `plan`, `strangle` |
+
+Every command is compiled from a standalone phase skill (below) by `npm run sync:router` —
+the standalone skills stay the source of truth and remain individually installable.
+
+## The Detector
+
+`npx groundwork detect` runs deterministic rules — no LLM, no API key — across two families:
+production-posture gaps (missing lockfile, no CI, no tests, unpinned base images, `.env` not
+ignored, containers running as root) and AI-slop tells (hardcoded secrets, empty catch
+blocks, mock data on real code paths, "in a real application you would…" comments, wildcard
+CORS, missing HTTP timeouts). **Every finding names the principle it enforces.**
+
+```bash
+npx groundwork detect --json .        # CI-friendly output, exit 1 on errors
+npx groundwork detect --strict .      # exit 1 on warnings too
+npx groundwork doctor                 # check .groundwork/context.md for drift
+```
+
+Waive intentional findings inline (`// groundwork-disable <rule-id>: reason`, plus
+`-line` / `-next-line` variants) or via `.groundwork/config.json`. On Claude Code,
+`npx groundwork install --hooks` adds a PostToolUse hook that scans every edited file and
+surfaces findings back into the agent's context.
+
+See the before/after [case study](docs/case-study.md): the same service goes from 25
+findings (6 errors) to zero, with each fix mapped to a principle.
+
 ## Three Phases
 
 | Phase | Skills | Use when |
@@ -56,57 +119,52 @@ groundwork is a two-layer library:
 
 ## Principle Library
 
-32 principles across 8 categories:
+40 principles across 8 categories:
 
 | Category | Principles |
 |---|---|
 | **Reliability** | Circuit Breakers, Fault Isolation, Graceful Degradation, Health Checks, Chaos Engineering |
 | **Security** | Secrets Management, Zero Trust, Least Privilege, Data Classification, Supply Chain Security |
 | **Scalability** | Horizontal Scaling, Caching Strategy, Data Partitioning, Async Processing |
-| **Observability** | Structured Logging, Distributed Tracing, SLO / Error Budgets, Alerting Strategy |
+| **Observability** | Structured Logging, Distributed Tracing, SLO / Error Budgets, Alerting Strategy, ML/AI Observability |
 | **Data** | Data Ownership, Consistency Models, Event Sourcing, Schema Evolution |
-| **Design** | Field-First (Hostile Operating Conditions) |
-| **Delivery** | CI/CD Pipeline, Blue-Green / Canary, Feature Flags, Infrastructure as Code |
-| **Operations** | Incident Response, Runbooks, Capacity Planning, Tech Debt Management |
+| **Design** | API Contract First, Bounded Contexts, Conway's Law Alignment, Fallacies of Distributed Computing, Field-First, Idempotency by Design, Separation of Concerns |
+| **Delivery** | CI/CD Pipeline, Blue-Green / Canary, Feature Flags, Infrastructure as Code, Testing Strategy |
+| **Operations** | Incident Response, Runbooks, Capacity Planning, FinOps Cost Visibility, Tech Debt Management |
 
 ## Installation
 
-Skills follow the [Agent Skills open standard](https://agentskills.io), supported by Claude Code, GitHub Copilot, Cursor, and [skills.sh](https://skills.sh). Each skill lives at `skills/<phase>-<skill-name>/SKILL.md` — flat structure, phase-prefixed names.
+Skills follow the [Agent Skills open standard](https://agentskills.io). Each standalone
+skill lives at `skills/<phase>-<skill-name>/SKILL.md`; the router lives at
+`skills/groundwork/`. See [docs/HARNESSES.md](docs/HARNESSES.md) for per-harness details.
 
-### Claude Code
-
-```bash
-# Install all skills
-cp -r skills/* .claude/skills/
-
-# Install a single skill
-cp -r skills/greenfield-spec-from-idea .claude/skills/
-```
-
-Or for global installation (available across all projects):
-```bash
-cp -r skills/* ~/.claude/skills/
-```
-
-Invoke with `/greenfield-spec-from-idea` or let Claude auto-trigger from the `description` field.
-
-### GitHub Copilot
+### Recommended: CLI installer
 
 ```bash
-mkdir -p .github/skills
-cp -r skills/* .github/skills/
+npx groundwork install                      # auto-detects harness dirs; router skill only
+npx groundwork install --all-skills         # also install the 15 standalone phase skills
+npx groundwork install --providers=claude,github,cursor,agents
+npx groundwork install --global             # user-level (~/.claude), Claude Code only
+npx groundwork install --hooks              # + Claude Code PostToolUse detector hook
+npx groundwork update                       # refresh an existing install
 ```
 
-### Cursor
+### Claude Code plugin
 
-Cursor uses `.mdc` files. Convert any skill for use as a Cursor rule:
+```
+/plugin marketplace add kdowswell/groundwork
+```
+
+Then open `/plugin` and install groundwork from the list.
+
+### Manual copy
 
 ```bash
-# Copy the SKILL.md content into a .mdc file in .cursor/rules/
-cat skills/greenfield-spec-from-idea/SKILL.md > .cursor/rules/greenfield-spec-from-idea.mdc
+cp -r skills/groundwork .claude/skills/           # Claude Code (router)
+cp -r skills/* .github/skills/                    # GitHub Copilot (everything)
+cp -r skills/groundwork .cursor/skills/           # Cursor (enable Agent Skills in settings)
+cp -r skills/groundwork .agents/skills/           # Codex CLI / .agents standard
 ```
-
-Cursor is also adding native Agent Skills support — watch for `SKILL.md` support in `.cursor/skills/`.
 
 ### skills.sh (via Vercel Agent Skills)
 
@@ -130,36 +188,45 @@ npx skills add kdowswell/groundwork --skill greenfield-spec-from-idea
 
 ### All agents — project context
 
-1. Copy `context/project-context.template.md` into your project and fill it in
-2. Invoke `signal-driven-principles` to select which principles apply to your project
-3. Invoke the matching phase skill when the work begins
+Run `/groundwork init` once per project. It interviews you (six questions max, skipping
+anything your repo already answers), writes `.groundwork/context.md`, and hands off to
+`/groundwork principles` to select the active principles every later command honors.
+`/groundwork doctor` and `npx groundwork doctor` keep the file honest as the project drifts.
 
 ## Repo Structure
 
 ```
 groundwork/
-├── principles/             Architectural principle library
+├── principles/             Architectural principle library (40 across 8 categories)
 │   ├── _schema/            Frontmatter JSON Schema
 │   └── {category}/         One .md file per principle
-├── skills/                 Phase-prefixed skill workflows (flat)
+├── skills/                 Agent Skills (flat)
 │   ├── _schema/            Frontmatter JSON Schema
-│   ├── greenfield-*/       0-to-1 skills (5)
-│   ├── exploration-*/      Research and prototype skills (4)
-│   └── brownfield-*/       Existing-system skills (6)
-├── context/                Project context artifacts
-│   ├── project-context.template.md
-│   └── discovery-questions.md
-└── scripts/
-    ├── validate-principles.ts
-    └── validate-skills.ts
+│   ├── groundwork/         The /groundwork router skill
+│   │   ├── SKILL.md        Command table + routing rules (rule-marked)
+│   │   ├── reference/      17 playbooks (15 compiled from phase skills + init, doctor)
+│   │   └── scripts/        context.mjs session loader, hook.mjs detector hook
+│   ├── greenfield-*/       0-to-1 skills (5) — source of truth for Define playbooks
+│   ├── exploration-*/      Research and prototype skills (4) — Explore playbooks
+│   └── brownfield-*/       Existing-system skills (6) — Evolve playbooks
+├── cli/                    npx groundwork — detect / doctor / install / update
+│   ├── engine/             Deterministic detector (zero runtime dependencies)
+│   └── data/               Generated principle index
+├── eval/                   Skill quality harness (LLM judge) + behavior tests (trace asserts)
+├── examples/case-study/    SlopMart before/after — detector fixtures + case study
+├── context/                Project context templates and discovery question bank
+├── docs/                   decisions/ (ADRs), case-study.md, HARNESSES.md
+└── scripts/                Validators + sync scripts (principles, router playbooks)
 ```
 
-## Validation
+## Validation & Tests
 
 ```bash
-npm run validate          # validate all principle frontmatter
-npm run validate:skills   # validate all skill frontmatter
-npm run validate:all      # both
+npm run validate:all      # principle + skill frontmatter and quality checks
+npm run sync:all          # regenerate synced principles + router playbooks (CI-enforced)
+npm run typecheck         # TypeScript
+npm test                  # detector, CLI, and behavior suites (behavior skips without ANTHROPIC_API_KEY)
+npm run eval              # LLM-judged skill-vs-baseline eval (45+ cases, costs tokens)
 ```
 
 ## Source Frameworks

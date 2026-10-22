@@ -1,0 +1,116 @@
+[
+  {
+    "id": "lease-qa-weekend-prototype",
+    "skill": "exploration-prototype-review",
+    "task_description": "I built a prototype over a weekend that lets landlords upload lease documents and ask questions about them — it worked well enough that three property managers asked to pay for it. It's one Python file, about 600 lines, and I want to start charging next week. Before I do, tell me whether I should build on this code or start over.",
+    "context": "## Prototype Details\n\nSingle `app.py`: a file-upload endpoint, a call to a hosted language-model API with the key pasted in as a string constant, extracted document text stored in a local `docs/` folder, and no login — anyone with the URL can query any uploaded lease. Errors from the model call are caught with a bare `except: pass`. The prototype was built to answer: 'will the model answer lease questions accurately enough that landlords trust it?' The three testers said yes.",
+    "rubric": [
+      {
+        "dimension": "hypothesis_and_scope_separation",
+        "description": "1.0=restates what the prototype was built to prove (answer-quality trust, which it validated) and separates skips that must be fixed because production is now in scope (auth, secrets) from skips legitimately outside the original question — not faulting it for lacking things irrelevant to the hypothesis; 0.5=evaluates against production criteria without ever acknowledging the original question; 0.0=treats it as a generic code-quality review",
+        "weight": 0.15
+      },
+      {
+        "dimension": "hardcoded_values_audit",
+        "description": "1.0=itemizes the pasted-in API key, the local `docs/` folder storage, and other environment assumptions as specific items that break outside the dev machine, each carried into the must-change list; 0.5=says 'move config to environment variables' generically without enumerating what is hardcoded; 0.0=misses the hardcoded credential entirely",
+        "weight": 0.15
+      },
+      {
+        "dimension": "error_handling_failure_modes",
+        "description": "1.0=names roughly three concrete failure modes on the core path — model API timeout/failure silently swallowed by `except: pass`, oversized or unparseable uploads, disk-storage failure — and for each states how it is currently handled versus what production needs; 0.5=says 'add error handling' without identifying specific failure modes; 0.0=no failure-mode analysis",
+        "weight": 0.20
+      },
+      {
+        "dimension": "security_and_observability_gaps",
+        "description": "1.0=identifies the missing authentication as a cross-tenant data exposure — any URL holder can read other landlords' leases, which are sensitive documents — as a launch blocker, AND flags that with errors swallowed and nothing logged, failures in production will be undiagnosable; 0.5=catches the auth gap or the observability gap but not both; 0.0=neither surfaced",
+        "weight": 0.20
+      },
+      {
+        "dimension": "recommendation_justified",
+        "description": "1.0=an explicit BUILD ON / REWRITE / HYBRID verdict argued from the audit findings (e.g., hybrid: the validated prompt-and-extraction approach carries forward, the single-file structure with no auth boundary gets rebuilt), explicitly not driven by the one-week deadline or paying-customer pressure; 0.5=a verdict stated without connecting it to findings; 0.0=no clear recommendation among the three options",
+        "weight": 0.20
+      },
+      {
+        "dimension": "must_change_list",
+        "description": "1.0=a concrete, ordered 'must change before production' list (secrets out of source, auth and per-tenant isolation, durable storage, error surfacing) kept distinct from nice-to-haves; 0.5=fixes scattered through prose with no consolidated list; 0.0=no actionable list",
+        "weight": 0.10
+      }
+    ]
+  },
+  {
+    "id": "dynamic-pricing-notebook",
+    "skill": "exploration-prototype-review",
+    "task_description": "One of our data scientists built a dynamic-pricing prototype for our online outdoor-gear store — a notebook plus a small web-service wrapper that adjusts prices based on inventory levels and scraped competitor prices. In an A/B test on 5% of traffic it lifted margin by 4%, so leadership wants it live on all products next month. Engineering has concerns; I need an honest assessment of what it takes to make this production-worthy, or whether we rebuild it.",
+    "context": "## Prototype Details\n\nThe notebook exports a pickled model; a small web service loads it and exposes `/price?sku=...`. Competitor prices are scraped by a scheduled job on the data scientist's workstation into a CSV on a shared drive, which the service reads. If the model file or CSV is missing or stale, the endpoint returns a 500 or serves prices from old data — there is no fallback price. A separate script writes computed prices directly into the production catalog database using a database password stored in the script. Original question: 'does inventory-and-competitor-aware pricing beat static pricing?' Answer: yes, +4% margin.",
+    "rubric": [
+      {
+        "dimension": "hypothesis_and_scope_separation",
+        "description": "1.0=credits what the prototype proved (the pricing strategy works, +4% margin — the learning is real) and cleanly separates that validated learning from the delivery mechanics that were never designed for production (workstation scraper, CSV handoff, direct DB writes); 0.5=jumps to flaws without distinguishing the validated hypothesis from the throwaway plumbing; 0.0=either rubber-stamps it because the A/B test won, or trashes it as bad code with no reference to what it proved",
+        "weight": 0.15
+      },
+      {
+        "dimension": "hardcoded_values_audit",
+        "description": "1.0=flags the production database password embedded in the price-writing script, the workstation-bound scraper, and the shared-drive CSV path as environment assumptions that fail the moment the data scientist's machine is off or the drive is unavailable; 0.5=notes 'credentials should be managed properly' without enumerating the specific hardcoded dependencies; 0.0=the embedded production credential goes unmentioned",
+        "weight": 0.15
+      },
+      {
+        "dimension": "error_handling_failure_modes",
+        "description": "1.0=identifies the concrete failure modes and their current handling: stale competitor CSV silently producing wrong prices (worse than failing), missing model file returning 500s on every price lookup, and the direct-write script partially applying a price run if it dies midway — each mapped to what production requires (freshness checks, fallback prices, transactional or resumable writes); 0.5=mentions 'no fallback' without walking specific failure modes; 0.0=happy-path acceptance",
+        "weight": 0.25
+      },
+      {
+        "dimension": "security_and_observability_gaps",
+        "description": "1.0=flags that nothing records which price was served or written, when, or from which model/CSV version — making a mispricing incident (e.g., tents at $3) undiagnosable and unattributable — plus the uncontrolled write path into the production catalog as both a security and integrity gap; 0.5=one of the audit-trail gap or the write-path exposure; 0.0=neither",
+        "weight": 0.15
+      },
+      {
+        "dimension": "recommendation_justified",
+        "description": "1.0=explicit BUILD ON / REWRITE / HYBRID verdict grounded in the audit — most defensibly hybrid: keep the model and pricing logic, rebuild the data pipeline and write path — and resists the leadership timeline as a reason to build on unsound plumbing; 0.5=verdict without linkage to the findings; 0.0=no recommendation, or 'ship it, then harden' with no analysis",
+        "weight": 0.20
+      },
+      {
+        "dimension": "must_change_list",
+        "description": "1.0=an ordered must-change-before-production list (managed scraper off the workstation, data freshness validation with fallback pricing, credentialed and auditable write path, price-change logging) separated from later improvements; 0.5=changes implied but never consolidated or prioritized; 0.0=no list",
+        "weight": 0.10
+      }
+    ]
+  },
+  {
+    "id": "erp-vendor-bridge-demo",
+    "skill": "exploration-prototype-review",
+    "task_description": "During an innovation week, two of our engineers prototyped a bridge between our 20-year-old ERP and a new logistics vendor's API, and the demo impressed the executives enough that they funded it as a Q3 deliverable. The prototype took three weeks and everyone now assumes we'll ship 'the demo plus some hardening.' I've been asked to review it and give a straight answer on whether that assumption holds.",
+    "context": "## Prototype Details\n\nThe bridge polls the ERP database directly every 30 seconds with SQL against internal tables (bypassing any ERP interface layer), transforms the rows, and POSTs shipment requests to the vendor's API. It runs on a VM under one engineer's personal account. Credentials for both the ERP database and the vendor API sit in a config file committed to the repo. There is no duplicate handling: when the process restarted mid-batch during the demo period, shipments were re-sent and the vendor invoiced us twice for them. Original question: 'can vendor onboarding be automated end-to-end?' Answer: yes.",
+    "rubric": [
+      {
+        "dimension": "hypothesis_and_scope_separation",
+        "description": "1.0=restates that the prototype validated end-to-end automation feasibility — that learning stands regardless of the code's fate — and evaluates production-readiness as a separate question from what the demo proved; 0.5=review conflates 'the demo worked' with 'the code is sound'; 0.0=no reference to what the prototype was built to answer",
+        "weight": 0.15
+      },
+      {
+        "dimension": "hardcoded_values_audit",
+        "description": "1.0=itemizes the committed credentials for both systems (already exposed in repo history — flags rotation, not just relocation), the personal-account VM, and the direct dependency on ERP internal table schemas as an undocumented coupling that breaks on any ERP patch; 0.5=mentions the config file but misses the repo-history exposure or the schema coupling; 0.0=credentials in the repo go unflagged",
+        "weight": 0.15
+      },
+      {
+        "dimension": "error_handling_and_idempotency",
+        "description": "1.0=treats the observed double-invoicing as the central finding: retries and restarts re-send shipments because writes to the vendor are not idempotent, and states that duplicate suppression (idempotency keys, a sent-shipment ledger, or vendor-side dedupe) must be designed into the data model and write path — not bolted on later — alongside the other failure modes (mid-batch crash state, vendor API unavailability, poll overlap); 0.5=lists failure modes but treats duplicate sends as a bug to patch rather than a design property; 0.0=ignores the double-invoice incident",
+        "weight": 0.25
+      },
+      {
+        "dimension": "security_and_observability_gaps",
+        "description": "1.0=flags that there is no record of which ERP rows became which vendor shipments — reconciliation after the double-invoice incident would be manual archaeology — plus the unaudited direct SQL access into a system of record as an access-control gap; 0.5=one of the traceability gap or the access gap; 0.0=neither surfaced",
+        "weight": 0.15
+      },
+      {
+        "dimension": "recommendation_justified",
+        "description": "1.0=explicit BUILD ON / REWRITE / HYBRID verdict argued from structural findings, explicitly naming and rejecting the sunk-cost framing — three weeks of build time and executive enthusiasm are not evidence the structure is cheaper to extend than replace; 0.5=verdict given but the 'demo plus hardening' assumption is never directly confronted; 0.0=endorses shipping the demo hardened because it is already funded",
+        "weight": 0.20
+      },
+      {
+        "dimension": "must_change_list",
+        "description": "1.0=a concrete ordered list before production (credential rotation and secret management, idempotent send path with reconciliation ledger, sanctioned ERP integration surface instead of raw internal tables, service account and deployment off the personal VM); 0.5=changes mentioned but not consolidated into a prioritized list; 0.0=no list",
+        "weight": 0.10
+      }
+    ]
+  }
+]

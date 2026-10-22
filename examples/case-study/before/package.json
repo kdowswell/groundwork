@@ -1,0 +1,11 @@
+{
+  "name": "slopmart-api",
+  "version": "1.0.0",
+  "description": "SlopMart order API",
+  "main": "server.js",
+  "dependencies": {
+    "express": "latest",
+    "axios": "*",
+    "lodash": ">=4.0.0"
+  }
+}

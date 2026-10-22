@@ -1,0 +1,101 @@
+[
+  {
+    "id": "solo-saas-framework-cve",
+    "skill": "brownfield-dependency-upgrade",
+    "task_description": "I run a scheduling SaaS solo, and my security scanner just flagged a critical CVE in the web framework my API runs on — a denial-of-service in request parsing. I'm two major versions behind because I've been putting this off. Customers book appointments around the clock, so there's no maintenance window, and the last time I bumped a major version, sessions broke and I found out from support tickets. I need to get this done without breaking production.",
+    "context": "## Dependency Details\n\n- Web framework: current v3.2 (end-of-life, no longer patched), target v5.1; the request-parsing CVE is fixed in v4.6 and later\n- Auth/session middleware v2.x is pinned to the framework's v3 plugin API; its v5-compatible release is itself a separate major version upgrade\n- The ORM and remaining direct dependencies declare compatibility with framework v5\n\n## System State\n\n- ~40k requests/day; bookings happen 24/7, no maintenance window\n- Test suite: ~200 unit tests; no integration tests covering request middleware or session handling\n- Single production environment; no staging environment currently exists\n- Deploys are container images; the previous image is retained and can be redeployed",
+    "rubric": [
+      {
+        "dimension": "criticality_and_breaking_changes",
+        "description": "1.0=classifies the framework as critical (primary request path, security-relevant) and enumerates specific breaking changes across v3-to-v4 and v4-to-v5 from changelogs/migration guides — including behavioral and default changes, and especially the v3 plugin API removal that strands the session middleware; 0.5=says 'major upgrade, expect breaking changes' without enumerating any; 0.0=no breaking-change analysis at all",
+        "weight": 0.20
+      },
+      {
+        "dimension": "security_advisory_review",
+        "description": "1.0=confirms which versions fix the request-parsing CVE, checks the target version and the changed transitive dependencies (via lockfile diff) for newly introduced advisories, and applies the same check to the middleware's coupled major upgrade; 0.5=notes the CVE is fixed at the target but never checks the target version or transitive changes for new advisories; 0.0=no advisory analysis beyond restating the scanner finding",
+        "weight": 0.15
+      },
+      {
+        "dimension": "usage_mapping",
+        "description": "1.0=produces a usage map — each breaking change tied to concrete usage locations with the required code change ('usage at X — affected by change Y — requires fix Z'), treating the pinned session middleware as a coupled upgrade with its own map; 0.5=advises 'search the codebase for affected APIs' without producing or structuring the map; 0.0=no mapping between breaking changes and this codebase",
+        "weight": 0.20
+      },
+      {
+        "dimension": "test_plan_before_upgrade",
+        "description": "1.0=a written test plan covering the mapped usage points that explicitly flags the missing middleware/session integration coverage and requires writing those tests BEFORE upgrading (sessions are exactly what broke last time); 0.5=plan is 'run the existing suite' despite its stated gaps; 0.0=no test plan before applying the upgrade",
+        "weight": 0.20
+      },
+      {
+        "dimension": "staged_rollout_and_rollback",
+        "description": "1.0=upgrade isolated in its own branch with no bundled changes; a rollout adapted to the no-staging, no-window reality (e.g., stand up a temporary pre-production check, deploy at the lowest-traffic hour, monitor named signals — error rate, session/login failures — for a defined period); plus a written step-by-step rollback using the retained container image and lockfile restore; 0.5=says 'deploy carefully and revert if broken' without concrete signals or steps; 0.0=direct production upgrade with no rollback procedure",
+        "weight": 0.25
+      }
+    ]
+  },
+  {
+    "id": "payments-tls-library-forced-upgrade",
+    "skill": "brownfield-dependency-upgrade",
+    "task_description": "Our payments team has 90 days to get off the current major version of our TLS/cryptography library before the vendor drops support, and compliance wants it closed out this quarter. We process about 50,000 card transactions a day, and one of our acquirer integrations still negotiates a legacy cipher configuration that I believe the new version removes by default. A botched upgrade here means declined payments or a compliance gap, so I want this staged carefully.",
+    "context": "## Dependency Details\n\n- TLS/crypto library: current major version loses vendor support in 90 days; the target major version raises the default minimum protocol version and removes several legacy cipher suites from the defaults\n- One acquirer integration (about 18% of transaction volume) negotiates a legacy cipher configuration that the target version disables by default\n- The library is both a direct dependency and a transitive dependency of the payment SDK\n\n## System State\n\n- ~50k card transactions/day; PCI DSS assessed annually\n- Canary deployment infrastructure exists (5% traffic slices)\n- An integration test environment with acquirer sandboxes is available\n- Hard deadline: end of quarter, per compliance",
+    "rubric": [
+      {
+        "dimension": "criticality_and_breaking_changes",
+        "description": "1.0=classifies the library as critical (security-relevant, in the payment path) and enumerates the behavioral changes — raised default minimum protocol version, removed legacy cipher suites — specifically identifying the acquirer carrying 18% of volume as impacted, with a decision path (re-enable the cipher explicitly vs. coordinate the acquirer's migration); 0.5=notes 'cipher defaults change' without connecting it to the affected acquirer; 0.0=treats this as a routine version bump with no behavioral analysis",
+        "weight": 0.20
+      },
+      {
+        "dimension": "security_advisory_review",
+        "description": "1.0=documents which advisories staying on the unsupported version would expose, checks the target version for new advisories, and reconciles the dual direct-plus-transitive presence via a lockfile diff so both paths land on the target (no version skew with the payment SDK); 0.5=checks only the direct dependency and ignores the payment SDK's transitive copy; 0.0=no advisory or transitive analysis",
+        "weight": 0.15
+      },
+      {
+        "dimension": "usage_mapping",
+        "description": "1.0=maps every TLS-touching usage — each acquirer integration, payment SDK initialization, webhook/callback verification — marking each as affected or unaffected with the required config or code change; 0.5=lists 'the payment integrations' collectively without per-usage analysis; 0.0=no usage map",
+        "weight": 0.20
+      },
+      {
+        "dimension": "test_plan_before_upgrade",
+        "description": "1.0=a written plan spanning unit coverage of TLS configuration plus integration tests against every acquirer sandbox — including the legacy-cipher acquirer — and negative tests (what a handshake failure looks like to the transaction flow), written before the version is touched; 0.5=plan is 'run the existing suite and try the sandbox'; 0.0=no test plan",
+        "weight": 0.20
+      },
+      {
+        "dimension": "staged_rollout_and_rollback",
+        "description": "1.0=upgrade isolated from other changes; staged sequence using the existing canary infrastructure (5% slice) with per-acquirer transaction success rate as a named monitoring signal, defined problem thresholds, at least 24 hours of observation, and a written rollback procedure (manifest revert, lockfile restore, redeploy) prepared before the first deploy — all scheduled inside the 90-day window; 0.5=mentions canary or rollback conceptually without signals, thresholds, or steps; 0.0=big-bang production deploy",
+        "weight": 0.25
+      }
+    ]
+  },
+  {
+    "id": "logistics-orm-three-majors-behind",
+    "skill": "brownfield-dependency-upgrade",
+    "task_description": "I maintain the warehouse-management backend at a logistics company, and we're blocked from upgrading our language runtime — which goes end-of-life in four months — because our ORM is three major versions behind. The ORM touches nearly every query in a 400k-line codebase, and most of the engineers who wrote the data layer have left. Order flow runs 24/7 and reporting jobs run overnight, so I need a plan that gets us through three major versions without a firefight.",
+    "context": "## Dependency Details\n\n- ORM: current v4, target v7; v5 changed transaction semantics, v6 removed the legacy query API, v7 is the first version compatible with the new language runtime\n- Roughly 1,900 call sites use the ORM directly; ~140 of them use the legacy query API removed in v6, concentrated in reporting code\n- Language runtime reaches end-of-life in 4 months; the runtime upgrade is blocked on ORM v7\n\n## System State\n\n- Order flow runs 24/7; reporting jobs run overnight against read replicas\n- Test coverage is strong on order flow, thin on reporting queries\n- The engineers who wrote most of the data layer have left the company\n- A staging environment mirrors the production schema with anonymized data",
+    "rubric": [
+      {
+        "dimension": "criticality_and_breaking_changes",
+        "description": "1.0=classifies the ORM as critical (every query path) and catalogs breaking changes per major — v5 transaction semantics, v6 legacy query API removal, v7 runtime compatibility — then makes an explicit, reasoned sequencing decision (one major at a time vs. a single jump) against the 4-month runtime deadline; 0.5=notes 'three majors of breaking changes' without per-version specifics or a sequencing decision; 0.0=no breaking-change analysis",
+        "weight": 0.20
+      },
+      {
+        "dimension": "security_advisory_review",
+        "description": "1.0=checks advisories on both the current and target versions and reviews the full lockfile diff for transitive changes across the three-major jump (a jump this size typically swaps several transitive packages); 0.5=checks the ORM only and ignores transitive changes; 0.0=no advisory or lockfile analysis",
+        "weight": 0.15
+      },
+      {
+        "dimension": "usage_mapping",
+        "description": "1.0=a quantified usage map: the ~140 legacy-query-API call sites enumerated and grouped by required rewrite pattern, and the transaction-semantics-affected call sites in order flow identified separately; 0.5=acknowledges the 1,900 call sites without structuring which are affected by which change; 0.0=no mapping",
+        "weight": 0.20
+      },
+      {
+        "dimension": "test_plan_before_upgrade",
+        "description": "1.0=directly targets the stated coverage gap: requires characterization/regression tests for the thinly covered reporting queries BEFORE migrating those call sites (with the original authors gone, post-upgrade failures would be ambiguous about pre-existing behavior), plus unit tests per rewritten call-site group and integration tests for order-flow transaction behavior; 0.5=relies on the existing suite despite the acknowledged reporting gap; 0.0=no test plan",
+        "weight": 0.20
+      },
+      {
+        "dimension": "staged_rollout_and_rollback",
+        "description": "1.0=the ORM upgrade is explicitly NOT combined with the runtime upgrade (one variable at a time); staged through the mirrored staging environment with overnight reporting jobs validated against replicas before production; named monitoring signals (query error rate, job duration, order-flow latency); and a written rollback covering manifest revert, lockfile restore, and any schema/data compatibility caveats that would make rollback one-way; 0.5=vague 'test in staging first' with no signals or written rollback; 0.0=combines both upgrades in one deploy with no rollback plan",
+        "weight": 0.25
+      }
+    ]
+  }
+]

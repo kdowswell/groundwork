@@ -1,0 +1,113 @@
+[
+  {
+    "id": "contract-search-relevance",
+    "skill": "exploration-research-spike",
+    "task_description": "I'm building a contract-search tool for solo attorneys and I can't decide whether plain keyword search is good enough or whether I need semantic search, which would add real cost and complexity to my stack. I've been researching this for two weeks and mostly just have a pile of blog posts. Help me actually settle it this week so I can move on.",
+    "rubric": [
+      {
+        "dimension": "question_precision",
+        "description": "1.0=reframes the vague topic into a question answerable with yes/no or a specific value, with a concrete measurable bar (e.g., 'does keyword search surface the relevant clause in the top 5 results for at least 8 of 10 representative attorney queries against a sample contract corpus?'); 0.5=narrows to a comparison but sets no measurable threshold; 0.0=stays at the topic level ('research semantic vs keyword search')",
+        "weight": 0.20
+      },
+      {
+        "dimension": "decision_identified",
+        "description": "1.0=writes the unblocked decision explicitly in the form 'once we know X, we will decide Y' — here, committing the v1 search stack (keyword-only vs adding an embedding pipeline and vector store); 0.5=vaguely says the research 'will inform the architecture'; 0.0=no decision named — the investigation has no defined endpoint",
+        "weight": 0.15
+      },
+      {
+        "dimension": "timebox_and_approach",
+        "description": "1.0=sets an explicit time box proportionate to a feasibility question (hours to ~2 days, not another two weeks) with the rule that findings at expiry are the findings, AND commits to 2-4 approach steps before starting (assemble a sample corpus, write ~10 representative attorney queries, run both approaches, score top-5 relevance); 0.5=has a time box or a written approach but not both; 0.0=neither — proposes more open-ended reading",
+        "weight": 0.20
+      },
+      {
+        "dimension": "evidence_standard",
+        "description": "1.0=requires at least three findings that cite concrete evidence — per-query hit rates, measured latency, estimated monthly cost of the embedding pipeline — and explicitly rejects impressions ('semantic seems better') as findings; 0.5=asks for results but accepts qualitative summaries as evidence; 0.0=no evidence standard — a recommendation could be written from blog posts alone",
+        "weight": 0.20
+      },
+      {
+        "dimension": "recommendation_not_memo",
+        "description": "1.0=output is committed to the form 'based on findings X, Y, Z we should do A rather than B', including what the path would have been had the answer gone the other way; 0.5=findings summarized with a hedged 'it depends' and no directive; 0.0=a memo of information with no recommendation",
+        "weight": 0.15
+      },
+      {
+        "dimension": "spike_code_disposal",
+        "description": "1.0=states that the comparison harness and any indexing code are throwaway — kept on a separate branch or deleted, with the report as the durable artifact — and that promoting any of it to production requires real review and tests; 0.5=mentions cleanup vaguely; 0.0=the spike code is implicitly the start of the production implementation",
+        "weight": 0.10
+      }
+    ]
+  },
+  {
+    "id": "courier-websocket-capacity",
+    "skill": "exploration-research-spike",
+    "task_description": "Our food-delivery team is arguing about whether our current single-region setup can push live courier locations to customers over websockets once we launch in two more cities — roughly 8,000 concurrent connections at dinner peak versus today's 2,000. Half the team wants to just adopt a managed push service now. I want to spend a couple of days getting a real answer instead of holding another meeting of opinions.",
+    "rubric": [
+      {
+        "dimension": "question_precision",
+        "description": "1.0=turns the argument into a measurable question with explicit pass/fail thresholds (e.g., 'can the current gateway sustain 8,000 concurrent websocket connections with location updates every N seconds at p95 delivery latency under X ms and CPU/memory below Y% headroom?'); 0.5=asks 'can it scale to 8,000?' with no latency or resource thresholds defining 'can'; 0.0=frames it as 'evaluate managed push services' — a topic, not a question",
+        "weight": 0.20
+      },
+      {
+        "dimension": "decision_identified",
+        "description": "1.0=names the blocked decision: 'once we know the answer, we decide whether to keep the current gateway for the two-city launch or begin the managed push-service migration now' — and notes the decision is currently being argued from opinion; 0.5=implies the outcome matters without stating the binary choice; 0.0=no decision linkage",
+        "weight": 0.15
+      },
+      {
+        "dimension": "timebox_and_approach",
+        "description": "1.0=sets a 1-3 day time box matching a performance characterization AND pre-commits 2-4 approach steps at the right fidelity — synthetic load against production-equivalent (not laptop) infrastructure, ramping connections from 2,000 past 8,000 to find the actual ceiling, measuring update latency and resource use at each step; 0.5=time box without a committed method, or a method that tests on non-representative infrastructure without acknowledging the fidelity gap; 0.0=neither time box nor approach",
+        "weight": 0.20
+      },
+      {
+        "dimension": "evidence_standard",
+        "description": "1.0=requires at least three findings with cited measurements (connections sustained, p95 update latency at 8,000, CPU/memory at peak, the failure point if found) and names the level of evidence gathered (load test against production-equivalent infrastructure) so readers can weigh confidence; 0.5=asks for a load test but would accept 'it held up fine' as a finding; 0.0=the answer could be produced by opinion or vendor marketing alone",
+        "weight": 0.20
+      },
+      {
+        "dimension": "recommendation_not_memo",
+        "description": "1.0=commits to 'based on the measurements we should do A rather than B' — keep the gateway, or start the migration — including the alternative path had the numbers gone the other way (e.g., 'had p95 exceeded the bar at 6,000 connections, we would begin the managed-service migration before launch'); 0.5=reports numbers and defers the call back to the team; 0.0=findings memo with no recommendation",
+        "weight": 0.15
+      },
+      {
+        "dimension": "spike_code_disposal",
+        "description": "1.0=load-test scripts and any gateway config experiments are marked throwaway or kept on a separate branch, explicitly not merged into the production deployment path without review; 0.5=vague 'clean up afterwards'; 0.0=spike changes flow silently into production config",
+        "weight": 0.10
+      }
+    ]
+  },
+  {
+    "id": "warehouse-etl-window",
+    "skill": "exploration-research-spike",
+    "task_description": "Our retail analytics group is planning a move to a new data-warehouse platform, but the whole business case hinges on whether the nightly inventory ETL — currently six hours — can run in under one hour on the new platform. Finance won't approve the migration without evidence, and the vendor's benchmarks are all synthetic. I have access to a trial environment for the next two weeks and need to come back with something defensible.",
+    "rubric": [
+      {
+        "dimension": "question_precision",
+        "description": "1.0=locks the question to a specific measurable form: 'does our nightly inventory ETL, run against a representative slice of our own data on the trial environment, complete in under 60 minutes when extrapolated to full volume?' — our workload, not the vendor's synthetic benchmark; 0.5=asks 'is the new platform faster?' without the 60-minute bar or the own-data requirement; 0.0=frames it as generally evaluating the new platform",
+        "weight": 0.20
+      },
+      {
+        "dimension": "decision_identified",
+        "description": "1.0=states the decision unblocked: 'once we know the answer, finance approves or rejects the migration business case' — and that an under-one-hour NO re-scopes the decision (renegotiate the window, phase the migration, or drop the case) rather than leaving it in limbo; 0.5=notes finance needs evidence without tying the answer to the approval decision; 0.0=no decision named",
+        "weight": 0.15
+      },
+      {
+        "dimension": "timebox_and_approach",
+        "description": "1.0=sets a bounded time box (about 3 days of characterization, not the full two-week trial window by default) AND pre-commits 2-4 steps: select a representative data slice, port and run the three heaviest ETL jobs, measure runtimes, extrapolate to full volume with stated assumptions — splitting the spike rather than extending if that proves too large; 0.5=uses the whole trial period as an implicit time box with no committed method; 0.0=unbounded 'try things in the trial environment'",
+        "weight": 0.20
+      },
+      {
+        "dimension": "evidence_standard",
+        "description": "1.0=requires at least three findings citing measured evidence (per-job runtimes on the trial platform, data volume of the slice, the extrapolation math and its assumptions) and explicitly names the fidelity limits — trial-environment hardware and partial data — so finance can judge the confidence of the number; 0.5=produces runtimes but hides the extrapolation assumptions; 0.0=relies on vendor benchmarks or estimates without running our workload",
+        "weight": 0.20
+      },
+      {
+        "dimension": "recommendation_not_memo",
+        "description": "1.0=ends with 'based on the measured runs, we should proceed / not proceed with the migration case' plus the alternative path if the answer had differed (e.g., 'had the heaviest job alone exceeded 40 minutes, we would recommend a phased migration keeping inventory ETL on the current platform'); 0.5=hands finance raw numbers without a recommendation; 0.0=a status update, not a conclusion",
+        "weight": 0.15
+      },
+      {
+        "dimension": "spike_code_disposal",
+        "description": "1.0=the ported ETL jobs and trial configuration are labeled throwaway evidence — not the migration implementation — with a note that production porting starts fresh with real review and tests; 0.5=ambiguous about whether the trial port becomes the migration codebase; 0.0=the spike port is treated as the first increment of the migration itself",
+        "weight": 0.10
+      }
+    ]
+  }
+]

@@ -1,0 +1,101 @@
+[
+  {
+    "id": "ecommerce-monolith-before-marketplace",
+    "skill": "brownfield-architecture-review",
+    "task_description": "Our e-commerce platform is a seven-year-old monolith handling about 60,000 orders a month, and next quarter we're adding a third-party marketplace feature that touches catalog, checkout, and seller payouts. Before we pile that on, I want an honest assessment of where the current architecture already hurts. On-call is rough — we get paged a few times a week and half the pages are noise — and I suspect we're building on cracks. Tell me what's actually wrong structurally and what we should fix before the marketplace work starts.",
+    "context": "## System\n\nSeven-year-old monolith web application with a fleet of background workers, all sharing one relational database. ~60k orders/month, team of 9 engineers.\n\n## Artifacts Available\n\n- Deployment: two app replicas behind a load balancer; workers deploy with the app as one unit; no readiness or liveness probes configured anywhere\n- Alerting: 34 alerts defined; on-call reports roughly half of pages are ignorable (CPU threshold alerts on batch hosts, disk warnings on a decommissioned queue host)\n- Incident history (last 6 months): 2 checkout outages traced to a reporting query locking order tables; 1 payment-provider outage that took all of checkout down with it; 1 duplicated-fulfillment incident after a queue message was redelivered\n- Logging: free-text log lines; correlating a single request across app and workers means grepping by timestamp\n\n## Planned Work\n\nThird-party marketplace feature next quarter: external sellers list products, checkout splits orders across sellers, sellers are paid out monthly.",
+    "rubric": [
+      {
+        "dimension": "evidence_based_findings",
+        "description": "1.0=every finding cites a specific provided artifact (no probes in the deploy config, the ignorable CPU alerts, the duplicated-fulfillment incident, free-text logs) or names the artifact needed to verify it; 0.5=findings mix observations with unverified assumptions about the system without distinguishing them; 0.0=findings are generic principle restatements that could apply to any monolith",
+        "weight": 0.25
+      },
+      {
+        "dimension": "assessment_status_per_area",
+        "description": "1.0=each assessed area receives an explicit status (Compliant / At Risk / Non-compliant) plus a one-sentence system-specific gap (e.g., 'fulfillment message handler has no duplicate-delivery check — redelivery caused a double shipment in the incident history'); 0.5=problems described but without status ratings, or gaps stated generically ('observability could be better'); 0.0=no per-area assessment structure at all",
+        "weight": 0.20
+      },
+      {
+        "dimension": "impact_ranking",
+        "description": "1.0=findings ranked High/Medium/Low with rationale tied to the order path, data loss, or on-call burden, and a top-3 priority list explicitly called out; 0.5=severity labels attached without rationale or without selecting a top set; 0.0=a flat unranked list of problems",
+        "weight": 0.15
+      },
+      {
+        "dimension": "improvement_specificity",
+        "description": "1.0=each top finding has a concrete, scoped, sized improvement — the minimum change that reduces the risk (e.g., 'add an idempotency check keyed on message ID to the fulfillment handler', with an effort estimate) — not a rewrite; 0.5=improvements are directionally right but unscoped and unsized ('improve logging', 'decouple checkout from the payment provider'); 0.0=no improvements proposed for non-compliant findings",
+        "weight": 0.20
+      },
+      {
+        "dimension": "planned_work_interaction",
+        "description": "1.0=explicitly analyzes whether the marketplace feature makes each top finding better, worse, or irrelevant (e.g., split orders and seller payouts multiply the duplicated-fulfillment and idempotency risk) and states which fixes must land before the feature starts; 0.5=mentions the marketplace feature but never connects individual findings to it; 0.0=the review ignores the planned feature entirely",
+        "weight": 0.20
+      }
+    ]
+  },
+  {
+    "id": "telehealth-platform-before-5x-growth",
+    "skill": "brownfield-architecture-review",
+    "task_description": "I'm the engineering lead at a telehealth startup, and we just signed a hospital network that will take us from about 800 video visits a day to 4,000 within a year. The platform is four years old and grew organically — three services sharing one database, integrations added under deadline pressure. Before we commit to the growth roadmap I want a structural review: what will break or bite us as volume climbs, and in what order should we fix it? The pilot starts in eight weeks.",
+    "context": "## System\n\nFour-year-old telehealth platform: a video-visit service, a scheduling service, and a clinical-records service. All three read and write one shared relational database. ~800 visits/day today; the new hospital contract projects ~4,000/day within 12 months. Team of 12.\n\n## Artifacts Available\n\n- Schema: 210 tables; patient, appointment, and billing entities are written to by all three services; no table has a single owning service\n- Alerting: 6 alerts total, all infrastructure-level (CPU, disk); no alert exists on appointment-booking failures or video-session error rates\n- Incident history (last 6 months): 3 incidents where a scheduling-service deploy broke clinical-records queries via a shared-table migration\n- Service calls: internal HTTP clients are hand-rolled with no timeouts configured; the mobile app integrates against undocumented endpoints whose fields mirror database column names\n- Compliance: patient health information appears in application logs — flagged by last year's audit, still unresolved\n\n## Planned Work\n\nThe signed contract commits the company to 5x patient volume within 12 months, starting with a hospital pilot in 8 weeks.",
+    "rubric": [
+      {
+        "dimension": "evidence_based_findings",
+        "description": "1.0=every finding traces to a provided artifact — the three shared-table migration incidents, the 6 infrastructure-only alerts, clientless timeouts, PHI in logs, column-name-mirroring endpoints — or explicitly flags what artifact would confirm it; 0.5=observed facts and speculation are blended without distinction; 0.0=findings are boilerplate that never references this system's artifacts",
+        "weight": 0.25
+      },
+      {
+        "dimension": "assessment_status_per_area",
+        "description": "1.0=each assessed area gets an explicit Compliant / At Risk / Non-compliant status with a one-sentence specific gap (e.g., 'no service owns the appointment tables — three services write to them and deploys have broken each other three times in six months'); 0.5=issues narrated without statuses or with generic gap statements; 0.0=no structured per-area assessment",
+        "weight": 0.20
+      },
+      {
+        "dimension": "impact_ranking",
+        "description": "1.0=findings ranked High/Medium/Low with rationale tied to patient impact, clinical data integrity, or the compliance exposure, and a top-3 called out; 0.5=severity labels without reasoning or no prioritization among high items; 0.0=unranked list",
+        "weight": 0.15
+      },
+      {
+        "dimension": "improvement_specificity",
+        "description": "1.0=each top finding has a scoped, sized improvement that is the minimum change to reduce risk (e.g., 'add booking-failure-rate and video-session-error alerts with thresholds' or 'assign a single owning service per shared entity and gate cross-service migrations'), not 'split into proper microservices'; 0.5=directionally correct but unscoped proposals; 0.0=no concrete improvements",
+        "weight": 0.20
+      },
+      {
+        "dimension": "sequencing_capacity_fit",
+        "description": "1.0=an ordered remediation sequence with dependency reasoning (e.g., table ownership mapping before any service-boundary change; PHI log scrubbing before the hospital pilot) scoped to a 12-person team, with a top-3 that plausibly fits the 8 weeks before the pilot; 0.5=a list of improvements with no ordering, dependencies, or capacity awareness; 0.0=a guilt list of 10+ items all marked urgent with no sequence",
+        "weight": 0.20
+      }
+    ]
+  },
+  {
+    "id": "fleet-tracking-services-before-ingestion-refactor",
+    "skill": "brownfield-architecture-review",
+    "task_description": "Our fleet-tracking product started six years ago as one service and is now fourteen, with ten engineers who all work on everything. Ingestion runs at about 2,000 GPS messages a second and customers usually notice data delays before we do. Next quarter we're refactoring the ingestion path to onboard a hardware partner that will double our volume, and I want to know which structural problems we have to fix first so the refactor doesn't just add a fifteenth service to the pile.",
+    "context": "## System\n\nFleet-tracking product, 6 years old, grown from 1 service to 14. Team of 10. GPS ingestion averages 2,000 messages/sec (peaks at 5,000). Customers are ~300 trucking companies.\n\n## Artifacts Available\n\n- Data access: 9 of the 14 services read tables owned by other services directly; the 'core' database has 340 tables and no ownership map\n- Network calls: no timeouts configured in 11 of 14 services; a code review last month found 3 retry loops with no backoff in the ingestion path\n- Incident history (last 6 months): 4 incidents; 2 were retry storms that amplified a brief database slowdown into hour-long ingestion backlogs, with position data arriving up to 3 hours late\n- Alerting: host-metric alerts only; customers discover data delays before the team does — support tickets are the de facto alerting system\n- Team structure: all 10 engineers work across all 14 services; no service has a designated owner\n\n## Planned Work\n\nNext quarter: refactor of the ingestion path to support a new hardware partner that will double message volume.",
+    "rubric": [
+      {
+        "dimension": "evidence_based_findings",
+        "description": "1.0=findings cite the provided artifacts — 9-of-14 cross-service table reads, 11-of-14 missing timeouts, the two retry-storm incidents, support tickets as de facto alerting, zero service ownership — rather than assumptions; 0.5=some findings grounded in artifacts, others asserted without evidence and not flagged as assumptions; 0.0=generic microservices critique with no reference to this system",
+        "weight": 0.25
+      },
+      {
+        "dimension": "assessment_status_per_area",
+        "description": "1.0=explicit Compliant / At Risk / Non-compliant status per assessed area with one-sentence specific gaps (e.g., 'retry loops without backoff in the ingestion path turned a brief database slowdown into an hour-long backlog — twice'); 0.5=problems listed without statuses or with vague gaps; 0.0=no per-area assessment",
+        "weight": 0.20
+      },
+      {
+        "dimension": "impact_ranking",
+        "description": "1.0=findings ranked High/Medium/Low with rationale tied to the ingestion path (the primary user-facing data flow), data lateness, and on-call burden, with a top-3 called out; 0.5=labels without rationale; 0.0=no ranking",
+        "weight": 0.15
+      },
+      {
+        "dimension": "improvement_specificity",
+        "description": "1.0=scoped, sized improvements per top finding (e.g., 'add timeouts and exponential backoff with jitter to the 3 ingestion retry sites', 'add an end-to-end data-freshness alert with a lateness threshold') rather than 'consolidate services'; 0.5=right direction, no scope or sizing; 0.0=no proposals",
+        "weight": 0.20
+      },
+      {
+        "dimension": "planned_work_interaction",
+        "description": "1.0=states, per top finding, whether the ingestion refactor and doubled volume makes it better, worse, or irrelevant — e.g., retry-without-backoff and missing freshness alerting get worse at 2x volume and must be fixed before or during the refactor — and sequences accordingly; 0.5=acknowledges the refactor without per-finding analysis; 0.0=ignores the planned refactor",
+        "weight": 0.20
+      }
+    ]
+  }
+]

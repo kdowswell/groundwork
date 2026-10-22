@@ -8,11 +8,23 @@
   "engines": {
     "node": ">=20"
   },
+  "bin": {
+    "groundwork": "cli/bin/groundwork.mjs"
+  },
+  "files": [
+    "cli/",
+    "skills/",
+    "principles/",
+    "LICENSE",
+    "README.md"
+  ],
   "scripts": {
     "validate": "tsx scripts/validate-principles.ts",
     "validate:skills": "tsx scripts/validate-skills.ts",
     "validate:all": "npm run validate && npm run validate:skills",
     "sync:principles": "tsx scripts/sync-skill-principles.ts",
+    "sync:router": "tsx scripts/sync-router-references.ts",
+    "sync:all": "npm run sync:principles && npm run sync:router",
     "typecheck": "tsc --noEmit",
     "test": "vitest run --passWithNoTests",
     "eval": "tsx eval/harness.ts",
