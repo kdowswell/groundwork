@@ -71,6 +71,8 @@ The human's job is to answer questions honestly, including "I don't know." Open 
 
 8. **Identify the riskiest assumption.** Pick the one assumption in the spec that, if wrong, would require the most rework. Write it as a falsifiable statement. This becomes the first thing to test or validate — before the architecture is locked.
 
+9. **Record the user's decision.** When the user answers the acceptance Checkpoint, run `groundwork approve <spec path> --checkpoint=greenfield-spec-from-idea/accept`, adding `--decision=changes-requested` if they asked for changes or `--decision=delegated` if they told you to decide. Record only an answer the user gave in this conversation. With no one available to answer, record nothing and leave the artifact marked as a draft. If the CLI is unavailable, write the decision and date at the top of the artifact instead and say it is unverified.
+
 ## Checkpoints
 
 **Is the problem statement about a user, or about the system?**
@@ -84,6 +86,9 @@ If the primary user is a field worker, mobile user, or anyone not sitting at a d
 
 **Are blocking questions still open after Phase 1?**
 If the spec contains blocking questions after the draft is written, Phase 2 must run — even if it feels premature. A spec with blocking questions is a draft, not an output. If running in a non-interactive or fully-automated context (no human available to answer), mark the spec explicitly as "Draft — blocking questions unresolved" at the top and record that Phase 2 must run before architecture begins. Do not pass a draft spec to the next phase as if it were complete.
+
+**Does the user accept this spec as the basis for architecture and data modeling?**
+Ask once the spec is complete. **Accepted:** record the approval; architecture and data modeling may start from it, and any later edit to the spec makes the approval stale, so the next step re-asks. **Changes requested:** record that, revise, and ask again; nothing downstream starts from this version. **Delegated ("you decide"):** record it as delegated, state the calls you made in your next reply, and proceed. The agent never answers this Checkpoint on the user's behalf.
 
 ## Principle Application
 

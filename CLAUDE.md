@@ -36,9 +36,9 @@ groundwork/
 │   └── brownfield-*/       Phase 3: 6 skills
 ├── hooks/hooks.json        Plugin lifecycle hooks → hook.mjs (SessionStart/PostToolUse/Stop, ADR-006)
 ├── cli/                    npx groundwork CLI — plain ESM, ZERO runtime dependencies (ADR-005)
-│   ├── bin/groundwork.mjs  Commands: detect, doctor, install, update
+│   ├── bin/groundwork.mjs  Commands: detect, doctor, install, update, approve, verify
 │   ├── engine/             Detector rules (each maps to a principle id), scanner, reporters
-│   ├── commands/           doctor.mjs, install.mjs
+│   ├── commands/           doctor.mjs, install.mjs, approvals.mjs (ADR-007 receipts)
 │   └── data/               GENERATED principle index (sync:router)
 ├── eval/                   Two harnesses:
 │   ├── harness.ts          Quality: skill-vs-baseline A/B with LLM judge (eval/cases/, 15 skills)

@@ -20,6 +20,9 @@ import { install } from "../../cli/commands/install.mjs";
 export const BEHAVIOR_MODEL = process.env.BEHAVIOR_MODEL ?? "claude-haiku-4-5-20251001";
 const MAX_TURNS = 12;
 const SKILL_REL = ".claude/skills/groundwork";
+const CLI_BIN = path.resolve(__dirname, "../../cli/bin/groundwork.mjs");
+/** `groundwork approve|verify` with plain arguments only — no shell metacharacters. */
+const GROUNDWORK_CLI = /^\s*(?:npx\s+)?groundwork\s+(approve|verify)((?:\s+[\w./=:@,"'<>-]+)*)\s*$/;
 
 export interface ToolCall {
   tool: string;
@@ -78,7 +81,7 @@ const TOOLS: Anthropic.Tool[] = [
   {
     name: "bash",
     description:
-      "Run a shell command in the workspace. This sandbox only permits running the groundwork context loader (node .../context.mjs).",
+      "Run a shell command in the workspace. This sandbox only permits the groundwork context loader (node .../context.mjs) and the groundwork CLI's `groundwork approve` and `groundwork verify` commands.",
     input_schema: {
       type: "object",
       properties: { command: { type: "string" } },
@@ -115,8 +118,26 @@ function executeTool(workspace: string, call: ToolCall): string {
     }
     case "bash": {
       const command = String(call.input.command ?? "");
+      const cli = command.match(GROUNDWORK_CLI);
+      if (cli) {
+        // Run the repo's CLI directly, without a shell; report exit status like a terminal would.
+        const args = [cli[1], ...cli[2].trim().split(/\s+/).filter(Boolean)].map((a) =>
+          a.replace(/^["']|["']$/g, "").replace(/=["'](.*)["']$/, "=$1"),
+        );
+        try {
+          const out = execFileSync(process.execPath, [CLI_BIN, ...args], {
+            cwd: workspace,
+            encoding: "utf8",
+            timeout: 10_000,
+          });
+          return `${out}\n(exit 0)`;
+        } catch (err) {
+          const e = err as { status?: number; stdout?: string; stderr?: string };
+          return `${e.stdout ?? ""}${e.stderr ?? ""}\n(exit ${e.status ?? 1})`;
+        }
+      }
       if (!command.includes("context.mjs")) {
-        return "error: this sandbox only permits running the groundwork context loader";
+        return "error: this sandbox only permits the groundwork context loader and groundwork approve/verify";
       }
       try {
         return execFileSync("sh", ["-c", command], {
@@ -200,6 +221,14 @@ export function isContextAccess(call: ToolCall): boolean {
   if (call.tool === "bash") return String(call.input.command ?? "").includes("context.mjs");
   if (call.tool === "read_file") return String(call.input.path ?? "").includes(".groundwork/context.md");
   return false;
+}
+
+/** Bash commands that invoked `groundwork <sub>` (approve or verify). */
+export function cliCalls(trace: ToolCall[], sub: "approve" | "verify"): string[] {
+  return trace
+    .filter((c) => c.tool === "bash")
+    .map((c) => String(c.input.command ?? ""))
+    .filter((cmd) => new RegExp(`groundwork\\s+${sub}\\b`).test(cmd));
 }
 
 /** Command playbooks read from reference/ (excludes reference/principles/). */

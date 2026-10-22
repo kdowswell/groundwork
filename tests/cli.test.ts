@@ -1,10 +1,20 @@
 import { execFileSync } from "node:child_process";
-import { existsSync, mkdtempSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import {
+  existsSync,
+  mkdtempSync,
+  mkdirSync,
+  readFileSync,
+  readdirSync,
+  rmSync,
+  symlinkSync,
+  writeFileSync,
+} from "node:fs";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { afterAll, describe, expect, it } from "vitest";
 import { doctor } from "../cli/commands/doctor.mjs";
 import { install } from "../cli/commands/install.mjs";
+import { approve, verify } from "../cli/commands/approvals.mjs";
 
 const ROOT = resolve(__dirname, "..");
 const BIN = join(ROOT, "cli/bin/groundwork.mjs");
@@ -306,6 +316,183 @@ describe("hook script", () => {
       tool_input: { file_path: join(AFTER, "orders.js") },
     });
     expect(runHook({ hook_event_name: "Stop", session_id: cleanSession, cwd: AFTER })).toBe("");
+  });
+});
+
+describe("groundwork approve / verify", () => {
+  const NOW = new Date("2026-10-22T12:00:00Z");
+  function projectWithSpec() {
+    const dir = tempDir();
+    mkdirSync(join(dir, "docs/specs"), { recursive: true });
+    writeFileSync(join(dir, "docs/specs/orders.md"), "# Orders\n\nScope: v1.\n");
+    return dir;
+  }
+
+  it("records a hash-pinned receipt and verifies it fresh", () => {
+    const dir = projectWithSpec();
+    const { receipt, path, replaced } = approve(dir, "docs/specs/orders.md", {
+      checkpoint: "greenfield-spec-from-idea/scope",
+      notes: "ship v1 only",
+      now: NOW,
+    });
+    expect(replaced).toBe(false);
+    expect(path).toBe(join(dir, ".groundwork/approvals/docs__specs__orders.md.json"));
+    expect(receipt).toMatchObject({
+      version: 1,
+      artifact: "docs/specs/orders.md",
+      decision: "approved",
+      decidedBy: "user",
+      date: "2026-10-22",
+      notes: "ship v1 only",
+    });
+    expect(receipt.sha256).toMatch(/^[0-9a-f]{64}$/);
+    expect(verify(dir)).toMatchObject({ ok: true, receipts: [{ status: "fresh" }] });
+    expect(verify(dir, "docs/specs/orders.md").ok).toBe(true);
+  });
+
+  it("flags stale and missing artifacts, and treats CRLF checkouts as unchanged", () => {
+    const dir = projectWithSpec();
+    approve(dir, "docs/specs/orders.md", { checkpoint: "scope", now: NOW });
+
+    writeFileSync(join(dir, "docs/specs/orders.md"), "# Orders\r\n\r\nScope: v1.\r\n");
+    expect(verify(dir).ok).toBe(true);
+
+    writeFileSync(join(dir, "docs/specs/orders.md"), "# Orders\n\nScope: v1 and v2.\n");
+    expect(verify(dir)).toMatchObject({ ok: false, receipts: [{ status: "stale" }] });
+    expect(verify(dir, "docs/specs/orders.md").ok).toBe(false);
+
+    rmSync(join(dir, "docs/specs/orders.md"));
+    expect(verify(dir).receipts[0].status).toBe("missing");
+  });
+
+  it("records delegated decisions as the agent's, and changes-requested never passes", () => {
+    const dir = projectWithSpec();
+    const { receipt } = approve(dir, "docs/specs/orders.md", {
+      checkpoint: "scope",
+      decision: "delegated",
+      now: NOW,
+    });
+    expect(receipt.decidedBy).toBe("agent-delegated");
+    expect(verify(dir, "docs/specs/orders.md").ok).toBe(true);
+
+    const second = approve(dir, "docs/specs/orders.md", {
+      checkpoint: "scope",
+      decision: "changes-requested",
+      now: NOW,
+    });
+    expect(second.replaced).toBe(true);
+    expect(verify(dir).ok).toBe(true); // receipt itself is intact
+    expect(verify(dir, "docs/specs/orders.md").ok).toBe(false); // but work may not proceed
+  });
+
+  it("rejects bad input and reports unapproved and invalid receipts", () => {
+    const dir = projectWithSpec();
+    expect(() => approve(dir, "docs/specs/orders.md", {} as any)).toThrow(/--checkpoint/);
+    expect(() => approve(dir, "docs/specs/orders.md", { checkpoint: "Bad Id" })).toThrow();
+    expect(() =>
+      approve(dir, "docs/specs/orders.md", { checkpoint: "scope", decision: "maybe" }),
+    ).toThrow(/--decision/);
+    expect(() => approve(dir, "../outside.md", { checkpoint: "scope" })).toThrow(/inside/);
+    expect(() => approve(dir, "docs/specs/nope.md", { checkpoint: "scope" })).toThrow(/exist/);
+
+    expect(verify(dir, "docs/specs/orders.md").receipts[0].status).toBe("unapproved");
+
+    mkdirSync(join(dir, ".groundwork/approvals"), { recursive: true });
+    writeFileSync(join(dir, ".groundwork/approvals/broken.json"), "{");
+    expect(verify(dir)).toMatchObject({ ok: false, receipts: [{ status: "invalid" }] });
+  });
+
+  it("refuses to overwrite a receipt that belongs to a colliding artifact path", () => {
+    const dir = projectWithSpec();
+    writeFileSync(join(dir, "docs__specs__orders.md"), "collides\n");
+    approve(dir, "docs/specs/orders.md", { checkpoint: "scope", now: NOW });
+    expect(() => approve(dir, "docs__specs__orders.md", { checkpoint: "scope" })).toThrow(
+      /already belongs/,
+    );
+  });
+
+  it("CLI: approve then verify, with exit codes and notes containing '='", () => {
+    const dir = projectWithSpec();
+    const approved = runCli(
+      ["approve", "docs/specs/orders.md", "--checkpoint=scope", "--notes=limit=100 rps"],
+      { cwd: dir },
+    );
+    expect(approved.status).toBe(0);
+    expect(approved.stdout).toContain("Recorded approved");
+    const receipt = JSON.parse(
+      readFileSync(join(dir, ".groundwork/approvals/docs__specs__orders.md.json"), "utf8"),
+    );
+    expect(receipt.notes).toBe("limit=100 rps");
+
+    expect(runCli(["verify"], { cwd: dir }).status).toBe(0);
+    writeFileSync(join(dir, "docs/specs/orders.md"), "# Orders\n\nchanged\n");
+    const stale = runCli(["verify", "--json"], { cwd: dir });
+    expect(stale.status).toBe(1);
+    expect(JSON.parse(stale.stdout).receipts[0].status).toBe("stale");
+    expect(runCli(["approve", "docs/specs/orders.md"], { cwd: dir }).status).toBe(2);
+  });
+
+  it("never writes or reads through symlinks, and rejects artifacts outside the project", () => {
+    const outside = tempDir();
+    const victim = join(outside, "victim.txt");
+    writeFileSync(victim, "export SECRET=1\n");
+
+    // A planted receipt symlink is refused, and the target is untouched.
+    const dir = projectWithSpec();
+    mkdirSync(join(dir, ".groundwork/approvals"), { recursive: true });
+    symlinkSync(victim, join(dir, ".groundwork/approvals/docs__specs__orders.md.json"));
+    expect(() => approve(dir, "docs/specs/orders.md", { checkpoint: "scope" })).toThrow(/regular file/);
+    expect(readFileSync(victim, "utf8")).toBe("export SECRET=1\n");
+    // verify reports it without echoing the target's contents.
+    const report = verify(dir);
+    expect(report).toMatchObject({ ok: false, receipts: [{ status: "invalid" }] });
+    expect(JSON.stringify(report)).not.toContain("SECRET");
+
+    // A symlinked approvals directory pointing outside is refused.
+    const dir2 = projectWithSpec();
+    mkdirSync(join(dir2, ".groundwork"));
+    symlinkSync(outside, join(dir2, ".groundwork/approvals"));
+    expect(() => approve(dir2, "docs/specs/orders.md", { checkpoint: "scope" })).toThrow(/outside/);
+    expect(readdirSync(outside)).toEqual(["victim.txt"]);
+    expect(verify(dir2).ok).toBe(false);
+
+    // A symlinked artifact resolving outside the project is refused.
+    const dir3 = projectWithSpec();
+    symlinkSync(victim, join(dir3, "docs/specs/link.md"));
+    expect(() => approve(dir3, "docs/specs/link.md", { checkpoint: "scope" })).toThrow(/inside/);
+
+    // A receipt whose artifact path escapes the project is invalid, not hashed.
+    const dir4 = projectWithSpec();
+    mkdirSync(join(dir4, ".groundwork/approvals"), { recursive: true });
+    writeFileSync(
+      join(dir4, ".groundwork/approvals/escape.json"),
+      JSON.stringify({
+        artifact: "../victim.txt",
+        sha256: "0".repeat(64),
+        checkpoint: "scope",
+        decision: "approved",
+        decidedBy: "user",
+        date: "2026-10-22",
+      }),
+    );
+    expect(verify(dir4).receipts[0]).toMatchObject({ status: "invalid" });
+    expect(verify(dir4).receipts[0].message).toMatch(/escapes/);
+  });
+
+  it("leaves no temp files behind after writing a receipt", () => {
+    const dir = projectWithSpec();
+    approve(dir, "docs/specs/orders.md", { checkpoint: "scope", now: NOW });
+    approve(dir, "docs/specs/orders.md", { checkpoint: "scope", now: NOW });
+    expect(readdirSync(join(dir, ".groundwork/approvals"))).toEqual(["docs__specs__orders.md.json"]);
+  });
+
+  it("doctor reports stale approvals even without a context file", () => {
+    const dir = projectWithSpec();
+    approve(dir, "docs/specs/orders.md", { checkpoint: "scope", now: NOW });
+    writeFileSync(join(dir, "docs/specs/orders.md"), "changed\n");
+    const checks = doctor(dir).findings.map((f: any) => f.check);
+    expect(checks).toContain("approval-stale");
+    expect(checks).toContain("context-missing");
   });
 });
 

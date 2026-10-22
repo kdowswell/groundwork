@@ -12,7 +12,10 @@ the user approves. Doctor is the only command allowed to modify the context file
    `npx groundwork doctor --json` and use its findings as the baseline. If not, perform the
    same checks manually: context file exists, `Last reviewed` date parses and is under 90 days
    old, Active Principles section is non-empty, and every active principle id exists in the
-   principle library (synced copies live in `reference/principles/`).
+   principle library (synced copies live in `reference/principles/`). The CLI also reports
+   approval receipts (`approval-stale`, `approval-missing`, `approval-invalid`). Surface them,
+   but never repair one by re-approving. Only the user can re-resolve a Checkpoint, by
+   re-reading the changed artifact.
 
 2. **Cross-examine the context against the repository.** For each section, look for observable
    contradictions:

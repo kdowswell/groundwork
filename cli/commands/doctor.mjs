@@ -6,6 +6,7 @@
 import { readFileSync, existsSync } from "node:fs";
 import { join, resolve, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
+import { verify } from "./approvals.mjs";
 
 const CLI_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const STALE_AFTER_DAYS = 90;
@@ -29,11 +30,31 @@ function loadPrincipleIds() {
 }
 
 /**
+ * Approval receipts that no longer hold (ADR-007). Reported, never repaired:
+ * only the user can re-approve.
+ */
+function approvalFindings(root) {
+  const severity = { stale: "warn", missing: "warn", invalid: "error" };
+  return verify(root)
+    .receipts.filter((r) => r.status !== "fresh")
+    .map((r) => ({
+      check: `approval-${r.status}`,
+      severity: severity[r.status],
+      message:
+        r.status === "invalid"
+          ? `${r.receiptFile}: ${r.message}`
+          : r.status === "stale"
+            ? `${r.artifact} changed after its ${r.decision} decision at ${r.checkpoint} — re-ask the Checkpoint`
+            : `${r.artifact} (${r.checkpoint}) no longer exists — remove ${r.receiptFile} or restore it`,
+    }));
+}
+
+/**
  * Run doctor checks against a project root.
  * @returns {{findings: Array<{check: string, severity: string, message: string}>}}
  */
 export function doctor(root) {
-  const findings = [];
+  const findings = approvalFindings(root);
   const contextPath = join(root, ".groundwork", "context.md");
 
   if (!existsSync(contextPath)) {
