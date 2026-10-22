@@ -6,8 +6,10 @@ import type { TestCase, EvalResult, SkillSummary, EvalReport } from "./types.js"
 import { judgeOutput, weightedScore } from "./judge.js";
 import { withRetry } from "./utils.js";
 
-const AGENT_MODEL = process.env.AGENT_MODEL ?? "claude-haiku-4-5-20251001";
-const JUDGE_MODEL = process.env.JUDGE_MODEL ?? "claude-sonnet-4-6";
+const AGENT_MODEL = process.env.AGENT_MODEL ?? "claude-haiku-5-5";
+const JUDGE_MODEL = process.env.JUDGE_MODEL ?? "claude-sonnet-5-5";
+// Current models think by default and thinking counts toward max_tokens, so leave room for it.
+const AGENT_MAX_TOKENS = 16000;
 const SKILLS_DIR = path.resolve(process.cwd(), "skills");
 const CASES_DIR = path.resolve(process.cwd(), "eval/cases");
 const RESULTS_DIR = path.resolve(process.cwd(), "eval/results");
@@ -58,7 +60,7 @@ async function runAgent(
     const turn1 = await withRetry(() =>
       client.messages.create({
         model: AGENT_MODEL,
-        max_tokens: 2048,
+        max_tokens: AGENT_MAX_TOKENS,
         system: systemBlocks,
         messages,
       })
@@ -74,16 +76,19 @@ async function runAgent(
   const response = await withRetry(() =>
     client.messages.create({
       model: AGENT_MODEL,
-      max_tokens: 2048,
+      max_tokens: AGENT_MAX_TOKENS,
       system: systemBlocks,
       messages,
     })
   );
 
-  return response.content
+  const text = response.content
     .filter((b): b is Anthropic.TextBlock => b.type === "text")
     .map((b) => b.text)
     .join("\n");
+  // An empty answer would be scored as a real one; fail the case instead.
+  if (!text.trim()) throw new Error(`agent produced no text (stop_reason: ${response.stop_reason})`);
+  return text;
 }
 
 async function evalCase(

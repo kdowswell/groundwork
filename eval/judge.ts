@@ -1,13 +1,33 @@
 import Anthropic from "@anthropic-ai/sdk";
+import { jsonSchemaOutputFormat } from "@anthropic-ai/sdk/helpers/json-schema";
 import type { RubricDimension, JudgmentScore } from "./types.js";
 import { withRetry } from "./utils.js";
 
-// 1 run is sufficient at temperature=0 (outputs are deterministic)
+// Sampling parameters are no longer accepted, so judgments are not strictly
+// deterministic; raise JUDGE_RUNS to average out variance when it matters.
 const JUDGE_RUNS = parseInt(process.env.JUDGE_RUNS ?? "1", 10);
 
-interface ScoreToolInput {
-  scores: Array<{ dimension: string; score: number; reasoning: string }>;
-}
+// Structured output, not a forced tool call: current models reject forced tool_choice.
+const SCORES_FORMAT = jsonSchemaOutputFormat({
+  type: "object",
+  properties: {
+    scores: {
+      type: "array",
+      items: {
+        type: "object",
+        properties: {
+          dimension: { type: "string" },
+          score: { type: "number" },
+          reasoning: { type: "string" },
+        },
+        required: ["dimension", "score", "reasoning"],
+        additionalProperties: false,
+      },
+    },
+  },
+  required: ["scores"],
+  additionalProperties: false,
+});
 
 export async function judgeOutput(
   client: Anthropic,
@@ -34,51 +54,27 @@ Score this agent output against each rubric dimension. Provide a score 0.0–1.0
 Scoring: 1.0 = fully satisfies | 0.5 = partially satisfies | 0.0 = does not satisfy. Be strict — score what is present, not what you assume was intended.`;
 
   // Run sequentially to avoid overloading the API
-  const runResponses: Anthropic.Message[] = [];
+  const allRunScores: Array<Array<{ dimension: string; score: number; reasoning: string }>> = [];
   for (let i = 0; i < JUDGE_RUNS; i++) {
     const response = await withRetry(() =>
-      client.messages.create({
+      client.messages.parse({
         model,
-        max_tokens: 1024,
-        temperature: 0,
-        tools: [
-          {
-            name: "score_output",
-            description: "Score the agent output against each rubric dimension",
-            input_schema: {
-              type: "object" as const,
-              properties: {
-                scores: {
-                  type: "array",
-                  items: {
-                    type: "object",
-                    properties: {
-                      dimension: { type: "string" },
-                      score: { type: "number", minimum: 0, maximum: 1 },
-                      reasoning: { type: "string" },
-                    },
-                    required: ["dimension", "score", "reasoning"],
-                  },
-                },
-              },
-              required: ["scores"],
-            },
-          },
-        ],
-        tool_choice: { type: "tool", name: "score_output" },
+        max_tokens: 4096,
+        output_config: { format: SCORES_FORMAT },
         messages: [{ role: "user", content: prompt }],
       })
     );
-    runResponses.push(response);
-  }
-
-  const allRunScores = runResponses.map((response) => {
-    const toolUse = response.content.find((b) => b.type === "tool_use");
-    if (!toolUse || toolUse.type !== "tool_use") {
-      throw new Error("Judge response missing tool_use block");
+    if (response.stop_reason === "refusal") {
+      throw new Error(`Judge refused (${response.stop_details?.category ?? "no category"})`);
     }
-    return (toolUse.input as ScoreToolInput).scores;
-  });
+    if (!response.parsed_output) {
+      throw new Error(`Judge returned no parseable scores (stop_reason: ${response.stop_reason})`);
+    }
+    // The schema can't bound numbers, so clamp to the rubric's 0–1 scale.
+    allRunScores.push(
+      response.parsed_output.scores.map((s) => ({ ...s, score: Math.min(1, Math.max(0, s.score)) }))
+    );
+  }
 
   // Average scores across runs; use reasoning from the first run
   return rubric.map((d) => {

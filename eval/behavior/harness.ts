@@ -10,14 +10,23 @@
  */
 import Anthropic from "@anthropic-ai/sdk";
 import { execFileSync } from "node:child_process";
-import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync, existsSync } from "node:fs";
+import {
+  chmodSync,
+  existsSync,
+  mkdirSync,
+  mkdtempSync,
+  readFileSync,
+  rmSync,
+  statSync,
+  writeFileSync,
+} from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-ignore — dependency-free ESM CLI, no declarations (ADR-005)
 import { install } from "../../cli/commands/install.mjs";
 
-export const BEHAVIOR_MODEL = process.env.BEHAVIOR_MODEL ?? "claude-haiku-4-5-20251001";
+export const BEHAVIOR_MODEL = process.env.BEHAVIOR_MODEL ?? "claude-haiku-5-5";
 const MAX_TURNS = 12;
 const SKILL_REL = ".claude/skills/groundwork";
 const CLI_BIN = path.resolve(__dirname, "../../cli/bin/groundwork.mjs");
@@ -46,10 +55,18 @@ export function resolveApiKey(): string | undefined {
   }
 }
 
+/** Directory name, inside a workspace, of the `groundwork` shim put on PATH for shell commands. */
+const SHIM_DIR = ".bin-shim";
+
 /** Create a scratch workspace with the router skill installed plus extra files. */
 export function createWorkspace(files: Record<string, string> = {}): string {
   const dir = mkdtempSync(path.join(tmpdir(), "groundwork-behavior-"));
   install({ projectRoot: dir, providers: ["claude"] });
+  // Real installs reach the CLI as `npx groundwork`; chained shell commands need it on PATH.
+  const shim = path.join(dir, SHIM_DIR, "groundwork");
+  mkdirSync(path.dirname(shim), { recursive: true });
+  writeFileSync(shim, `#!/bin/sh\nexec "${process.execPath}" "${CLI_BIN}" "$@"\n`, "utf8");
+  chmodSync(shim, 0o755);
   for (const [rel, content] of Object.entries(files)) {
     const abs = path.join(dir, rel);
     mkdirSync(path.dirname(abs), { recursive: true });
@@ -96,7 +113,7 @@ function listFilesRec(root: string, dir = root): string[] {
   for (const entry of require("node:fs").readdirSync(dir, { withFileTypes: true })) {
     const abs = path.join(dir, entry.name);
     if (entry.isDirectory()) {
-      if (entry.name === "node_modules" || entry.name === ".git") continue;
+      if (entry.name === "node_modules" || entry.name === ".git" || entry.name === SHIM_DIR) continue;
       out.push(...listFilesRec(root, abs));
     } else {
       out.push(path.relative(root, abs).split(path.sep).join("/"));
@@ -114,6 +131,7 @@ function executeTool(workspace: string, call: ToolCall): string {
       const abs = path.resolve(workspace, rel);
       if (!abs.startsWith(workspace)) return "error: path escapes the workspace";
       if (!existsSync(abs)) return `error: no such file: ${rel}`;
+      if (!statSync(abs).isFile()) return `error: not a file: ${rel}`;
       return readFileSync(abs, "utf8");
     }
     case "bash": {
@@ -144,9 +162,16 @@ function executeTool(workspace: string, call: ToolCall): string {
           cwd: workspace,
           encoding: "utf8",
           timeout: 10_000,
+          env: {
+            ...process.env,
+            PATH: `${path.join(workspace, SHIM_DIR)}${path.delimiter}${process.env.PATH ?? ""}`,
+          },
         });
       } catch (err) {
-        return `error: ${(err as Error).message}`;
+        // Non-zero exit (e.g. a failing `groundwork verify`): show what a terminal would.
+        const e = err as { status?: number; stdout?: string; stderr?: string; message: string };
+        if (e.status == null) return `error: ${e.message}`;
+        return `${e.stdout ?? ""}${e.stderr ?? ""}\n(exit ${e.status})`;
       }
     }
     default:
@@ -177,7 +202,7 @@ export async function runScenario(opts: {
   for (let turn = 0; turn < MAX_TURNS; turn++) {
     const response = await client.messages.create({
       model: BEHAVIOR_MODEL,
-      max_tokens: 1500,
+      max_tokens: 16000, // thinking is on by default and counts toward this
       system: [{ type: "text", text: system, cache_control: { type: "ephemeral" } }],
       tools: TOOLS,
       messages,
