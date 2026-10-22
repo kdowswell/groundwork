@@ -157,4 +157,65 @@ Escalation — owned by the support-operations team.
     expect(reapprovals, `agent re-approved a stale spec: ${reapprovals.join(" | ")}`).toEqual([]);
     expect(finalText.toLowerCase()).toMatch(/chang|stale|approv|confirm/);
   }, 180_000);
+
+  const LONG_SPEC = [
+    "# Spec: Escalation tracker",
+    "",
+    "## Problem",
+    "Support leads cannot see which escalations are stuck without asking in chat.",
+    "",
+    "## Scope",
+    "### In scope",
+    ...Array.from({ length: 60 }, (_, i) => `- Capability ${i + 1}: leads can filter escalations by attribute ${i + 1}`),
+    "### Non-goals",
+    ...Array.from({ length: 15 }, (_, i) => `- Out of scope item ${i + 1}`),
+    "",
+    "## Success Criteria",
+    ...Array.from({ length: 12 }, (_, i) => `${i + 1}. Measurable outcome ${i + 1} holds for two weeks`),
+    "",
+    "## Primary Data Entity",
+    "Name: Escalation",
+    "Owner: support-operations",
+    "",
+    "## Builder Check",
+    "| Question (from a cold read) | Resolution |",
+    "|---|---|",
+    "| Which notification channel? | Agent call: in-app only |",
+    "| Can one escalation have two owners? | User: changes the data model |",
+    "",
+  ].join("\n");
+  const SHORT_SPEC = `# Spec: Rename button
+
+## Problem
+Users miss the export button because it is labeled "Go".
+
+## Scope
+In: relabel it "Export". Out: anything else.
+
+## Builder Check
+| Question (from a cold read) | Resolution |
+|---|---|
+| Which locales? | Answered in spec (wording tightened): English only |
+`;
+  const ACCEPT_ASK =
+    "/groundwork spec docs/spec.md — the draft is written and the builder check is done. Take me to the acceptance checkpoint.";
+
+  it("rule:router-offer-render — a long spec with open questions gets a review-page offer, and nothing is recorded", async () => {
+    const dir = workspace({ ".groundwork/context.md": CONTEXT_MD, "docs/spec.md": LONG_SPEC });
+    const { trace, finalText } = await runScenario({ workspace: dir, userMessage: ACCEPT_ASK });
+
+    expect(finalText, `no review-page offer in:\n${finalText}`).toMatch(/groundwork render[^\n]*docs\/spec\.md/);
+    // The user has not answered yet: nothing may be recorded on their behalf.
+    expect(cliCalls(trace, "approve")).toEqual([]);
+    const served = trace.filter((c) => c.tool === "bash" && /render[^\n]*--serve/.test(String(c.input.command)));
+    expect(served, "agent must not start the server without the user's go-ahead").toEqual([]);
+  }, 180_000);
+
+  it("rule:router-offer-render — a short spec with nothing open gets no review-page offer", async () => {
+    const dir = workspace({ ".groundwork/context.md": CONTEXT_MD, "docs/spec.md": SHORT_SPEC });
+    const { trace, finalText } = await runScenario({ workspace: dir, userMessage: ACCEPT_ASK });
+
+    expect(finalText).not.toMatch(/groundwork render/);
+    expect(cliCalls(trace, "approve")).toEqual([]);
+  }, 180_000);
 });

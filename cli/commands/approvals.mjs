@@ -9,19 +9,16 @@
  * committed with the repository.
  */
 import { createHash } from "node:crypto";
+import { existsSync, lstatSync, readFileSync, readdirSync, realpathSync } from "node:fs";
+import { join, relative, resolve, sep } from "node:path";
 import {
-  existsSync,
-  lstatSync,
-  mkdirSync,
-  readFileSync,
-  readdirSync,
-  realpathSync,
-  renameSync,
-  rmSync,
-  writeFileSync,
-} from "node:fs";
-import { randomBytes } from "node:crypto";
-import { isAbsolute, join, relative, resolve, sep } from "node:path";
+  ensureProjectDir,
+  isInside,
+  isRegularFile,
+  resolvesInside,
+  toProjectPath,
+  writeFileSafe,
+} from "./safe-fs.mjs";
 
 export const APPROVALS_DIR = join(".groundwork", "approvals");
 export const DECISIONS = ["approved", "changes-requested", "delegated"];
@@ -36,44 +33,8 @@ export function digestFile(absPath) {
   return createHash("sha256").update(text, "utf8").digest("hex");
 }
 
-function isInside(parent, child) {
-  const rel = relative(parent, child);
-  return rel !== "" && !rel.startsWith("..") && !isAbsolute(rel);
-}
-
-/**
- * True when `abs` stays inside `root` after resolving symlinks. Receipts and
- * artifacts come from the repository, which may be untrusted (a fresh clone):
- * a symlinked path must not reach files outside it.
- */
-function resolvesInside(root, abs) {
-  return isInside(root, abs) && isInside(realpathSync(root), realpathSync(abs));
-}
-
 /** Repo-relative POSIX path, or throw when the artifact is outside the root. */
-function toArtifactPath(root, artifact) {
-  const abs = resolve(root, artifact);
-  if (!isInside(root, abs) || (existsSync(abs) && !resolvesInside(root, abs))) {
-    throw new Error(`artifact must be a file inside ${root}: ${artifact}`);
-  }
-  return relative(root, abs).split(sep).join("/");
-}
-
-/** Approvals directory, created if needed; refused if it resolves outside the root. */
-function approvalsDir(root) {
-  const dir = join(root, APPROVALS_DIR);
-  mkdirSync(dir, { recursive: true });
-  if (!isInside(realpathSync(root), realpathSync(dir))) {
-    throw new Error(`${APPROVALS_DIR} resolves outside ${root} (symlink?) — refusing to write`);
-  }
-  return dir;
-}
-
-/** A receipt path must be a regular file, never a symlink. */
-function isRegularFile(path) {
-  const st = lstatSync(path, { throwIfNoEntry: false });
-  return st !== undefined && st.isFile() && !st.isSymbolicLink();
-}
+const toArtifactPath = (root, artifact) => toProjectPath(root, artifact);
 
 /** One receipt per artifact: docs/specs/x.md → docs__specs__x.md.json */
 export function receiptPath(root, artifactPath) {
@@ -119,7 +80,7 @@ export function approve(root, artifact, opts) {
   };
   if (opts.notes) receipt.notes = String(opts.notes);
 
-  const dir = approvalsDir(root);
+  const dir = ensureProjectDir(root, APPROVALS_DIR);
   const path = receiptPath(root, artifactPath);
   const replaced = lstatSync(path, { throwIfNoEntry: false }) !== undefined;
   if (replaced) {
@@ -133,16 +94,7 @@ export function approve(root, artifact, opts) {
       );
     }
   }
-  // Exclusive-create a temp file, then rename over the target: rename replaces
-  // the directory entry itself, so it can never write through a symlink.
-  const tmp = join(dir, `.${randomBytes(6).toString("hex")}.tmp`);
-  writeFileSync(tmp, `${JSON.stringify(receipt, null, 2)}\n`, { encoding: "utf8", flag: "wx" });
-  try {
-    renameSync(tmp, path);
-  } catch (err) {
-    rmSync(tmp, { force: true });
-    throw err;
-  }
+  writeFileSafe(dir, path, `${JSON.stringify(receipt, null, 2)}\n`);
   return { receipt, path, replaced };
 }
 
