@@ -62,7 +62,7 @@ The agent draws the structural questions out of the spec and proposes a sketch. 
    - **For the user:** the answer changes what gets built.
    Bring the user only the last group, in one round. Record every question and its resolution in the sketch's Builder Check section. The section is never left out; if the cold read finds nothing, write "No open questions."
 
-9. **Record the user's decision.** When the user answers the acceptance Checkpoint, run `groundwork approve <architecture path> --checkpoint=greenfield-architecture-sketch/accept`, adding `--decision=changes-requested` if they asked for changes or `--decision=delegated` if they told you to decide. Record only an answer the user gave in this conversation. With no one available to answer, record nothing and leave the artifact marked as a draft. If the CLI is unavailable, write the decision and date at the top of the artifact instead and say it is unverified.
+9. **Record the user's decision.** When the user answers the acceptance Checkpoint, run `groundwork approve <architecture path> --checkpoint=greenfield-architecture-sketch/accept`, adding `--decision=changes-requested` if they asked for changes or `--decision=delegated` if they told you to decide. Record only an answer the user gave in this conversation. If they decided in the review page, it is already recorded: confirm with `groundwork verify` instead of recording it again, and never submit the page yourself. With no one available to answer, record nothing and leave the artifact marked as a draft. If the CLI is unavailable, write the decision and date at the top of the artifact instead and say it is unverified.
 
 ## Checkpoints
 
@@ -82,7 +82,7 @@ If the user expects an immediate response to an action but the action crosses a 
 **Yes:** put them to the user before the acceptance Checkpoint, and fold each answer into the sketch. Acceptance cannot be asked while any of them is open, because the user would be approving a sketch that two builders would read differently. **No:** go straight to acceptance, and list the "Agent call:" decisions you made so the user can overturn any of them when they answer.
 
 **Does the user accept this sketch as the basis for data modeling and implementation?**
-Ask once the sketch is complete. **Accepted:** record the approval; data modeling and implementation may start from it, and any later edit to the sketch makes the approval stale, so the next step re-asks. **Changes requested:** record that, revise, and ask again; nothing downstream starts from this version. **Delegated ("you decide"):** record it as delegated, state the calls you made in your next reply, and proceed. The agent never answers this Checkpoint on the user's behalf.
+Ask once the sketch is complete. If the sketch is long or still has open questions for the user, offer once to show it as a review page (`groundwork render <sketch path> --serve`), where the user can read it beside its open questions and findings and decide there. **Accepted:** record the approval; data modeling and implementation may start from it, and any later edit to the sketch makes the approval stale, so the next step re-asks. **Changes requested:** record that, revise, and ask again; nothing downstream starts from this version. **Delegated ("you decide"):** record it as delegated, state the calls you made in your next reply, and proceed. The agent never answers this Checkpoint on the user's behalf.
 
 ## Principle Application
 

@@ -113,3 +113,11 @@ ten-year-old codebase is still Define work. <!-- rule:router-phase-from-request 
   the user to confirm. When no such artifact exists, the request itself is the input: draft
   from it, stating the requirements you assumed, rather than stopping to ask for one.
   <!-- rule:router-verify-handoff -->
+- When you ask a spec, sketch, or data model's acceptance Checkpoint and the artifact is long
+  (more than about 80 lines) or still has open questions for the user, offer a review page
+  once, alongside the question: `groundwork render <artifact> --serve` shows it beside its
+  open questions, cited principles, and detector findings, and records the user's decision
+  from the page. Start it only if the user agrees, and never submit the page's form yourself.
+  A decision made in the page is already recorded: confirm it with
+  `groundwork verify <artifact>` instead of running `approve` again. Don't offer it for short
+  artifacts with nothing open. <!-- rule:router-offer-render -->

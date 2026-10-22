@@ -30,8 +30,10 @@ export const BEHAVIOR_MODEL = process.env.BEHAVIOR_MODEL ?? "claude-haiku-5-5";
 const MAX_TURNS = 12;
 const SKILL_REL = ".claude/skills/groundwork";
 const CLI_BIN = path.resolve(__dirname, "../../cli/bin/groundwork.mjs");
-/** `groundwork approve|verify` with plain arguments only — no shell metacharacters. */
-const GROUNDWORK_CLI = /^\s*(?:npx\s+)?groundwork\s+(approve|verify)((?:\s+[\w./=:@,"'<>-]+)*)\s*$/;
+/** `groundwork approve|verify|render` with plain arguments only — no shell metacharacters. */
+const GROUNDWORK_CLI = /^\s*(?:npx\s+)?groundwork\s+(approve|verify|render)((?:\s+[\w./=:@,"'<>-]+)*)\s*$/;
+/** A test agent must never start the review server: it would block, and only humans decide there. */
+const SERVE_REFUSAL = "error: this sandbox cannot start servers; give the user the command to run instead\n(exit 1)";
 
 export interface ToolCall {
   tool: string;
@@ -98,7 +100,7 @@ const TOOLS: Anthropic.Tool[] = [
   {
     name: "bash",
     description:
-      "Run a shell command in the workspace. This sandbox only permits the groundwork context loader (node .../context.mjs) and the groundwork CLI's `groundwork approve` and `groundwork verify` commands.",
+      "Run a shell command in the workspace. This sandbox only permits the groundwork context loader (node .../context.mjs) and the groundwork CLI's `groundwork approve`, `groundwork verify`, and `groundwork render` commands.",
     input_schema: {
       type: "object",
       properties: { command: { type: "string" } },
@@ -136,6 +138,7 @@ function executeTool(workspace: string, call: ToolCall): string {
     }
     case "bash": {
       const command = String(call.input.command ?? "");
+      if (/groundwork\s+render\b/.test(command) && /--serve\b/.test(command)) return SERVE_REFUSAL;
       const cli = command.match(GROUNDWORK_CLI);
       if (cli) {
         // Run the repo's CLI directly, without a shell; report exit status like a terminal would.
@@ -248,8 +251,8 @@ export function isContextAccess(call: ToolCall): boolean {
   return false;
 }
 
-/** Bash commands that invoked `groundwork <sub>` (approve or verify). */
-export function cliCalls(trace: ToolCall[], sub: "approve" | "verify"): string[] {
+/** Bash commands that invoked `groundwork <sub>`. */
+export function cliCalls(trace: ToolCall[], sub: "approve" | "verify" | "render"): string[] {
   return trace
     .filter((c) => c.tool === "bash")
     .map((c) => String(c.input.command ?? ""))
