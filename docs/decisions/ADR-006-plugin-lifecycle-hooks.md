@@ -28,7 +28,9 @@ event's `hook_event_name` (absent means PostToolUse, for compatibility with exis
   This is a digest, not the full file; the router still loads the full context on demand. With
   no context file, it stays silent and does not suggest `/groundwork init` from a hook.
 - **PostToolUse (Edit|Write|MultiEdit):** unchanged per-file scan, plus append the edited path
-  to a per-session ledger in the OS temp directory.
+  to a per-session ledger in per-user state (`$XDG_STATE_HOME/groundwork/hooks`, default
+  `~/.local/state/groundwork/hooks`, created 0700). It is never stored in the shared temp
+  directory, where another local user could pre-create the directory or plant symlinks.
 - **Stop:** re-scan every file in the ledger. Unresolved `error` findings block the stop
   **once** with the list as the reason. `stop_hook_active` suppresses a second block, so the
   hook can never loop. Remaining `warn` findings go to the user as a non-blocking
@@ -49,7 +51,7 @@ and one test surface.
 **Negative:** the Stop block costs one extra agent turn whenever an `error` finding is real
 but intentional and unwaived. A user with both the plugin and `install --hooks` runs every
 hook twice, which the docs must call out.
-**Neutral:** the ledger lives in temp storage keyed by session id. Sessions that never reach
+**Neutral:** the ledger lives in per-user state keyed by session id. Sessions that never reach
 Stop leave small files that are pruned after a day at the next SessionStart.
 
 ## Alternatives Considered

@@ -5,7 +5,7 @@
  *
  *   SessionStart  digest of .groundwork/context.md (silent when absent)
  *   PostToolUse   detector scan of the edited file; path appended to a
- *                 per-session ledger (missing event name means PostToolUse)
+ *                 per-session ledger in per-user state (0700) (missing event name means PostToolUse)
  *   Stop          deep pass over every file edited this turn; unresolved
  *                 error findings block the stop once, warnings go to the user
  *
@@ -22,13 +22,17 @@ import {
   statSync,
   unlinkSync,
 } from "node:fs";
-import { tmpdir } from "node:os";
+import { homedir } from "node:os";
 import { dirname, join, relative, resolve } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import { analyzeContext, findContextFile } from "./context.mjs";
 
 const SCRIPT_DIR = dirname(fileURLToPath(import.meta.url));
-const LEDGER_DIR = join(tmpdir(), "groundwork-hooks");
+// Per-user state, never the shared temp dir: another local user must not be able
+// to pre-create the directory or plant ledgers/symlinks in it.
+const LEDGER_DIR =
+  process.env.GROUNDWORK_HOOK_STATE_DIR ??
+  join(process.env.XDG_STATE_HOME ?? join(homedir(), ".local", "state"), "groundwork", "hooks");
 const LEDGER_MAX_AGE_MS = 86_400_000;
 const MAX_LISTED = 8;
 
@@ -138,7 +142,7 @@ async function onPostToolUse(event) {
 
   const ledger = ledgerPath(event.session_id);
   if (ledger) {
-    mkdirSync(LEDGER_DIR, { recursive: true });
+    mkdirSync(LEDGER_DIR, { recursive: true, mode: 0o700 });
     appendFileSync(ledger, `${absPath}\n`, "utf8");
   }
 

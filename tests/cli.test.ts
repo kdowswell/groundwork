@@ -212,11 +212,16 @@ describe("hook script", () => {
     expect(garbage).toBe("");
   });
 
+  const stateDir = tempDir();
   const runHook = (event: object) =>
-    execFileSync(process.execPath, [HOOK], { input: JSON.stringify(event), encoding: "utf8" });
+    execFileSync(process.execPath, [HOOK], {
+      input: JSON.stringify(event),
+      encoding: "utf8",
+      env: { ...process.env, GROUNDWORK_HOOK_STATE_DIR: stateDir },
+    });
   let sessionSeq = 0;
   const newSession = () => `vitest-${process.pid}-${Date.now()}-${sessionSeq++}`;
-  const ledgerFor = (id: string) => join(tmpdir(), "groundwork-hooks", `${id}.log`);
+  const ledgerFor = (id: string) => join(stateDir, `${id}.log`);
 
   it("SessionStart digests project context and stays silent outside groundwork projects", () => {
     const dir = tempDir();
