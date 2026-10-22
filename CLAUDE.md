@@ -34,6 +34,7 @@ groundwork/
 │   │   └── SKILL.md        Literal filename required by Agent Skills standard
 │   ├── exploration-*/      Phase 2: 4 skills
 │   └── brownfield-*/       Phase 3: 6 skills
+├── agents/                 Plugin subagents: groundwork-builder (read-only builder check, ADR-007)
 ├── hooks/hooks.json        Plugin lifecycle hooks → hook.mjs (SessionStart/PostToolUse/Stop, ADR-006)
 ├── cli/                    npx groundwork CLI — plain ESM, ZERO runtime dependencies (ADR-005)
 │   ├── bin/groundwork.mjs  Commands: detect, doctor, install, update, approve, verify

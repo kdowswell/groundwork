@@ -7,27 +7,32 @@
       {
         "dimension": "entities_scoped",
         "description": "1.0=lists 3-7 core entities as nouns with a one-sentence definition each (e.g., Trainer, Client, Program, Workout, SessionResult) — neither the whole fitness domain nor implementation-detail tables like join or settings tables promoted to entities; 0.5=entities named but undefined, or the list balloons past 10; 0.0=jumps straight to columns and DDL with no entity-level model",
-        "weight": 0.20
+        "weight": 0.18
       },
       {
         "dimension": "relationship_cardinality",
         "description": "1.0=cardinality stated for every related pair (one-to-one, one-to-many, many-to-many) and the trainer-client many-to-many named as a first-class concept carrying its own meaning (e.g., a CoachingEngagement with start date and status), not a bare join table; 0.5=relationships drawn without cardinality, or the many-to-many left as an anonymous linking table; 0.0=no relationships modeled",
-        "weight": 0.20
+        "weight": 0.18
       },
       {
         "dimension": "ownership_assigned",
         "description": "1.0=each entity has exactly one named authoritative source (which module or service is the system of record — e.g., trainer-authored Program templates vs client-generated SessionResults), so no entity can be written from two places by convenience; 0.5=ownership mentioned for some entities but others left orphaned; 0.0=no ownership assignment at all",
-        "weight": 0.15
+        "weight": 0.135
       },
       {
         "dimension": "access_patterns_validated",
         "description": "1.0=lists 2-4 concrete read patterns per major entity ('session results by client_id ordered by date', 'active clients for a trainer', 'programs assigned to a client') with the fields involved, and flags any pattern that would require a full-table scan as a design signal; 0.5=generic statements like 'we'll query by user' without fields or ordering; 0.0=no access patterns — the model is never checked against its workload",
-        "weight": 0.25
+        "weight": 0.225
       },
       {
         "dimension": "schema_evolution_strategy",
         "description": "1.0=explicitly picks one of additive-only, versioned, or migration-managed with reasoning tied to the situation (solo developer, no external consumers yet, single deployable) rather than defaulting silently to whatever the ORM does; 0.5=mentions a migrations tool without choosing and justifying a strategy; 0.0=no evolution strategy considered",
-        "weight": 0.20
+        "weight": 0.18
+      },
+      {
+        "dimension": "builder_check",
+        "description": "1.0=includes a Builder Check section listing questions a builder reading only the data model would need answered, each resolved as answered-in-data model, a labeled agent call, or a question for the user — and only questions that change what gets built are put to the user; 0.5=open questions listed but not framed from the builder's perspective or not sorted by resolution; 0.0=no builder-perspective check",
+        "weight": 0.1
       }
     ]
   },
