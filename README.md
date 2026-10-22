@@ -66,7 +66,7 @@ CORS, missing HTTP timeouts). **Every finding names the principle it enforces.**
 ```bash
 npx groundwork detect --json .        # CI-friendly output, exit 1 on errors
 npx groundwork detect --strict .      # exit 1 on warnings too
-npx groundwork doctor                 # check .groundwork/context.md for drift
+npx groundwork doctor                 # check .groundwork/context.md and approvals for drift
 ```
 
 Waive intentional findings inline (`// groundwork-disable <rule-id>: reason`, plus
@@ -199,6 +199,23 @@ Run `/groundwork init` once per project. It interviews you (six questions max, s
 anything your repo already answers), writes `.groundwork/context.md`, and hands off to
 `/groundwork principles` to select the active principles every later command honors.
 `/groundwork doctor` and `npx groundwork doctor` keep the file honest as the project drifts.
+
+### Checkpoint approvals
+
+When you resolve a Checkpoint, record it as a receipt pinned to the artifact's SHA-256
+([ADR-007](docs/decisions/ADR-007-hash-pinned-checkpoint-approvals.md)):
+
+```bash
+npx groundwork approve docs/specs/orders.md --checkpoint=greenfield-spec-from-idea/scope
+npx groundwork approve docs/specs/orders.md --checkpoint=scope --decision=delegated   # "you pick"
+npx groundwork verify                        # exit 1 if any approved artifact changed or vanished
+npx groundwork verify docs/specs/orders.md   # exit 0 only if this artifact may proceed
+```
+
+Receipts live in `.groundwork/approvals/` and are meant to be committed. Editing an
+approved artifact makes its receipt stale, so drift after approval shows up in `verify` and
+`doctor` instead of slipping silently into implementation. Delegated decisions are recorded
+as the agent's (`decidedBy: "agent-delegated"`), never as yours.
 
 ## Repo Structure
 

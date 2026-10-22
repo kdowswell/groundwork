@@ -92,3 +92,18 @@ ten-year-old codebase is still Define work. <!-- rule:router-phase-from-request 
 - Report context drift when you notice it, but never repair it as a side effect of another
   command; that is `doctor`'s job, and it acts only when the user asks.
   <!-- rule:router-drift-not-a-side-quest -->
+
+## Approvals
+
+- A Checkpoint on an artifact is resolved only by the user's explicit answer in this
+  conversation. Record that answer with `groundwork approve <artifact> --checkpoint=<id>`,
+  passing `--decision=changes-requested` when they asked for changes and
+  `--decision=delegated` when they told you to choose, and disclose a delegated choice in your
+  next reply. Never record `approved` for an answer the user did not give. Silence, an earlier
+  session, or your own confidence is not approval. <!-- rule:router-approval-is-the-users -->
+- Before a playbook builds on an artifact from an earlier step (a spec, a sketch, a data
+  model), run `groundwork verify <artifact>`. If it fails (unapproved, changed since
+  approval, or changes requested), tell the user which and re-ask that artifact's acceptance
+  Checkpoint before continuing. Do not proceed silently, and do not approve it yourself to get
+  past the check. If the CLI is unavailable, say the approval could not be verified and ask
+  the user to confirm. <!-- rule:router-verify-handoff -->

@@ -1,0 +1,205 @@
+/**
+ * `groundwork approve` / `groundwork verify` — hash-pinned Checkpoint
+ * approval receipts (ADR-007).
+ *
+ * A receipt records how a Checkpoint was resolved for one artifact and pins
+ * the artifact's SHA-256 at that moment. `verify` reports receipts whose
+ * artifact changed (stale) or disappeared (missing), so post-approval drift is
+ * mechanically detectable. Receipts live in .groundwork/approvals/ and are
+ * committed with the repository.
+ */
+import { createHash } from "node:crypto";
+import {
+  existsSync,
+  mkdirSync,
+  readFileSync,
+  readdirSync,
+  writeFileSync,
+} from "node:fs";
+import { isAbsolute, join, relative, resolve, sep } from "node:path";
+
+export const APPROVALS_DIR = join(".groundwork", "approvals");
+export const DECISIONS = ["approved", "changes-requested", "delegated"];
+const CHECKPOINT_ID = /^[a-z0-9][a-z0-9-]*(\/[a-z0-9][a-z0-9-]*)?$/;
+
+/**
+ * SHA-256 of an artifact. CRLF is normalized to LF so a git autocrlf checkout
+ * does not invalidate every receipt; no other normalization (ADR-007).
+ */
+export function digestFile(absPath) {
+  const text = readFileSync(absPath, "utf8").replace(/\r\n/g, "\n");
+  return createHash("sha256").update(text, "utf8").digest("hex");
+}
+
+/** Repo-relative POSIX path, or throw when the artifact is outside the root. */
+function toArtifactPath(root, artifact) {
+  const abs = resolve(root, artifact);
+  const rel = relative(root, abs);
+  if (rel === "" || rel.startsWith("..") || isAbsolute(rel)) {
+    throw new Error(`artifact must be a file inside ${root}: ${artifact}`);
+  }
+  return rel.split(sep).join("/");
+}
+
+/** One receipt per artifact: docs/specs/x.md → docs__specs__x.md.json */
+export function receiptPath(root, artifactPath) {
+  return join(root, APPROVALS_DIR, `${artifactPath.replaceAll("/", "__")}.json`);
+}
+
+/**
+ * Record a Checkpoint decision for an artifact.
+ * @param {string} root project root
+ * @param {string} artifact path to the artifact (relative to root, or absolute)
+ * @param {object} opts
+ * @param {string} opts.checkpoint "<skill>/<checkpoint>" or a single kebab-case id
+ * @param {string} [opts.decision] approved | changes-requested | delegated
+ * @param {string} [opts.notes]
+ * @param {Date} [opts.now]
+ * @returns {{receipt: object, path: string, replaced: boolean}}
+ */
+export function approve(root, artifact, opts) {
+  const artifactPath = toArtifactPath(root, artifact);
+  const abs = join(root, artifactPath);
+  if (!existsSync(abs)) throw new Error(`artifact does not exist: ${artifactPath}`);
+
+  const checkpoint = opts.checkpoint;
+  if (typeof checkpoint !== "string" || !CHECKPOINT_ID.test(checkpoint)) {
+    throw new Error(
+      'approve needs --checkpoint=<id>, kebab-case, optionally "<skill>/<checkpoint>"',
+    );
+  }
+  const decision = opts.decision ?? "approved";
+  if (!DECISIONS.includes(decision)) {
+    throw new Error(`--decision must be one of: ${DECISIONS.join(", ")}`);
+  }
+
+  const receipt = {
+    version: 1,
+    artifact: artifactPath,
+    sha256: digestFile(abs),
+    checkpoint,
+    decision,
+    // A delegated choice is the agent's, and must never read as the user's.
+    decidedBy: decision === "delegated" ? "agent-delegated" : "user",
+    date: (opts.now ?? new Date()).toISOString().slice(0, 10),
+  };
+  if (opts.notes) receipt.notes = String(opts.notes);
+
+  const path = receiptPath(root, artifactPath);
+  const replaced = existsSync(path);
+  if (replaced) {
+    const prior = readReceipt(path).receipt;
+    if (prior && prior.artifact !== artifactPath) {
+      throw new Error(
+        `receipt file ${relative(root, path)} already belongs to ${prior.artifact} — rename one artifact`,
+      );
+    }
+  }
+  mkdirSync(join(root, APPROVALS_DIR), { recursive: true });
+  writeFileSync(path, `${JSON.stringify(receipt, null, 2)}\n`, "utf8");
+  return { receipt, path, replaced };
+}
+
+function readReceipt(file) {
+  let receipt;
+  try {
+    receipt = JSON.parse(readFileSync(file, "utf8"));
+  } catch (err) {
+    return { error: `not valid JSON (${err.message})` };
+  }
+  for (const field of ["artifact", "sha256", "checkpoint", "decision", "decidedBy", "date"]) {
+    if (typeof receipt?.[field] !== "string") return { error: `missing field "${field}"` };
+  }
+  if (!DECISIONS.includes(receipt.decision)) {
+    return { error: `unknown decision "${receipt.decision}"` };
+  }
+  return { receipt };
+}
+
+/**
+ * Status of one receipt:
+ *   fresh    artifact unchanged since the decision
+ *   stale    artifact changed after the decision — re-ask the Checkpoint
+ *   missing  artifact no longer exists
+ *   invalid  receipt is malformed
+ */
+function checkReceipt(root, file) {
+  const { receipt, error } = readReceipt(file);
+  const receiptFile = relative(root, file).split(sep).join("/");
+  if (error) return { receiptFile, status: "invalid", message: error };
+
+  const abs = join(root, receipt.artifact);
+  const base = {
+    receiptFile,
+    artifact: receipt.artifact,
+    checkpoint: receipt.checkpoint,
+    decision: receipt.decision,
+    decidedBy: receipt.decidedBy,
+    date: receipt.date,
+  };
+  if (!existsSync(abs)) return { ...base, status: "missing" };
+  return { ...base, status: digestFile(abs) === receipt.sha256 ? "fresh" : "stale" };
+}
+
+/**
+ * Verify approval receipts.
+ * @param {string} root project root
+ * @param {string} [artifact] check only this artifact; with no receipt it is "unapproved"
+ * @returns {{receipts: Array<object>, ok: boolean}}
+ *   ok — every receipt is fresh; for a single artifact, also that its decision
+ *   lets work proceed (approved or delegated)
+ */
+export function verify(root, artifact) {
+  if (artifact !== undefined) {
+    const artifactPath = toArtifactPath(root, artifact);
+    const file = receiptPath(root, artifactPath);
+    if (!existsSync(file)) {
+      return { receipts: [{ artifact: artifactPath, status: "unapproved" }], ok: false };
+    }
+    const r = checkReceipt(root, file);
+    return { receipts: [r], ok: r.status === "fresh" && r.decision !== "changes-requested" };
+  }
+
+  const dir = join(root, APPROVALS_DIR);
+  if (!existsSync(dir)) return { receipts: [], ok: true };
+  const receipts = readdirSync(dir)
+    .filter((name) => name.endsWith(".json"))
+    .sort()
+    .map((name) => checkReceipt(root, join(dir, name)));
+  return { receipts, ok: receipts.every((r) => r.status === "fresh") };
+}
+
+const STATUS_NOTE = {
+  stale: "artifact changed since the decision — re-ask the Checkpoint",
+  missing: "artifact no longer exists — remove the receipt or restore the artifact",
+  unapproved: "no receipt — the Checkpoint has not been resolved",
+};
+
+export function formatApproveHuman(result) {
+  const { receipt } = result;
+  const who = receipt.decidedBy === "user" ? "by the user" : "delegated to the agent";
+  return (
+    `✓ ${result.replaced ? "Replaced" : "Recorded"} ${receipt.decision} ` +
+    `for ${receipt.artifact} at ${receipt.checkpoint} (${who})\n` +
+    `  sha256 ${receipt.sha256.slice(0, 12)}… → ${relative(process.cwd(), result.path) || result.path}`
+  );
+}
+
+export function formatVerifyHuman(result) {
+  if (result.receipts.length === 0) return "No approval receipts in .groundwork/approvals/.";
+  const lines = [];
+  for (const r of result.receipts) {
+    if (r.status === "invalid") {
+      lines.push(`  ✗ invalid  ${r.receiptFile}: ${r.message}`);
+      continue;
+    }
+    const mark = r.status === "fresh" ? "✓" : "✗";
+    const decision = r.decision ? ` ${r.decision} @ ${r.checkpoint} (${r.date})` : "";
+    lines.push(`  ${mark} ${r.status.padEnd(10)} ${r.artifact}${decision}`);
+    if (STATUS_NOTE[r.status]) lines.push(`               ${STATUS_NOTE[r.status]}`);
+    else if (r.decision === "changes-requested") {
+      lines.push("               changes requested — revise, then re-ask the Checkpoint");
+    }
+  }
+  return lines.join("\n");
+}

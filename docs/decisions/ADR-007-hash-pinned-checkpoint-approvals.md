@@ -1,7 +1,7 @@
 # ADR-007: Hash-pinned checkpoint approvals and a builder check
 
 **Date:** 2026-10-22
-**Status:** Proposed
+**Status:** Accepted
 
 ## Context
 
@@ -37,9 +37,13 @@ We will record each resolved Checkpoint as an **approval receipt** under
 }
 ```
 
-- `groundwork approve <artifact> --checkpoint <id>` writes the receipt, and
+- `groundwork approve <artifact> --checkpoint=<id>` writes the receipt, and
   `groundwork verify` reports every receipt whose artifact digest no longer matches (stale)
-  or whose artifact is gone. `doctor` includes verify output.
+  or whose artifact is gone. `groundwork verify <artifact>` exits 0 only when that artifact
+  has a fresh receipt whose decision lets work proceed (`approved` or `delegated`).
+  `doctor` includes verify output.
+- The digest is computed with CRLF normalized to LF, so a git `autocrlf` checkout does not
+  invalidate every receipt. No other normalization is applied.
 - Playbooks that hand off to a later phase (spec → architecture → implementation, ADR → build)
   check the predecessor artifact's receipt before starting. A missing or stale receipt is
   reported and the Checkpoint re-asked. It does not block silently, and the agent never
@@ -53,6 +57,12 @@ We will record each resolved Checkpoint as an **approval receipt** under
 
 Receipts are committed to the repository. They form the durable decision trail between ADRs
 (which record *why*) and code (which records *what*).
+
+**Implementation order:** the receipt format and the `approve`/`verify` CLI land first, together
+with the router's Approvals rules (`router-approval-is-the-users`, `router-verify-handoff`,
+both covered by live behavior tests) and the hand-off chain spec → sketch → model. Each of
+those skills ends with an acceptance Checkpoint and a record step; sketch and model start by
+verifying their predecessor. The builder check follows as its own change.
 
 ## Consequences
 

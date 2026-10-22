@@ -6,6 +6,8 @@
  *   npx groundwork doctor [path] [--json]
  *   npx groundwork install [--providers=claude,github,cursor,agents] [--all-skills] [--global] [--hooks]
  *   npx groundwork update  (same as install; idempotent)
+ *   npx groundwork approve <artifact> --checkpoint=<id> [--decision=...] [--notes=...]
+ *   npx groundwork verify [artifact] [--json]
  */
 import { readFileSync } from "node:fs";
 import { join, resolve, dirname } from "node:path";
@@ -14,6 +16,13 @@ import { detect, countBySeverity } from "../engine/detect.mjs";
 import { formatHuman, formatJson } from "../engine/report.mjs";
 import { doctor, formatDoctorHuman } from "../commands/doctor.mjs";
 import { install, formatInstallHuman, PROVIDERS } from "../commands/install.mjs";
+import {
+  approve,
+  verify,
+  formatApproveHuman,
+  formatVerifyHuman,
+  DECISIONS,
+} from "../commands/approvals.mjs";
 
 const PACKAGE_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "../..");
 
@@ -21,8 +30,10 @@ function parseArgs(argv) {
   const args = { _: [], flags: {} };
   for (const token of argv) {
     if (token.startsWith("--")) {
-      const [key, value] = token.slice(2).split("=");
-      args.flags[key] = value ?? true;
+      // Split on the first "=" only, so values such as --notes may contain "=".
+      const eq = token.indexOf("=");
+      if (eq === -1) args.flags[token.slice(2)] = true;
+      else args.flags[token.slice(2, eq)] = token.slice(eq + 1);
     } else {
       args._.push(token);
     }
@@ -44,6 +55,13 @@ Usage:
       --global                 user-level install (claude only)
       --hooks                  install Claude Code lifecycle hooks (not needed with the plugin)
   groundwork update            refresh an existing install (same as install)
+  groundwork approve <file>    record a Checkpoint decision, pinned to the file's SHA-256
+      --checkpoint=<id>        required: "<skill>/<checkpoint>" or a kebab-case id
+      --decision=<d>           ${DECISIONS.join(" | ")} (default: approved)
+      --notes=<text>           optional context for the decision
+  groundwork verify [file]     report approval receipts that are stale or missing their file;
+                               with a file, exit 0 only if it has a fresh, non-rejected receipt
+      --json                   JSON output
   groundwork help              this message
   groundwork version           print version
 
@@ -94,6 +112,25 @@ function main() {
           hooks: Boolean(args.flags.hooks),
         }),
       );
+      break;
+    }
+    case "approve": {
+      const artifact = args._[1];
+      if (!artifact) throw new Error("approve needs an artifact path");
+      const result = approve(process.cwd(), artifact, {
+        checkpoint: args.flags.checkpoint,
+        decision: args.flags.decision,
+        notes: typeof args.flags.notes === "string" ? args.flags.notes : undefined,
+      });
+      console.log(formatApproveHuman(result));
+      break;
+    }
+    case "verify": {
+      const result = verify(process.cwd(), args._[1]);
+      console.log(
+        args.flags.json ? JSON.stringify({ version: 1, ...result }, null, 2) : formatVerifyHuman(result),
+      );
+      process.exit(result.ok ? 0 : 1);
       break;
     }
     case "version": {
