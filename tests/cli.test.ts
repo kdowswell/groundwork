@@ -159,8 +159,12 @@ describe("groundwork install", () => {
     install({ projectRoot: dir, providers: ["claude"], hooks: true });
     const settings = JSON.parse(readFileSync(join(dir, ".claude/settings.local.json"), "utf8"));
     expect(settings.permissions.allow).toEqual(["Bash(ls)"]);
-    expect(settings.hooks.PostToolUse).toHaveLength(1);
-    expect(JSON.stringify(settings.hooks.PostToolUse[0])).toContain("hook.mjs");
+    for (const event of ["SessionStart", "PostToolUse", "Stop"]) {
+      expect(settings.hooks[event]).toHaveLength(1);
+      expect(JSON.stringify(settings.hooks[event][0])).toContain("hook.mjs");
+    }
+    expect(settings.hooks.PostToolUse[0].matcher).toBe("Edit|Write|MultiEdit");
+    expect(settings.hooks.Stop[0].matcher).toBeUndefined();
   });
 });
 
@@ -206,5 +210,107 @@ describe("hook script", () => {
     expect(clean).toBe("");
     const garbage = execFileSync(process.execPath, [HOOK], { input: "not json", encoding: "utf8" });
     expect(garbage).toBe("");
+  });
+
+  const runHook = (event: object) =>
+    execFileSync(process.execPath, [HOOK], { input: JSON.stringify(event), encoding: "utf8" });
+  let sessionSeq = 0;
+  const newSession = () => `vitest-${process.pid}-${Date.now()}-${sessionSeq++}`;
+  const ledgerFor = (id: string) => join(tmpdir(), "groundwork-hooks", `${id}.log`);
+
+  it("SessionStart digests project context and stays silent outside groundwork projects", () => {
+    const dir = tempDir();
+    mkdirSync(join(dir, ".git"));
+    expect(runHook({ hook_event_name: "SessionStart", cwd: dir })).toBe("");
+
+    mkdirSync(join(dir, ".groundwork"));
+    writeFileSync(
+      join(dir, ".groundwork/context.md"),
+      "# Project Context\n\n## Stage\n- Last reviewed: 2000-01-01\n\n## Active Principles\n" +
+        "- secrets-management — no secrets in code\n- idempotency — retries are safe\n",
+    );
+    mkdirSync(join(dir, "docs/decisions"), { recursive: true });
+    writeFileSync(join(dir, "docs/decisions/ADR-001-x.md"), "# ADR-001\n\n**Status:** Proposed\n");
+    writeFileSync(join(dir, "docs/decisions/ADR-002-y.md"), "# ADR-002\n\n**Status:** Accepted\n");
+
+    const parsed = JSON.parse(runHook({ hook_event_name: "SessionStart", cwd: dir }));
+    const ctx: string = parsed.hookSpecificOutput.additionalContext;
+    expect(parsed.hookSpecificOutput.hookEventName).toBe("SessionStart");
+    expect(ctx).toContain("secrets-management, idempotency");
+    expect(ctx).toContain("stale");
+    expect(ctx).toContain("ADR-001-x.md");
+    expect(ctx).not.toContain("ADR-002-y.md");
+  });
+
+  it("Stop blocks once on unresolved errors from files edited this turn, then clears", () => {
+    const session = newSession();
+    runHook({
+      hook_event_name: "PostToolUse",
+      session_id: session,
+      cwd: BEFORE,
+      tool_input: { file_path: join(BEFORE, "server.js") },
+    });
+    expect(existsSync(ledgerFor(session))).toBe(true);
+
+    const parsed = JSON.parse(runHook({ hook_event_name: "Stop", session_id: session, cwd: BEFORE }));
+    expect(parsed.decision).toBe("block");
+    expect(parsed.reason).toContain("hardcoded-secret");
+    expect(existsSync(ledgerFor(session))).toBe(false);
+
+    // Nothing edited since: the next stop is silent.
+    expect(runHook({ hook_event_name: "Stop", session_id: session, cwd: BEFORE })).toBe("");
+  });
+
+  it("Stop never blocks when stop_hook_active is set", () => {
+    const session = newSession();
+    runHook({
+      hook_event_name: "PostToolUse",
+      session_id: session,
+      cwd: BEFORE,
+      tool_input: { file_path: join(BEFORE, "server.js") },
+    });
+    const out = runHook({
+      hook_event_name: "Stop",
+      session_id: session,
+      cwd: BEFORE,
+      stop_hook_active: true,
+    });
+    expect(out).toBe("");
+    expect(existsSync(ledgerFor(session))).toBe(false);
+  });
+
+  it("Stop reports warnings to the user without blocking, and is silent for clean edits", () => {
+    const dir = tempDir();
+    writeFileSync(join(dir, "cors.js"), 'res.setHeader("Access-Control-Allow-Origin", "*");\n');
+    const warnSession = newSession();
+    runHook({
+      hook_event_name: "PostToolUse",
+      session_id: warnSession,
+      cwd: dir,
+      tool_input: { file_path: join(dir, "cors.js") },
+    });
+    const parsed = JSON.parse(runHook({ hook_event_name: "Stop", session_id: warnSession, cwd: dir }));
+    expect(parsed.decision).toBeUndefined();
+    expect(parsed.systemMessage).toContain("1 warning");
+
+    const cleanSession = newSession();
+    runHook({
+      hook_event_name: "PostToolUse",
+      session_id: cleanSession,
+      cwd: AFTER,
+      tool_input: { file_path: join(AFTER, "orders.js") },
+    });
+    expect(runHook({ hook_event_name: "Stop", session_id: cleanSession, cwd: AFTER })).toBe("");
+  });
+});
+
+describe("plugin hooks manifest", () => {
+  it("registers the dispatcher for every lifecycle event and the script exists", () => {
+    const manifest = JSON.parse(readFileSync(join(ROOT, "hooks/hooks.json"), "utf8"));
+    for (const event of ["SessionStart", "PostToolUse", "Stop"]) {
+      const command: string = manifest.hooks[event][0].hooks[0].command;
+      expect(command).toContain("${CLAUDE_PLUGIN_ROOT}/skills/groundwork/scripts/hook.mjs");
+    }
+    expect(existsSync(join(ROOT, "skills/groundwork/scripts/hook.mjs"))).toBe(true);
   });
 });

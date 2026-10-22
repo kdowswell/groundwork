@@ -6,7 +6,7 @@ a "only X supports Y" claim.
 
 | Provider flag | Harness | Skills directory | Hook support |
 |---|---|---|---|
-| `claude` | Claude Code | `.claude/skills/` (project) or `~/.claude/skills/` (`--global`) | Yes — `--hooks` adds a PostToolUse detector hook to `.claude/settings.local.json` |
+| `claude` | Claude Code | `.claude/skills/` (project) or `~/.claude/skills/` (`--global`) | Yes — SessionStart, PostToolUse and Stop hooks: shipped by the plugin (`hooks/hooks.json`), or `--hooks` adds them to `.claude/settings.local.json` |
 | `github` | GitHub Copilot | `.github/skills/` | Not installed by groundwork today |
 | `cursor` | Cursor | `.cursor/skills/` (requires Agent Skills enabled in settings) | Not installed by groundwork today |
 | `agents` | Codex CLI and other `.agents/`-standard tools | `.agents/skills/` | Not installed by groundwork today |

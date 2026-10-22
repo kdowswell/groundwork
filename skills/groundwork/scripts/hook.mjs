@@ -1,24 +1,41 @@
 #!/usr/bin/env node
 /**
- * Claude Code PostToolUse hook: run the groundwork detector on the file that
- * was just edited and surface findings back into the agent's context.
+ * Claude Code lifecycle hook dispatcher (ADR-006). One script, three events,
+ * branched on the event's hook_event_name:
  *
- * Reads the hook event JSON from stdin, resolves the detector engine from the
- * installed skill (scripts/engine/, embedded by `groundwork install`) or from
- * the repo layout (cli/engine/), scans only the edited file, and emits
- * additionalContext when there are findings. Always exits 0 — a broken hook
- * must never block the agent.
+ *   SessionStart  digest of .groundwork/context.md (silent when absent)
+ *   PostToolUse   detector scan of the edited file; path appended to a
+ *                 per-session ledger (missing event name means PostToolUse)
+ *   Stop          deep pass over every file edited this turn; unresolved
+ *                 error findings block the stop once, warnings go to the user
+ *
+ * Resolves the detector engine from the installed skill (scripts/engine/,
+ * embedded by `groundwork install`) or from the repo/plugin layout
+ * (cli/engine/). Always exits 0 — a broken hook must never block the agent.
  */
-import { existsSync } from "node:fs";
-import { dirname, join, resolve } from "node:path";
+import {
+  appendFileSync,
+  existsSync,
+  mkdirSync,
+  readFileSync,
+  readdirSync,
+  statSync,
+  unlinkSync,
+} from "node:fs";
+import { tmpdir } from "node:os";
+import { dirname, join, relative, resolve } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
+import { analyzeContext, findContextFile } from "./context.mjs";
 
 const SCRIPT_DIR = dirname(fileURLToPath(import.meta.url));
+const LEDGER_DIR = join(tmpdir(), "groundwork-hooks");
+const LEDGER_MAX_AGE_MS = 86_400_000;
+const MAX_LISTED = 8;
 
 async function loadEngine() {
   const candidates = [
     join(SCRIPT_DIR, "engine", "detect.mjs"), // installed layout (embedded engine)
-    resolve(SCRIPT_DIR, "../../../cli/engine/detect.mjs"), // repo layout
+    resolve(SCRIPT_DIR, "../../../cli/engine/detect.mjs"), // repo / plugin layout
   ];
   for (const candidate of candidates) {
     if (existsSync(candidate)) return import(pathToFileURL(candidate).href);
@@ -32,41 +49,160 @@ async function readStdin() {
   return Buffer.concat(chunks).toString("utf8");
 }
 
-function output(context) {
-  process.stdout.write(
-    JSON.stringify({
-      hookSpecificOutput: {
-        hookEventName: "PostToolUse",
-        additionalContext: context,
-      },
-    }),
+function emit(payload) {
+  process.stdout.write(JSON.stringify(payload));
+}
+
+function additionalContext(hookEventName, context) {
+  emit({ hookSpecificOutput: { hookEventName, additionalContext: context } });
+}
+
+function formatFinding(f, cwd) {
+  const file = f.absPath && cwd ? relative(cwd, f.absPath) || f.file : f.file;
+  return `- [${f.severity}] ${f.rule} at ${file}:${f.line ?? "?"} — ${f.message} (principle: ${f.principle})`;
+}
+
+/** Session ids come from the harness; keep them filename-safe regardless. */
+function ledgerPath(sessionId) {
+  if (!sessionId) return null;
+  const safe = String(sessionId).replace(/[^A-Za-z0-9_-]/g, "_").slice(0, 128);
+  return safe ? join(LEDGER_DIR, `${safe}.log`) : null;
+}
+
+function scanFile(engine, absPath, configRoot) {
+  const { findings } = engine.detect(absPath, { configRoot });
+  return findings.map((f) => ({ ...f, absPath }));
+}
+
+// --- SessionStart -----------------------------------------------------------
+
+function pruneLedgers() {
+  if (!existsSync(LEDGER_DIR)) return;
+  const now = Date.now();
+  for (const name of readdirSync(LEDGER_DIR)) {
+    const p = join(LEDGER_DIR, name);
+    try {
+      if (now - statSync(p).mtimeMs > LEDGER_MAX_AGE_MS) unlinkSync(p);
+    } catch {
+      // Another session may have removed it first.
+    }
+  }
+}
+
+function proposedAdrs(repoRoot) {
+  const found = [];
+  for (const rel of ["docs/decisions", "docs/adr", "docs/adrs"]) {
+    const dir = join(repoRoot, rel);
+    if (!existsSync(dir)) continue;
+    for (const name of readdirSync(dir)) {
+      if (!name.endsWith(".md") || name.toLowerCase() === "readme.md") continue;
+      const head = readFileSync(join(dir, name), "utf8").slice(0, 600);
+      if (/Status:?\**:?\s*Proposed/i.test(head)) found.push(`${rel}/${name}`);
+    }
+  }
+  return found;
+}
+
+function onSessionStart(event) {
+  pruneLedgers();
+  const contextPath = findContextFile(event.cwd ?? process.cwd());
+  if (!contextPath) return; // Not a groundwork project: say nothing.
+
+  const repoRoot = dirname(dirname(contextPath));
+  const { staleReasons, principleIds } = analyzeContext(readFileSync(contextPath, "utf8"));
+  const lines = [`groundwork project context: ${relative(repoRoot, contextPath)}`];
+  lines.push(
+    principleIds.length > 0
+      ? `Active principles: ${principleIds.join(", ")}. Weigh architectural choices against them.`
+      : "No Active Principles recorded — /groundwork principles can select them.",
+  );
+  if (staleReasons.length > 0) {
+    lines.push(`Context is stale (${staleReasons.join("; ")}); mention once, repair only via /groundwork doctor.`);
+  }
+  const proposed = proposedAdrs(repoRoot);
+  if (proposed.length > 0) {
+    lines.push(`Proposed (undecided) ADRs: ${proposed.join(", ")}.`);
+  }
+  lines.push("Load the full context through the /groundwork router when doing architecture work.");
+  additionalContext("SessionStart", lines.join("\n"));
+}
+
+// --- PostToolUse ------------------------------------------------------------
+
+async function onPostToolUse(event) {
+  const cwd = event.cwd ?? process.cwd();
+  const filePath = event?.tool_input?.file_path;
+  if (!filePath) return;
+  const absPath = resolve(cwd, filePath);
+  if (!existsSync(absPath)) return;
+
+  const ledger = ledgerPath(event.session_id);
+  if (ledger) {
+    mkdirSync(LEDGER_DIR, { recursive: true });
+    appendFileSync(ledger, `${absPath}\n`, "utf8");
+  }
+
+  const engine = await loadEngine();
+  if (!engine) return;
+  const material = scanFile(engine, absPath, cwd).filter((f) => f.severity !== "info");
+  if (material.length === 0) return;
+  const lines = material.slice(0, MAX_LISTED).map((f) => formatFinding(f, cwd));
+  additionalContext(
+    "PostToolUse",
+    `groundwork detector found ${material.length} issue(s) in the file you just edited:\n` +
+      `${lines.join("\n")}\n` +
+      "Fix what is real; waive intentional cases with 'groundwork-disable <rule-id>: reason'.",
   );
 }
 
-try {
+// --- Stop -------------------------------------------------------------------
+
+async function onStop(event) {
+  const ledger = ledgerPath(event.session_id);
+  if (!ledger || !existsSync(ledger)) return;
+  const files = [...new Set(readFileSync(ledger, "utf8").split("\n").filter(Boolean))];
+  unlinkSync(ledger);
+  // Already blocked once this turn: never loop.
+  if (event.stop_hook_active) return;
+
   const engine = await loadEngine();
-  if (engine) {
-    const event = JSON.parse(await readStdin());
-    const filePath = event?.tool_input?.file_path;
-    if (filePath && existsSync(filePath)) {
-      const { findings } = engine.detect(filePath, {
-        configRoot: event?.cwd ?? process.cwd(),
-      });
-      const material = findings.filter((f) => f.severity !== "info");
-      if (material.length > 0) {
-        const lines = material
-          .slice(0, 8)
-          .map(
-            (f) =>
-              `- [${f.severity}] ${f.rule} at ${f.file}:${f.line ?? "?"} — ${f.message} (principle: ${f.principle})`,
-          );
-        output(
-          `groundwork detector found ${material.length} issue(s) in the file you just edited:\n` +
-            `${lines.join("\n")}\n` +
-            "Fix what is real; waive intentional cases with 'groundwork-disable <rule-id>: reason'.",
-        );
-      }
-    }
+  if (!engine) return;
+  const cwd = event.cwd ?? process.cwd();
+  const findings = files.filter((f) => existsSync(f)).flatMap((f) => scanFile(engine, f, cwd));
+  const errors = findings.filter((f) => f.severity === "error");
+  const warns = findings.filter((f) => f.severity === "warn");
+
+  const payload = {};
+  if (errors.length > 0) {
+    payload.decision = "block";
+    payload.reason =
+      `groundwork deep pass: ${errors.length} unresolved error finding(s) in files changed this turn:\n` +
+      `${errors.slice(0, MAX_LISTED).map((f) => formatFinding(f, cwd)).join("\n")}\n` +
+      "Fix them, or waive an intentional case with 'groundwork-disable <rule-id>: reason' and say why. " +
+      "This check runs once per turn.";
+  }
+  if (warns.length > 0) {
+    payload.systemMessage = `groundwork: ${warns.length} warning(s) remain in files changed this turn — run \`npx groundwork detect\` for details.`;
+  }
+  if (Object.keys(payload).length > 0) emit(payload);
+}
+
+// --- Dispatch ---------------------------------------------------------------
+
+try {
+  const event = JSON.parse(await readStdin());
+  switch (event?.hook_event_name ?? "PostToolUse") {
+    case "SessionStart":
+      onSessionStart(event);
+      break;
+    case "PostToolUse":
+      await onPostToolUse(event);
+      break;
+    case "Stop":
+      await onStop(event);
+      break;
+    default:
+      break;
   }
 } catch {
   // Never surface hook failures into the agent flow.

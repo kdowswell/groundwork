@@ -14,10 +14,11 @@
  */
 import { existsSync, readFileSync } from "node:fs";
 import { dirname, join, parse, resolve } from "node:path";
+import { fileURLToPath } from "node:url";
 
 const STALE_AFTER_DAYS = 90;
 
-function findContextFile(startDir) {
+export function findContextFile(startDir) {
   let dir = resolve(startDir);
   const { root } = parse(dir);
   while (true) {
@@ -38,6 +39,34 @@ function daysSince(dateStr) {
   return Math.floor((Date.now() - then) / 86_400_000);
 }
 
+/**
+ * Parse a context file's freshness and Active Principles.
+ * @param {string} raw context.md contents
+ * @returns {{staleReasons: string[], principleLines: string[], principleIds: string[]}}
+ */
+export function analyzeContext(raw) {
+  const staleReasons = [];
+
+  const reviewedMatch = raw.match(/Last reviewed:\s*(\d{4}-\d{2}-\d{2})/);
+  if (!reviewedMatch) {
+    staleReasons.push("no parseable 'Last reviewed: YYYY-MM-DD' line");
+  } else {
+    const age = daysSince(reviewedMatch[1]);
+    if (age !== null && age > STALE_AFTER_DAYS) {
+      staleReasons.push(`last reviewed ${age} days ago (threshold ${STALE_AFTER_DAYS})`);
+    }
+  }
+
+  // Only the Active Principles section, up to the next heading.
+  const principlesSection = (raw.split(/^## Active Principles\s*$/m)[1] ?? "").split(/^#{1,2} /m)[0];
+  const principleLines = principlesSection
+    .split("\n")
+    .filter((l) => /^\s*-\s*\S/.test(l) && !/run \/groundwork principles/i.test(l));
+  const principleIds = principleLines.map((l) => l.replace(/^\s*-\s*/, "").split(/[\s—:]/)[0]);
+
+  return { staleReasons, principleLines, principleIds };
+}
+
 function main() {
   const contextPath = findContextFile(process.cwd());
 
@@ -51,22 +80,7 @@ function main() {
   }
 
   const raw = readFileSync(contextPath, "utf8");
-  const staleReasons = [];
-
-  const reviewedMatch = raw.match(/Last reviewed:\s*(\d{4}-\d{2}-\d{2})/);
-  if (!reviewedMatch) {
-    staleReasons.push("no parseable 'Last reviewed: YYYY-MM-DD' line");
-  } else {
-    const age = daysSince(reviewedMatch[1]);
-    if (age !== null && age > STALE_AFTER_DAYS) {
-      staleReasons.push(`last reviewed ${age} days ago (threshold ${STALE_AFTER_DAYS})`);
-    }
-  }
-
-  const principlesSection = raw.split(/^## Active Principles\s*$/m)[1] ?? "";
-  const principleLines = principlesSection
-    .split("\n")
-    .filter((l) => /^\s*-\s*\S/.test(l) && !/run \/groundwork principles/i.test(l));
+  const { staleReasons, principleLines } = analyzeContext(raw);
   const noPrinciples = principleLines.length === 0;
 
   console.log(`CONTEXT_OK ${contextPath}`);
@@ -81,4 +95,5 @@ function main() {
   );
 }
 
-main();
+// Run as a script; stay importable for the hook dispatcher.
+if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) main();

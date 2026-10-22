@@ -4,8 +4,8 @@
  *
  * Non-interactive by design: providers are auto-detected from existing harness
  * directories and overridable with --providers. `update` is the same idempotent
- * copy. With --hooks, installs a Claude Code PostToolUse hook that runs the
- * detector on edited files.
+ * copy. With --hooks, registers the Claude Code lifecycle hook dispatcher
+ * (SessionStart, PostToolUse, Stop — ADR-006).
  */
 import {
   cpSync,
@@ -52,6 +52,18 @@ function embedEngine(installedSkillDir) {
 const HOOK_COMMAND =
   'node "$CLAUDE_PROJECT_DIR/.claude/skills/groundwork/scripts/hook.mjs"';
 
+/** Events the dispatcher handles (ADR-006); matcher only where the event takes one. */
+const HOOK_EVENTS = [
+  { event: "SessionStart", entry: {} },
+  { event: "PostToolUse", entry: { matcher: "Edit|Write|MultiEdit" } },
+  { event: "Stop", entry: {} },
+];
+
+/**
+ * Register the dispatcher for every lifecycle event in settings.local.json
+ * (never the shared settings.json). Idempotent per event.
+ * @returns {string[]} events newly registered
+ */
 function installClaudeHook(projectRoot) {
   const settingsPath = join(projectRoot, ".claude", "settings.local.json");
   let settings = {};
@@ -65,19 +77,22 @@ function installClaudeHook(projectRoot) {
     }
   }
   settings.hooks ??= {};
-  settings.hooks.PostToolUse ??= [];
-  const already = settings.hooks.PostToolUse.some((entry) =>
-    JSON.stringify(entry).includes("groundwork/scripts/hook.mjs"),
-  );
-  if (!already) {
-    settings.hooks.PostToolUse.push({
-      matcher: "Edit|Write|MultiEdit",
+  const added = [];
+  for (const { event, entry } of HOOK_EVENTS) {
+    settings.hooks[event] ??= [];
+    const already = settings.hooks[event].some((e) =>
+      JSON.stringify(e).includes("groundwork/scripts/hook.mjs"),
+    );
+    if (already) continue;
+    settings.hooks[event].push({
+      ...entry,
       hooks: [{ type: "command", command: HOOK_COMMAND }],
     });
+    added.push(event);
   }
   mkdirSync(dirname(settingsPath), { recursive: true });
   writeFileSync(settingsPath, `${JSON.stringify(settings, null, 2)}\n`, "utf8");
-  return !already;
+  return added;
 }
 
 /**
@@ -86,7 +101,7 @@ function installClaudeHook(projectRoot) {
  * @param {string[]} [opts.providers]
  * @param {boolean} [opts.allSkills] also install the 15 standalone phase skills
  * @param {boolean} [opts.global] install to the user-level directory (claude only)
- * @param {boolean} [opts.hooks] install the Claude Code detector hook
+ * @param {boolean} [opts.hooks] install the Claude Code lifecycle hooks
  */
 export function install(opts) {
   const projectRoot = resolve(opts.projectRoot ?? process.cwd());
@@ -128,12 +143,12 @@ export function install(opts) {
     summary.push({ provider, label: meta.label, skillsDir, count });
   }
 
-  let hookInstalled = false;
+  let hookEvents = [];
   if (opts.hooks && providers.includes("claude") && !opts.global) {
-    hookInstalled = installClaudeHook(projectRoot);
+    hookEvents = installClaudeHook(projectRoot);
   }
 
-  return { providers, summary, hookInstalled };
+  return { providers, summary, hookInstalled: hookEvents.length > 0, hookEvents };
 }
 
 export function formatInstallHuman(result, { update = false, hooks = false } = {}) {
@@ -145,8 +160,8 @@ export function formatInstallHuman(result, { update = false, hooks = false } = {
   if (hooks) {
     lines.push(
       result.hookInstalled
-        ? "✓ Claude Code PostToolUse hook installed (.claude/settings.local.json)"
-        : "· Claude Code hook already present — left as-is",
+        ? `✓ Claude Code hooks installed: ${result.hookEvents.join(", ")} (.claude/settings.local.json)`
+        : "· Claude Code hooks already present — left as-is",
     );
   }
   lines.push("");
