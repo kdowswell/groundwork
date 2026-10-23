@@ -121,3 +121,6 @@ ten-year-old codebase is still Define work. <!-- rule:router-phase-from-request 
   A decision made in the page is already recorded: confirm it with
   `groundwork verify <artifact>` instead of running `approve` again. Don't offer it for short
   artifacts with nothing open. <!-- rule:router-offer-render -->
+- Don't write approval status into an artifact (a "Draft, awaiting acceptance" banner, an
+  "Approved" line). The receipt is the status, and editing the artifact to update a banner
+  makes its approval stale. <!-- rule:router-no-status-in-artifact -->

@@ -175,6 +175,31 @@ describe("groundwork render --serve", () => {
     await expect(http(url)).rejects.toThrow(); // server is gone
   });
 
+  it("accepts the browser's same-origin form post", async () => {
+    // Browsers send `Origin: null` on form posts under Referrer-Policy: no-referrer,
+    // which the origin check rightly refuses — so the page must not send that policy.
+    const dir = project();
+    const { url, done, rendered } = await serve(dir, "docs/spec.md");
+    const page = await new Promise<{ headers: Record<string, unknown>; body: string }>((resolve, reject) => {
+      request(url, (res) => {
+        let body = "";
+        res.on("data", (c) => (body += c));
+        res.on("end", () => resolve({ headers: res.headers, body }));
+      })
+        .on("error", reject)
+        .end();
+    });
+    expect(page.headers["referrer-policy"]).toBe("same-origin");
+    const origin = new URL(url).origin;
+    const res = await post(
+      url,
+      { token: tokenOf(page.body), sha256: rendered.sha256, decision: "approved" },
+      { Origin: origin },
+    );
+    expect(res.status).toBe(200);
+    expect((await done).decision).toBe("approved");
+  });
+
   it("refuses wrong hosts, foreign origins, bad tokens, and unknown decisions", async () => {
     const dir = project();
     const { url, done, rendered, stop } = await serve(dir, "docs/spec.md");
