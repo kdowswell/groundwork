@@ -57,6 +57,7 @@ export function renderInline(raw) {
   return text.replace(/\u0000(\d+)\u0000/g, (_, i) => codes[Number(i)]);
 }
 
+const SHORT_LINE = 60;
 const TABLE_SEPARATOR = /^\s*\|?\s*:?-{2,}:?\s*(\|\s*:?-{2,}:?\s*)*\|?\s*$/;
 const LIST_ITEM = /^(\s*)([-*+]|\d+[.)])\s+(.*)$/;
 
@@ -199,6 +200,7 @@ export function renderMarkdown(source, opts = {}) {
     }
 
     const para = [];
+    const paraRaw = [];
     while (
       i < lines.length &&
       lines[i].trim() !== "" &&
@@ -208,10 +210,18 @@ export function renderMarkdown(source, opts = {}) {
       !LIST_ITEM.test(lines[i]) &&
       !(lines[i].includes("|") && i + 1 < lines.length && TABLE_SEPARATOR.test(lines[i + 1]))
     ) {
-      para.push(lines[i++].trim());
+      paraRaw.push(lines[i]);
+      para.push(lines[i++].trim().replace(/\\$/, ""));
     }
-    // Keep source line breaks: artifact templates put one fact per line (Name:, Owner:).
-    out.push(`<p>${para.map(renderInline).join("<br>\n")}</p>`);
+    // Keep a source line break after a short line (templates put one fact per line: Name:,
+    // Owner:) or a Markdown hard break; join hard-wrapped prose with a space.
+    const parts = para.map(renderInline);
+    let html = parts[0];
+    for (let k = 1; k < parts.length; k++) {
+      const prev = paraRaw[k - 1];
+      html += (prev.length < SHORT_LINE || / {2}$|\\$/.test(prev) ? "<br>\n" : "\n") + parts[k];
+    }
+    out.push(`<p>${html}</p>`);
   }
 
   return { html: out.join("\n"), headings };
