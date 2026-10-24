@@ -128,7 +128,8 @@ Every feature must hold to these:
 
 1. **Advise by default; block rarely.** The only hard stops are the Stop hook on an `error`
    finding, once per turn (ADR-006), and declining to build on an unapproved or changed
-   artifact, which asks the user rather than refusing (ADR-007). Don't add another.
+   artifact, which asks the user rather than refusing (ADR-007). Don't add another default
+   one; a team may opt into stricter gates (the strict plan gate, ADR-013).
 2. **Ask at most once, at a natural moment:** before building, or in the pull request. Never as a
    follow-up chore after the work is done.
 3. **Documentation changes travel in the same change set as the code they describe.**
@@ -152,8 +153,9 @@ Every feature must hold to these:
   command as `npx @kdowswell/groundwork <command>`, never bare `npx groundwork`: that name on
   npm is an unrelated package. The installed bin stays `groundwork`.
 - Hooks (`hooks/hooks.json`, `install --hooks`) all route through `hook.mjs`, which must stay
-  fail-open (always exit 0) and may block only at Stop, only on `error` findings, and only once
-  per turn (`stop_hook_active`). See ADR-006.
+  fail-open (always exit 0) and may block only at Stop, only once per turn (`stop_hook_active`),
+  and only on `error` findings or the opt-in strict plan gate (ADR-006, ADR-013). The default
+  plan nudge is advisory context, once per session.
 - Detector rules need tests: unit coverage in `tests/detector.test.ts` and, when the rule is
   broad, a trigger in `examples/case-study/before/` plus a clean pass in `after/`.
 - `.groundwork/context.md` at the repo root is groundwork's own dogfooded context; new

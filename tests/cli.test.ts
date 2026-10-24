@@ -278,6 +278,68 @@ describe("hook script", () => {
     expect(digest()).not.toContain("Approved change plan"); // applied: nothing to remind
   });
 
+  describe("plan nudge (ADR-013)", () => {
+    function project(config?: object) {
+      const dir = tempDir();
+      mkdirSync(join(dir, ".groundwork"));
+      mkdirSync(join(dir, "src"));
+      writeFileSync(join(dir, ".groundwork/context.md"), "# Project Context\n\n## Active Principles\n- secrets-management — x\n");
+      if (config) writeFileSync(join(dir, ".groundwork/config.json"), JSON.stringify(config));
+      return dir;
+    }
+    const edit = (dir: string, session: string, file: string) => {
+      writeFileSync(join(dir, file), "export const x = 1;\n");
+      const out = runHook({ hook_event_name: "PostToolUse", session_id: session, cwd: dir, tool_input: { file_path: join(dir, file) } });
+      return out ? (JSON.parse(out).hookSpecificOutput.additionalContext as string) : "";
+    };
+
+    it("nudges once, at the third source file, and never for docs", () => {
+      const dir = project();
+      const session = newSession();
+      expect(edit(dir, session, "src/a.ts")).toBe("");
+      expect(edit(dir, session, "README.md")).toBe(""); // not source
+      expect(edit(dir, session, "src/a.ts")).toBe(""); // same file again
+      expect(edit(dir, session, "src/b.ts")).toBe("");
+      const note = edit(dir, session, "src/c.ts");
+      expect(note).toContain("this session has changed 3 source files and no change plan is approved or in progress");
+      expect(note).toContain("/groundwork plan <change>");
+      expect(note).toContain("don't stop or wait for an answer");
+      expect(edit(dir, session, "src/d.ts")).toBe(""); // once per session
+      expect(edit(dir, newSession(), "src/e.ts")).toBe(""); // a new session starts its own count
+    });
+
+    it("stays quiet with planned work, outside groundwork projects, or when turned off", () => {
+      const planned = project();
+      writeFileSync(join(planned, "spec.md"), "# Spec: X\n");
+      approve(planned, "spec.md", { checkpoint: "greenfield-spec-from-idea/accept" }); // approved today
+      const s1 = newSession();
+      for (const f of ["src/a.ts", "src/b.ts", "src/c.ts"]) expect(edit(planned, s1, f)).toBe("");
+
+      const off = project({ planGate: { mode: "off" } });
+      const s2 = newSession();
+      for (const f of ["src/a.ts", "src/b.ts", "src/c.ts"]) expect(edit(off, s2, f)).toBe("");
+
+      const plain = tempDir();
+      mkdirSync(join(plain, "src"));
+      const s3 = newSession();
+      for (const f of ["src/a.ts", "src/b.ts", "src/c.ts"]) expect(edit(plain, s3, f)).toBe("");
+
+      const early = project({ planGate: { afterFiles: 1 } });
+      expect(edit(early, newSession(), "src/a.ts")).toContain("changed 1 source files");
+    });
+
+    it("strict mode blocks one Stop per session instead of nudging", () => {
+      const dir = project({ planGate: { mode: "strict" } });
+      const session = newSession();
+      for (const f of ["src/a.ts", "src/b.ts", "src/c.ts"]) expect(edit(dir, session, f)).toBe("");
+      const stop = JSON.parse(runHook({ hook_event_name: "Stop", session_id: session, cwd: dir }));
+      expect(stop.decision).toBe("block");
+      expect(stop.reason).toContain("groundwork plan gate (strict");
+      edit(dir, session, "src/d.ts");
+      expect(runHook({ hook_event_name: "Stop", session_id: session, cwd: dir })).toBe(""); // once per session
+    });
+  });
+
   it("Stop blocks once on unresolved errors from files edited this turn, then clears", () => {
     const session = newSession();
     runHook({
