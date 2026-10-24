@@ -31,7 +31,7 @@ what the request needs — never preload multiple playbooks. <!-- rule:router-pr
    playbook from `reference/` and follow it. <!-- rule:router-one-playbook -->
 3. **Verify artifacts you will build on.** If the playbook starts from an existing spec,
    sketch, or data model file (named in the request or present in the project), run
-   `groundwork verify <file>` from the project root before following the playbook, and act on
+   `npx @kdowswell/groundwork verify <file>` from the project root before following the playbook, and act on
    the result as the Approvals section says. <!-- rule:router-verify-handoff -->
 4. **Honor active principles.** If project context names active principles, they constrain every
    command's output; synced copies live in `reference/principles/`. <!-- rule:router-honor-principles -->
@@ -99,16 +99,19 @@ ten-year-old codebase is still Define work. <!-- rule:router-phase-from-request 
 
 ## Approvals
 
+- The groundwork CLI is the npm package `@kdowswell/groundwork`: run it as
+  `npx @kdowswell/groundwork <command>`. Never run `npx groundwork`; without a local install it
+  downloads and runs an unrelated package of that name. <!-- rule:router-cli-package -->
 - A Checkpoint on an artifact is resolved only by the user's explicit answer in this
-  conversation. Record that answer with `groundwork approve <artifact> --checkpoint=<id>`,
+  conversation. Record that answer with `npx @kdowswell/groundwork approve <artifact> --checkpoint=<id>`,
   passing `--decision=changes-requested` when they asked for changes and
   `--decision=delegated` when they told you to choose, and disclose a delegated choice in your
   next reply. Never record `approved` for an answer the user did not give. Silence, an earlier
   session, or your own confidence is not approval. <!-- rule:router-approval-is-the-users -->
 - Before a playbook builds on an artifact from an earlier step (a spec, a sketch, a data
-  model), run `groundwork verify <artifact>`. If it fails (unapproved, changed since
+  model), run `npx @kdowswell/groundwork verify <artifact>`. If it fails (unapproved, changed since
   approval, or changes requested), tell the user which (for a change since approval, run
-  `groundwork verify <artifact> --diff` and show what changed) and re-ask that artifact's acceptance
+  `npx @kdowswell/groundwork verify <artifact> --diff` and show what changed) and re-ask that artifact's acceptance
   Checkpoint before continuing. Do not proceed silently, and do not approve it yourself to get
   past the check. If the CLI is unavailable, say the approval could not be verified and ask
   the user to confirm. When no such artifact exists, the request itself is the input: draft
@@ -116,11 +119,11 @@ ten-year-old codebase is still Define work. <!-- rule:router-phase-from-request 
   <!-- rule:router-verify-handoff -->
 - When you ask a spec, sketch, or data model's acceptance Checkpoint and the artifact is long
   (more than about 80 lines) or still has open questions for the user, offer a review page
-  once, alongside the question: `groundwork render <artifact> --serve` shows it beside its
+  once, alongside the question: `npx @kdowswell/groundwork render <artifact> --serve` shows it beside its
   open questions, cited principles, and detector findings, and records the user's decision
   from the page. Start it only if the user agrees, and never submit the page's form yourself.
   A decision made in the page is already recorded: confirm it with
-  `groundwork verify <artifact>` instead of running `approve` again. Don't offer it for short
+  `npx @kdowswell/groundwork verify <artifact>` instead of running `approve` again. Don't offer it for short
   artifacts with nothing open. <!-- rule:router-offer-render -->
 - Don't write approval status into an artifact (a "Draft, awaiting acceptance" banner, an
   "Approved" line). The receipt is the status, and editing the artifact to update a banner

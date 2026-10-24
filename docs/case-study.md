@@ -12,7 +12,7 @@ can never silently drift from reality.
 It works in a demo. It has every tell of unguided AI generation:
 
 ```
-$ npx groundwork detect examples/case-study/before
+$ npx @kdowswell/groundwork detect examples/case-study/before
 
 25 findings: 6 error, 16 warn, 3 info
 ```
@@ -35,7 +35,7 @@ Every finding names the principle it violates — the detector is the enforcemen
 
 ## The workflow
 
-1. **`npx groundwork detect`** — the deterministic scan above. No LLM, no API key; run it in
+1. **`npx @kdowswell/groundwork detect`** — the deterministic scan above. No LLM, no API key; run it in
    CI with `--json`.
 2. **`/groundwork review`** — the agent assesses the system against active principles and
    writes a findings report; the detector output seeds the mechanical layer so the agent
@@ -48,7 +48,7 @@ Every finding names the principle it violates — the detector is the enforcemen
 ## The result
 
 ```
-$ npx groundwork detect examples/case-study/after
+$ npx @kdowswell/groundwork detect examples/case-study/after
 
 ✓ 9 file(s) scanned, no findings.
 ```
@@ -68,6 +68,6 @@ What changed, mapped back to principles:
 ## Reproduce it
 
 ```bash
-npx groundwork detect examples/case-study/before   # 25 findings, exit 1
-npx groundwork detect examples/case-study/after    # clean, exit 0
+npx @kdowswell/groundwork detect examples/case-study/before   # 25 findings, exit 1
+npx @kdowswell/groundwork detect examples/case-study/after    # clean, exit 0
 ```

@@ -2,13 +2,13 @@
 /**
  * groundwork CLI — deterministic architecture checks and skill installation.
  *
- *   npx groundwork detect [path] [--json] [--strict]
- *   npx groundwork doctor [path] [--json]
- *   npx groundwork install [--providers=claude,github,cursor,agents] [--all-skills] [--global] [--hooks]
- *   npx groundwork update  (same as install; idempotent)
- *   npx groundwork approve <artifact> --checkpoint=<id> [--decision=...] [--notes=...]
- *   npx groundwork verify [artifact] [--json] [--diff]
- *   npx groundwork render <artifact> [--serve] [--checkpoint=<id>] [--port=<n>]
+ *   npx @kdowswell/groundwork detect [path] [--json] [--strict]
+ *   npx @kdowswell/groundwork doctor [path] [--json]
+ *   npx @kdowswell/groundwork install [--providers=claude,github,cursor,agents] [--all-skills] [--global] [--hooks]
+ *   npx @kdowswell/groundwork update  (same as install; idempotent)
+ *   npx @kdowswell/groundwork approve <artifact> --checkpoint=<id> [--decision=...] [--notes=...]
+ *   npx @kdowswell/groundwork verify [artifact] [--json] [--diff]
+ *   npx @kdowswell/groundwork render <artifact> [--serve] [--checkpoint=<id>] [--port=<n>]
  */
 import { readFileSync } from "node:fs";
 import { join, relative, resolve, dirname } from "node:path";
@@ -45,6 +45,9 @@ function parseArgs(argv) {
 }
 
 const HELP = `groundwork — architecture skills, principles, and deterministic checks for AI coding agents
+
+Run as \`npx @kdowswell/groundwork <command>\`, or \`groundwork <command>\` once installed in the
+project. (The unscoped \`groundwork\` package on npm is unrelated.)
 
 Usage:
   groundwork detect [path]     scan for production-readiness gaps and AI-slop tells

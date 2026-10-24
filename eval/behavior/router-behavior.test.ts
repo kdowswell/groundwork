@@ -124,6 +124,9 @@ Escalation — owned by the support-operations team.
 
     const verifies = cliCalls(trace, "verify");
     expect(verifies.some((c) => c.includes("docs/spec.md")), "agent must verify the spec").toBe(true);
+    // rule:router-cli-package — never the unscoped name, which npx resolves to an unrelated package.
+    const unscoped = [...verifies, ...cliCalls(trace, "approve")].filter((c) => /npx\s+(?:(?:-y|--yes)\s+)?groundwork\b/.test(c));
+    expect(unscoped, `unscoped npx call: ${unscoped.join(" | ")}`).toEqual([]);
     // Unapproved spec: the agent must not approve it on the user's behalf.
     const selfApprovals = cliCalls(trace, "approve").filter((c) => !/--decision=/.test(c));
     expect(selfApprovals, `agent approved for the user: ${selfApprovals.join(" | ")}`).toEqual([]);

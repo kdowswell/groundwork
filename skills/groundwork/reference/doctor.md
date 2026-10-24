@@ -9,7 +9,7 @@ the user approves. Doctor is the only command allowed to modify the context file
 ## Steps
 
 1. **Run the deterministic checks first.** If the groundwork CLI is available, run
-   `npx groundwork doctor --json` and use its findings as the baseline. If not, perform the
+   `npx @kdowswell/groundwork doctor --json` and use its findings as the baseline. If not, perform the
    same checks manually: context file exists, `Last reviewed` date parses and is under 90 days
    old, Active Principles section is non-empty, and every active principle id exists in the
    principle library (synced copies live in `reference/principles/`). The CLI also reports

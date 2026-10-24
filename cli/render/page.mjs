@@ -272,9 +272,9 @@ export function buildPage(p) {
 <p class="small">Records <code>${escapeHtml(p.checkpoint)}</code> pinned to this exact version.</p></form>`;
   } else {
     decide = `<p class="small">Read-only view. To decide in the browser, run:</p>
-<pre><code>npx groundwork render ${escapeHtml(p.artifactPath)} --serve</code></pre>
+<pre><code>npx @kdowswell/groundwork render ${escapeHtml(p.artifactPath)} --serve</code></pre>
 <p class="small">or record it directly:</p>
-<pre><code>npx groundwork approve ${escapeHtml(p.artifactPath)} --checkpoint=${escapeHtml(p.checkpoint)}</code></pre>`;
+<pre><code>npx @kdowswell/groundwork approve ${escapeHtml(p.artifactPath)} --checkpoint=${escapeHtml(p.checkpoint)}</code></pre>`;
   }
 
   const working = a.workingSpec

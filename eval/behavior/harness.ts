@@ -30,8 +30,13 @@ export const BEHAVIOR_MODEL = process.env.BEHAVIOR_MODEL ?? "claude-haiku-5-5";
 const MAX_TURNS = 12;
 const SKILL_REL = ".claude/skills/groundwork";
 const CLI_BIN = path.resolve(__dirname, "../../cli/bin/groundwork.mjs");
-/** `groundwork approve|verify|render` with plain arguments only — no shell metacharacters. */
-const GROUNDWORK_CLI = /^\s*(?:npx\s+)?groundwork\s+(approve|verify|render)((?:\s+[\w./=:@,"'<>-]+)*)\s*$/;
+/**
+ * `[npx [-y]] [@kdowswell/]groundwork approve|verify|render` with plain arguments only — no shell
+ * metacharacters. Bare `npx groundwork` still runs here so a test can assert it never happens
+ * (rule:router-cli-package); a real install would fetch an unrelated package.
+ */
+const GROUNDWORK_CLI =
+  /^\s*(?:npx\s+(?:(?:-y|--yes)\s+)?)?(?:@kdowswell\/)?groundwork\s+(approve|verify|render)((?:\s+[\w./=:@,"'<>-]+)*)\s*$/;
 /** A test agent must never start the review server: it would block, and only humans decide there. */
 const SERVE_REFUSAL = "error: this sandbox cannot start servers; give the user the command to run instead\n(exit 1)";
 
@@ -64,7 +69,7 @@ const SHIM_DIR = ".bin-shim";
 export function createWorkspace(files: Record<string, string> = {}): string {
   const dir = mkdtempSync(path.join(tmpdir(), "groundwork-behavior-"));
   install({ projectRoot: dir, providers: ["claude"] });
-  // Real installs reach the CLI as `npx groundwork`; chained shell commands need it on PATH.
+  // Chained shell commands reach the CLI as the installed `groundwork` bin; put it on PATH.
   const shim = path.join(dir, SHIM_DIR, "groundwork");
   mkdirSync(path.dirname(shim), { recursive: true });
   writeFileSync(shim, `#!/bin/sh\nexec "${process.execPath}" "${CLI_BIN}" "$@"\n`, "utf8");

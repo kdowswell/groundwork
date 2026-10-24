@@ -1,7 +1,7 @@
 {
-  "name": "groundwork",
+  "name": "@kdowswell/groundwork",
   "version": "0.0.1",
-  "description": "Architectural grounding for AI coding agents — distilled principle files agents reference during planning.",
+  "description": "Architectural grounding for AI coding agents \u2014 distilled principle files agents reference during planning.",
   "type": "module",
   "license": "MIT",
   "author": "Kurt Dowswell <kdowswell@gmail.com>",
@@ -42,5 +42,12 @@
     "tsx": "^4.19.2",
     "typescript": "^5.7.2",
     "vitest": "^2.1.8"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/kdowswell/groundwork.git"
   }
 }
