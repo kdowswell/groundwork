@@ -154,6 +154,87 @@ function post(url: string, fields: Record<string, string>, headers: Record<strin
 const tokenOf = (html: string) => html.match(/name="token" value="([0-9a-f]+)"/)![1];
 const receiptPath = (dir: string) => join(dir, ".groundwork/approvals/docs__spec.md.json");
 
+const ARCH = `# Architecture: Escalation tracker
+
+## Components
+| # | Component | Runs on | State | Responsibility |
+|---|---|---|---|---|
+| 1 | **Capture Client** | Device, mobile app | Stateless | Collects reports |
+| 2 | **Outbox & Sync** | Device | **Stateful**: the system of record | Queues and syncs |
+| 3 | **Escalation API** | Backend, one deployable | Stateful | Stores escalations |
+| 4 | <img src=x onerror=alert(1)> | Third party (paging) | Stateless | Pages people |
+
+## Primary Data Flow
+1. **Report captured (device).** The Capture Client writes to the Outbox.
+   *Fails by:* storage full.
+2. **Sync.** Outbox & Sync posts to the Escalation API.
+3. **Nobody in particular.** Logs are rotated.
+
+## External Dependencies
+| Dependency | What we need | Failure mode | Severity |
+|---|---|---|---|
+| Paging vendor | Pages on-call | Pages are late | Degraded |
+| Identity provider | Sign-in | First sign-in fails | Degraded; catastrophic for new users |
+| Data store | Everything | Down | Catastrophic |
+
+## Sync / Async Boundary
+**Synchronous (user waits):** report capture, local write, and replay (≤ 2 s, p90).
+**Asynchronous (background):**
+- Sync to the API.
+- Paging.
+`;
+
+describe("architecture visuals (ADR-009)", () => {
+  const MAP = '<figure class="viz sysmap">';
+  const page = (source: string) => {
+    const dir = project(source);
+    return render(dir, "docs/spec.md", { write: false }).html;
+  };
+
+  it("draws a lane map with the components each flow step names", () => {
+    const html = page(ARCH);
+    const at = html.indexOf(MAP);
+    const map = html.slice(at, html.indexOf("</figure>", at));
+    // Placed under the Components heading, above its table.
+    expect(html.indexOf('<h2 id="components">')).toBeLessThan(at);
+    expect(at).toBeLessThan(html.indexOf("<th>Component</th>"));
+    expect([...map.matchAll(/class="lane"[^>]*>([^<]+)</g)].map((m) => m[1])).toEqual(["Device", "Backend", "Third party"]);
+    expect(map.match(/<span class="tag">stateful<\/span>/g)).toHaveLength(2);
+    // Step 1 names Capture Client and "the Outbox" (short alias of "Outbox & Sync"): columns 2 and 3.
+    expect(map).toContain('<div class="dot" style="grid-column:2;grid-row:3">');
+    expect(map).toContain('<div class="dot" style="grid-column:3;grid-row:3">');
+    expect(map).toContain('<div class="wire" style="grid-column:3 / span 2;grid-row:4;margin-inline:calc(50% / 2)">');
+    expect(map).toContain("<span>Report captured</span>"); // "(device)" moves to the tooltip
+    expect(map).toContain("names no component");
+    // Artifact text is never markup.
+    expect(map).not.toContain("<img");
+    expect(map).toContain("&lt;img src=x onerror=alert(1)&gt;");
+  });
+
+  it("groups dependencies by severity and splits sync from async", () => {
+    const html = page(ARCH);
+    expect(html).toMatch(/<section class="sev sev-bad"><h4>Catastrophic <span>1<\/span><\/h4><ul><li[^>]*><strong>Data store/);
+    expect(html).toContain("<em>catastrophic for new users</em>");
+    expect(html).toMatch(/sev-ok"><h4>Degraded <span>1</);
+    expect(html).toContain('<li title="report capture">report capture</li>');
+    expect(html).toContain('<li title="replay (≤ 2 s, p90)">replay (≤ 2 s, p90)</li>');
+    expect(html).toContain('<li title="Sync to the API">Sync to the API</li>');
+  });
+
+  it("asks for a Runs on column instead of guessing lanes, and stays silent without the sections", () => {
+    const noLanes = page(ARCH.replace(/\| Runs on /, "| Notes ").replace("|---|---|---|---|---|", "|---|---|---|---|---|"));
+    expect(noLanes).toContain("Add a <code>Runs on</code> column");
+    expect(noLanes).not.toContain('class="lane"');
+    expect(page("# Architecture: Bare\n\nJust prose.\n")).not.toContain("<figure");
+    expect(page(SPEC)).not.toContain("<figure"); // spec visuals are a later step
+    const huge = ARCH.replace(
+      "| 4 |",
+      Array.from({ length: 12 }, (_, i) => `| x${i} | **Extra ${i}** | Backend | Stateless | More |\n`).join("") + "| 4 |",
+    );
+    expect(page(huge)).not.toContain(MAP);
+  });
+});
+
 describe("changes since approval (ADR-009)", () => {
   it("opens a stale artifact's page with the diff against the approved snapshot", () => {
     const dir = project();

@@ -7,7 +7,8 @@
  * load. Approval happens through a plain form post, and only in --serve mode.
  */
 import { diffHunks, diffStats } from "./diff.mjs";
-import { escapeHtml, parseTable, renderInline, renderMarkdown } from "./markdown.mjs";
+import { escapeHtml, renderInline, renderMarkdown, slugify } from "./markdown.mjs";
+import { column, deriveVisuals, sectionTable, VISUAL_CSS } from "./visuals.mjs";
 
 /** Artifact kinds groundwork produces, keyed by their H1 prefix. */
 export const ARTIFACT_KINDS = [
@@ -17,22 +18,6 @@ export const ARTIFACT_KINDS = [
 ];
 
 const PRINCIPLE_URL = "https://github.com/kdowswell/groundwork/blob/main/principles";
-
-/** Rows of the first table under a `## <name>` heading. */
-function sectionTable(lines, name) {
-  const start = lines.findIndex((l) => new RegExp(`^##\\s+${name}\\s*$`, "i").test(l));
-  if (start === -1) return null;
-  for (let i = start + 1; i < lines.length && !/^##\s/.test(lines[i]); i++) {
-    if (lines[i].includes("|") && /^\s*\|?\s*:?-{2,}/.test(lines[i + 1] ?? "")) return parseTable(lines, i);
-  }
-  return null;
-}
-
-/** Index of the first header matching `pattern`, or `fallback`. */
-function column(table, pattern, fallback) {
-  const i = table.header.findIndex((h) => pattern.test(h));
-  return i === -1 ? fallback : i;
-}
 
 /**
  * Extract the decision-relevant structure from an artifact's Markdown.
@@ -205,7 +190,10 @@ function approvalBadge(approval) {
  * @param {{token: string}|null} p.form present only in --serve mode
  */
 export function buildPage(p) {
-  const { html: body } = renderMarkdown(p.source);
+  const visuals = deriveVisuals(p.analysis.kind, p.source);
+  const { html: body } = renderMarkdown(p.source, {
+    afterHeading: (level, text) => (level === 2 ? (visuals.get(slugify(text)) ?? "") : ""),
+  });
   const a = p.analysis;
   const kindLabel = a.kind ? a.kind.label : "Artifact";
 
@@ -270,7 +258,7 @@ export function buildPage(p) {
 <meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'; form-action 'self'; base-uri 'none'">
 <meta name="color-scheme" content="light dark">
 <title>${escapeHtml(a.title)} · groundwork review</title>
-<style>${CSS}</style></head>
+<style>${CSS}${VISUAL_CSS}</style></head>
 <body>
 <header><div class="wrap"><div class="meta">${escapeHtml(kindLabel)} · <code>${escapeHtml(p.artifactPath)}</code> · sha256 ${escapeHtml(p.sha256.slice(0, 12))}…</div>
 <h1>${escapeHtml(a.title)}</h1>${approvalBadge(p.approval)}</div></header>

@@ -41,9 +41,9 @@ The agent draws the structural questions out of the spec and proposes a sketch. 
 
 1. **Draw the system boundary.** **First, if a spec file is named or present in the project, run `groundwork verify <spec path>` from the project root, and act on the first Checkpoint before writing anything else.** With no spec file, work from the request as given. Write one sentence: "This system is responsible for X and hands off Y to Z." Anything inside the boundary is your problem; anything outside is a dependency. Ambiguity here is technical debt's favorite entry point.
 
-2. **Name the major components.** List 3–7 components with a one-sentence responsibility for each. A component is a distinct unit that could in principle be deployed, tested, or replaced independently. If a component's responsibility spans more than one sentence, split it.
+2. **Name the major components.** List 3–7 components with a one-sentence responsibility for each, where each runs (the user's device, the backend, a third party), and whether it holds persistent state. A component is a distinct unit that could in principle be deployed, tested, or replaced independently. If a component's responsibility spans more than one sentence, split it.
 
-3. **Trace the primary data flow.** Follow the data entity from Step 5 of the spec-from-idea skill through the system: where it enters, what transforms it, where it's stored, who reads it, and where it exits. Write this as a numbered sequence. Every hop between components is a potential failure point — note it.
+3. **Trace the primary data flow.** Follow the data entity from Step 5 of the spec-from-idea skill through the system: where it enters, what transforms it, where it's stored, who reads it, and where it exits. Write this as a numbered sequence, naming the components each step touches by their names from Step 2. Every hop between components is a potential failure point — note it.
 
 4. **List external dependencies.** For each system outside the boundary that this system depends on, record:
    - What this system requests from it
@@ -135,9 +135,9 @@ It hands off to: ...
 It receives from: ...
 
 ## Components
-| Component | Responsibility |
-|---|---|
-| ... | One sentence |
+| Component | Runs on | State | Responsibility |
+|---|---|---|---|
+| ... | Device / Backend / Third party | Stateful / Stateless | One sentence |
 
 ## Primary Data Flow
 1. ...
