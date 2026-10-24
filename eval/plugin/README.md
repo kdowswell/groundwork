@@ -8,7 +8,7 @@ can't: the real Skill tool, the lifecycle hooks, and the `groundwork-builder` su
 |---|---|
 | `handoff-stale-spec` | `rule:router-verify-handoff`, `rule:router-approval-is-the-users`, `rule:router-cli-package`: a spec edited after approval is verified, its diff shown, and acceptance re-asked |
 | `spec-builder-check` | ADR-007 builder check: the `groundwork-builder` subagent runs, the spec gets a Builder Check section, and every user question comes in one message |
-| `render-offer` | `rule:router-offer-render`: a long spec with open questions gets a review-page offer; no server and no decision without the user |
+| `render-offer` | `rule:router-offer-render`: a long spec gets a review-page offer at acceptance; no server and no decision without the user |
 | `stop-hook-secret` | ADR-006 hooks: an edit to a file holding a credential ends with the key moved out of source |
 
 ```bash
