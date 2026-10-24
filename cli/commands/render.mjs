@@ -15,6 +15,7 @@ import { fileURLToPath } from "node:url";
 import { detect } from "../engine/detect.mjs";
 import { analyzeArtifact, buildPage, messagePage } from "../render/page.mjs";
 import { approve, approvedDiff, digestFile, verify } from "./approvals.mjs";
+import { activePrincipleIds } from "./doctor.mjs";
 import {
   ensureProjectDir,
   isRegularFile,
@@ -35,6 +36,13 @@ function loadPrinciples() {
   } catch {
     return [];
   }
+}
+
+/** Active principle ids from .groundwork/context.md, or [] when there is none (ADR-009). */
+function activePrinciples(root) {
+  const file = join(root, ".groundwork", "context.md");
+  if (!existsSync(file) || !isRegularFile(file) || !resolvesInside(root, file)) return [];
+  return activePrincipleIds(readFileSync(file, "utf8"));
 }
 
 /** Detector findings for project files the artifact names (never outside the root). */
@@ -77,7 +85,10 @@ export function render(root, artifact, opts = {}) {
   }
   const source = readFileSync(abs, "utf8");
   const sha256 = digestFile(abs);
-  const analysis = analyzeArtifact(source, loadPrinciples());
+  const library = loadPrinciples();
+  const analysis = analyzeArtifact(source, library);
+  const activeIds = activePrinciples(root);
+  const active = activeIds.map((id) => library.find((p) => p.id === id) ?? { id, title: id, category: "" });
   const checkpoint = opts.checkpoint ?? analysis.kind?.checkpoint ?? null;
   const receipt = verify(root, artifactPath).receipts[0];
   const approval = receipt && receipt.status !== "unapproved" ? receipt : null;
@@ -92,6 +103,7 @@ export function render(root, artifact, opts = {}) {
     approval,
     findings,
     changes,
+    active,
     checkpoint,
     form: opts.form ?? null,
   });
@@ -105,7 +117,7 @@ export function render(root, artifact, opts = {}) {
     path = join(dir, `${artifactPath.replaceAll("/", "__")}.html`);
     writeFileSafe(dir, path, html);
   }
-  return { artifactPath, sha256, checkpoint, analysis, approval, findings, html, path };
+  return { artifactPath, sha256, checkpoint, analysis, approval, findings, active, html, path };
 }
 
 function sameSecret(a, b) {

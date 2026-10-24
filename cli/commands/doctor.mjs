@@ -53,6 +53,21 @@ function approvalFindings(root) {
  * Run doctor checks against a project root.
  * @returns {{findings: Array<{check: string, severity: string, message: string}>}}
  */
+/**
+ * Principle ids listed under `## Active Principles` in a context file. Reading stops at the
+ * next heading or at a "Suppressed" / "Excluded" label, so excluded ids never count as active.
+ */
+export function activePrincipleIds(raw) {
+  const after = raw.replace(/\r\n/g, "\n").split(/^## Active Principles\s*$/m)[1] ?? "";
+  const ids = [];
+  for (const line of after.split("\n")) {
+    if (/^#{1,6}\s/.test(line) || /^\s*\**\s*(suppressed|excluded|not selected|left out)\b/i.test(line)) break;
+    const m = line.match(/^\s*-\s*([a-z0-9-]+)\s*(?:—|--|-|$)/);
+    if (m) ids.push(m[1]);
+  }
+  return ids;
+}
+
 export function doctor(root) {
   const findings = approvalFindings(root);
   const contextPath = join(root, ".groundwork", "context.md");
@@ -86,10 +101,7 @@ export function doctor(root) {
     }
   }
 
-  const principlesSection = raw.split(/^## Active Principles\s*$/m)[1] ?? "";
-  const activeIds = [...principlesSection.matchAll(/^\s*-\s*([a-z0-9-]+)\s*(?:—|--|-|$)/gm)].map(
-    (m) => m[1],
-  );
+  const activeIds = activePrincipleIds(raw);
   if (activeIds.length === 0) {
     findings.push({
       check: "no-active-principles",

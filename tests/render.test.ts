@@ -314,6 +314,108 @@ describe("spec visuals (ADR-009)", () => {
   });
 });
 
+const MODEL = `# Data Model: Escalations
+
+## Entities
+| Entity | Definition | Owner |
+|---|---|---|
+| Team | A support team | Accounts |
+| Escalation | A stuck customer issue | Support ops |
+| Note | A comment on an escalation | Support ops |
+| <b>Agent</b> | A person who works escalations | Accounts |
+
+## Relationships
+| Entity A | Relationship | Entity B | Notes |
+|---|---|---|---|
+| Team | one-to-many | Escalation | Each escalation has one team |
+| Note | many-to-one | Escalation | |
+| Escalation | many-to-many | <b>Agent</b> | Watchers |
+| Escalation | 1:N | AuditEvent | Not listed above |
+| Note | sometimes | Team | No cardinality: skipped |
+
+## Consistency Requirements
+| Boundary | Requirement | Reason |
+|---|---|---|
+| Escalation → Note | Eventual | Notes can lag |
+| Team → Escalation | Strong | Reassignment must not double-assign |
+| Escalation → Search | Strong at write, eventual to search | Index lags |
+`;
+
+describe("data model visuals (ADR-009)", () => {
+  const page = (source: string, context?: string) => {
+    const dir = project(source);
+    if (context) {
+      mkdirSync(join(dir, ".groundwork"), { recursive: true });
+      writeFileSync(join(dir, ".groundwork/context.md"), context);
+    }
+    return render(dir, "docs/spec.md", { write: false }).html;
+  };
+  const ERD = '<figure class="viz erd">';
+  const nodeY = (html: string, name: string) =>
+    Number(html.match(new RegExp(`<title>${name}[^<]*</title><rect x="[\\d.]+" y="([\\d.]+)"`))![1]);
+
+  it("lays out entities with the one side above the many side", () => {
+    const html = page(MODEL);
+    const at = html.indexOf(ERD);
+    expect(html.indexOf('<h2 id="entities">')).toBeLessThan(at);
+    expect(at).toBeLessThan(html.indexOf("<th>Definition</th>"));
+    // Team (1) above Escalation (N); "many-to-one" flips so Escalation sits above Note.
+    expect(nodeY(html, "Team")).toBeLessThan(nodeY(html, "Escalation"));
+    expect(nodeY(html, "Escalation")).toBeLessThan(nodeY(html, "Note"));
+    // Named only in Relationships: drawn dashed and labeled.
+    expect(html).toContain('<g class="node unlisted"><title>AuditEvent — Named in Relationships but not in Entities</title>');
+    // A relationship with no cardinality is skipped, not guessed.
+    expect(html).not.toContain("Note sometimes Team");
+    // Escaped labels, and owners in the legend.
+    expect(html).not.toContain("<b>Agent</b>");
+    expect(html).toContain("&lt;b&gt;Agent&lt;/b&gt;");
+    expect([...html.matchAll(/<li><i class="sw" style="background:[^"]+"><\/i>([^<]+)<\/li>/g)].map((m) => m[1])).toEqual([
+      "Accounts",
+      "Support ops",
+    ]);
+  });
+
+  it("survives cycles, and draws nothing without both tables or past the size cap", () => {
+    const cyclic = MODEL.replace("| Note | sometimes | Team |", "| Escalation | one-to-many | Team |");
+    expect(page(cyclic)).toContain(ERD);
+    expect(page(MODEL.replace("## Relationships", "## Links"))).not.toContain(ERD);
+    const many = Array.from({ length: 17 }, (_, i) => `| E${i} | one-to-many | E${i + 1} | |`).join("\n");
+    expect(page(`# Data Model: Big\n\n## Entities\n| Entity | Owner |\n|---|---|\n| E0 | x |\n\n## Relationships\n| Entity A | Relationship | Entity B | Notes |\n|---|---|---|---|\n${many}\n`)).not.toContain(ERD);
+  });
+
+  it("groups consistency boundaries, strongest first", () => {
+    const html = page(MODEL);
+    const order = [...html.slice(html.indexOf('<figure class="viz consistency">')).matchAll(/<section class="sev ([a-z-]*)"><h4>([^<]+) <span>/g)]
+      .slice(0, 3)
+      .map((m) => `${m[2]} ${m[1]}`);
+    expect(order).toEqual(["Strong sev-bad", "Strong at write sev-warn", "Eventual sev-ok"]);
+  });
+
+  it("shows coverage of the project's active principles, ignoring excluded ones", () => {
+    const context = `# Context
+
+## Active Principles
+- data-ownership — one owner per entity
+- consistency-models — explicit rules
+- secrets-management — keys stay server-side
+
+Suppressed or excluded:
+- feature-flags — not needed
+
+## Stack
+- Node
+`;
+    const html = page(`${MODEL}\n## Principle Compliance Notes\n- data-ownership: owners named.\n- consistency-models: see above.\n- idempotency-by-design: client IDs.\n`, context);
+    expect(html).toContain("<h2>Active principles</h2>");
+    expect(html).toContain("2 of 3 addressed in this data model");
+    expect(html).toMatch(/<li class="miss"><span class="mark">–<\/span><a [^>]*>Secrets Management<\/a> <span class="small">not addressed/);
+    expect(html).not.toContain("Feature Flags");
+    expect(html).toMatch(/Also cited: <a [^>]*>Idempotency by Design<\/a>/);
+    // No context file: the plain cited list, as before.
+    expect(page(MODEL)).toContain("<h2>Principles cited</h2>");
+  });
+});
+
 describe("changes since approval (ADR-009)", () => {
   it("opens a stale artifact's page with the diff against the approved snapshot", () => {
     const dir = project();

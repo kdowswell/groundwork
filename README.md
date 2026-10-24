@@ -251,8 +251,11 @@ riskiest assumption and counts that link to their sections, shows scope beside n
 puts open questions on a board by category with their owners. An architecture sketch gets a
 system map (components in lanes by where they run, and the components each data-flow step
 touches), its dependencies grouped by severity, and what the user waits for versus what runs
-in the background. Every builder check gets a bar of how its questions were resolved. A stale
-artifact opens with its changes since approval. Sections that
+in the background. A data model gets an entity-relationship diagram (the "one" side above the
+"many" side, colored by owner) and its consistency boundaries grouped by requirement. Every
+builder check gets a bar of how its questions were resolved, and the side panel shows which of
+the project's active principles the artifact addresses. A stale artifact opens with its changes
+since approval. Sections that
 are missing or don't follow the template draw nothing.
 
 ## Repo Structure

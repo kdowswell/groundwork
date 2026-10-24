@@ -471,6 +471,222 @@ function specSummary(lines) {
   }</figure>`;
 }
 
+// ---------------------------------------------------------------------------
+// Data model
+
+const MAX_DIAGRAM_ENTITIES = 16;
+const NODE_W = 142;
+const NODE_H = 48;
+const GAP_X = 20;
+const MAX_PER_ROW = 4;
+const GAP_Y = 64;
+const OWNER_COLORS = ["var(--accent)", "var(--ok)", "var(--warn)", "var(--bad)", "var(--muted)"];
+
+/** "one-to-many", "1:N", "has many", "N:1"… → [left, right] as "1" | "N", or null. */
+function cardinality(raw) {
+  const t = plain(raw).toLowerCase();
+  const side = (w) => (/^(one|1|single)$/.test(w) ? "1" : /^(many|n|\*|m)$/.test(w) ? "N" : null);
+  const pair = t.match(/\b(one|many|1|n|m|\*)\s*(?:-?\s*to\s*-?|:|\.\.|\/)\s*(one|many|1|n|m|\*)\b/);
+  if (pair) {
+    const a = side(pair[1]);
+    const b = side(pair[2]);
+    return a && b ? [a, b] : null;
+  }
+  if (/has many|contains|owns many/.test(t)) return ["1", "N"];
+  if (/belongs to|many of one/.test(t)) return ["N", "1"];
+  return null;
+}
+
+/**
+ * Layered layout: an edge points from its "1" side to its "N" side (parent above child);
+ * one-to-one and many-to-many point from the left entity to the right one. Cycles are
+ * broken by depth-first back edges, layers come from the longest path, and one
+ * barycenter pass orders each layer under its parents.
+ */
+function layoutEntities(names, edges) {
+  const out = new Map(names.map((n) => [n, []]));
+  for (const e of edges) if (e.from !== e.to) out.get(e.from).push(e.to);
+  const state = new Map();
+  const dag = new Map(names.map((n) => [n, []]));
+  const visit = (n) => {
+    state.set(n, 1);
+    for (const m of out.get(n)) {
+      if (state.get(m) === 1) continue; // back edge: drop for layering
+      dag.get(n).push(m);
+      if (!state.has(m)) visit(m);
+    }
+    state.set(n, 2);
+  };
+  for (const n of names) if (!state.has(n)) visit(n);
+
+  const layer = new Map();
+  const depth = (n) => {
+    if (layer.has(n)) return layer.get(n);
+    layer.set(n, 0); // guards re-entry; the DAG has no cycles
+    let d = 0;
+    for (const [p, kids] of dag) if (kids.includes(n)) d = Math.max(d, depth(p) + 1);
+    layer.set(n, d);
+    return d;
+  };
+  for (const n of names) depth(n);
+
+  const layers = [];
+  for (const n of names) (layers[layer.get(n)] ??= []).push(n);
+  const pos = new Map();
+  layers.forEach((row, li) => {
+    if (li > 0) {
+      const center = (n) => {
+        const parents = [...dag].filter(([, kids]) => kids.includes(n)).map(([p]) => pos.get(p));
+        return parents.length ? parents.reduce((a, b) => a + b, 0) / parents.length : Infinity;
+      };
+      row.sort((a, b) => center(a) - center(b));
+    }
+    row.forEach((n, i) => pos.set(n, i - (row.length - 1) / 2));
+  });
+  return { layers, layer, pos };
+}
+
+function entityDiagram(lines) {
+  const entTable = sectionTable(lines, "Entities");
+  const relTable = sectionTable(lines, "Relationships");
+  if (!entTable || !relTable) return "";
+  const nameCol = column(entTable, /entity/i, 0);
+  const ownerCol = column(entTable, /owner/i, -1);
+  const defCol = column(entTable, /definition|description/i, -1);
+  const entities = new Map();
+  for (const r of entTable.rows) {
+    const name = plain(r[nameCol]);
+    if (!name || /^\.{3}$/.test(name)) continue;
+    entities.set(name.toLowerCase(), {
+      name,
+      owner: ownerCol === -1 ? "" : plain(r[ownerCol]),
+      def: defCol === -1 ? "" : plain(r[defCol]),
+      listed: true,
+    });
+  }
+  const aCol = column(relTable, /entity a|^from|^source/i, 0);
+  const kindCol = column(relTable, /relationship|cardinality/i, 1);
+  const bCol = column(relTable, /entity b|^to$|^target/i, 2);
+  const noteCol = column(relTable, /note/i, -1);
+  const edges = [];
+  for (const r of relTable.rows) {
+    const a = plain(r[aCol]);
+    const b = plain(r[bCol]);
+    const card = cardinality(r[kindCol] ?? "");
+    if (!a || !b || /^\.{3}$/.test(a) || !card) continue;
+    for (const n of [a, b]) {
+      if (!entities.has(n.toLowerCase())) entities.set(n.toLowerCase(), { name: n, owner: "", def: "", listed: false });
+    }
+    const A = entities.get(a.toLowerCase()).name;
+    const B = entities.get(b.toLowerCase()).name;
+    const flip = card[0] === "N" && card[1] === "1";
+    edges.push({
+      from: flip ? B : A,
+      to: flip ? A : B,
+      fromCard: flip ? card[1] : card[0],
+      toCard: flip ? card[0] : card[1],
+      label: `${A} ${plain(r[kindCol])} ${B}${noteCol !== -1 && plain(r[noteCol]) ? ` — ${plain(r[noteCol])}` : ""}`,
+    });
+  }
+  const nodes = [...entities.values()];
+  if (edges.length === 0 || nodes.length < 2 || nodes.length > MAX_DIAGRAM_ENTITIES) return "";
+
+  const names = nodes.map((n) => n.name);
+  const { layers } = layoutEntities(names, edges);
+  // Wrap wide layers so the diagram fits the page instead of scrolling: rows of at most MAX_PER_ROW.
+  const rows = layers.flatMap((l) =>
+    Array.from({ length: Math.ceil(l.length / MAX_PER_ROW) }, (_, k) => l.slice(k * MAX_PER_ROW, (k + 1) * MAX_PER_ROW)),
+  );
+  const rowOf = new Map();
+  const slot = new Map();
+  rows.forEach((r, ri) => r.forEach((n, i) => (rowOf.set(n, ri), slot.set(n, i - (r.length - 1) / 2))));
+  const widest = Math.max(...rows.map((r) => r.length));
+  const width = widest * NODE_W + (widest - 1) * GAP_X + 24;
+  const height = rows.length * NODE_H + (rows.length - 1) * GAP_Y + 24;
+  const cx = (n) => width / 2 + slot.get(n) * (NODE_W + GAP_X);
+  const top = (n) => 12 + rowOf.get(n) * (NODE_H + GAP_Y);
+
+  // Spread each node's edges along its bottom (outgoing) and top (incoming) edge, ordered by
+  // where the other end sits, so lines and their 1/N labels don't pile onto one point.
+  const port = new Map();
+  const spread = (key, list, other) => {
+    list.sort((x, y) => cx(other(x)) - cx(other(y)));
+    list.forEach((e, i) => port.set(`${key}:${edges.indexOf(e)}`, (i + 1) / (list.length + 1) - 0.5));
+  };
+  for (const n of names) {
+    spread("out", edges.filter((e) => e.from === n), (e) => e.to);
+    spread("in", edges.filter((e) => e.to === n), (e) => e.from);
+  }
+  const span = NODE_W * 0.7;
+
+  const owners = [...new Set(nodes.map((n) => n.owner).filter(Boolean))];
+  const color = (owner) => (owner ? OWNER_COLORS[owners.indexOf(owner) % OWNER_COLORS.length] : "var(--line)");
+
+  const svgEdges = edges
+    .map((e, ei) => {
+      const x1 = cx(e.from) + port.get(`out:${ei}`) * span;
+      const x2 = cx(e.to) + port.get(`in:${ei}`) * span;
+      const down = rowOf.get(e.to) > rowOf.get(e.from);
+      const y1 = down ? top(e.from) + NODE_H : top(e.from) + NODE_H / 2;
+      const y2 = down ? top(e.to) : top(e.to) + NODE_H / 2;
+      const bend = down ? Math.max(24, (y2 - y1) / 2) : 0;
+      const path = down
+        ? `M${x1},${y1} C${x1},${y1 + bend} ${x2},${y2 - bend} ${x2},${y2}`
+        : `M${x1 + (x2 > x1 ? NODE_W / 2 : -NODE_W / 2)},${y1} C${x1},${y1 - GAP_Y} ${x2},${y2 - GAP_Y} ${x2 + (x2 > x1 ? -NODE_W / 2 : NODE_W / 2)},${y2}`;
+      const end = down
+        ? `<text class="card" x="${x1 + 4}" y="${y1 + 13}">${e.fromCard}</text><text class="card" x="${x2 + 4}" y="${y2 - 5}">${e.toCard}</text>`
+        : "";
+      return `<g class="edge"><title>${escapeHtml(e.label)}</title><path d="${path}"/>${end}</g>`;
+    })
+    .join("");
+  const svgNodes = nodes
+    .map((n) => {
+      const x = cx(n.name) - NODE_W / 2;
+      const y = top(n.name);
+      const tip = [n.name, n.def, n.owner && `Owner: ${n.owner}`, !n.listed && "Named in Relationships but not in Entities"]
+        .filter(Boolean)
+        .join(" — ");
+      return `<g class="node${n.listed ? "" : " unlisted"}"><title>${escapeHtml(tip)}</title><rect x="${x}" y="${y}" width="${NODE_W}" height="${NODE_H}" rx="8"/><rect class="stripe" x="${x}" y="${y}" width="5" height="${NODE_H}" rx="2" style="fill:${color(n.owner)}"/><text class="name" x="${x + 14}" y="${y + 20}">${escapeHtml(clip(n.name, 18))}</text><text class="owner" x="${x + 14}" y="${y + 37}">${escapeHtml(clip(n.owner || (n.listed ? "no owner" : "not in Entities"), 22))}</text></g>`;
+    })
+    .join("");
+  const legend = owners.length
+    ? `<ul class="legend">${owners.map((o) => `<li><i class="sw" style="background:${color(o)}"></i>${escapeHtml(o)}</li>`).join("")}</ul>`
+    : "";
+  return `<figure class="viz erd"><figcaption>Entities and relationships, the "one" side above the "many" side, colored by owner</figcaption><div class="scroll"><svg viewBox="0 0 ${width} ${height}" width="${width}" height="${height}" role="img" aria-label="Entity relationship diagram">${svgEdges}${svgNodes}</svg></div>${legend}</figure>`;
+}
+
+function consistencyGroups(lines) {
+  const table = sectionTable(lines, "Consistency Requirements");
+  if (!table) return "";
+  const bCol = column(table, /boundary/i, 0);
+  const reqCol = column(table, /requirement|model|consistency/i, 1);
+  const whyCol = column(table, /reason|why/i, -1);
+  const groups = new Map();
+  for (const r of table.rows) {
+    const boundary = plain(r[bCol]);
+    const req = plain(r[reqCol]);
+    if (!boundary || /^\.{3}$/.test(boundary) || !req) continue;
+    const key = clip(req.split(/[,;:(.]/)[0].trim(), 28);
+    if (!groups.has(key)) groups.set(key, []);
+    groups.get(key).push({ boundary, why: whyCol === -1 ? "" : plain(r[whyCol]), req });
+  }
+  if (groups.size === 0) return "";
+  // Strongest first: strong boundaries constrain the design most; mixed ones say "strong at X, eventual at Y".
+  const STRONG = /strong|linearizable|serializable|transactional|immediate/i;
+  const rank = (items) => {
+    const req = items[0].req;
+    return STRONG.test(req) && /eventual/i.test(req) ? 1 : STRONG.test(req) ? 0 : /eventual/i.test(req) ? 2 : 3;
+  };
+  const cls = (items) => ["sev-bad", "sev-warn", "sev-ok", ""][rank(items)];
+  const cols = [...groups].sort((x, y) => rank(x[1]) - rank(y[1])).map(
+    ([k, items]) =>
+      `<section class="sev ${cls(items)}"><h4>${escapeHtml(k)} <span>${items.length}</span></h4><ul>${items
+        .map((i) => `<li title="${escapeHtml(i.req)}"><strong>${escapeHtml(i.boundary)}</strong>${i.why ? `<span>${escapeHtml(clip(i.why, 140))}</span>` : ""}</li>`)
+        .join("")}</ul></section>`,
+  );
+  return `<figure class="viz consistency"><figcaption>Consistency boundaries by requirement</figcaption><div class="sev-cols">${cols.join("")}</div></figure>`;
+}
+
 /**
  * Visuals for an artifact, keyed by the slug of the `##` heading they sit under.
  * The key TOP holds a summary shown at the top of the document.
@@ -496,6 +712,10 @@ export function deriveVisuals(kind, source) {
     if (summary) out.set(TOP, summary);
     add("Scope", scopeColumns(lines));
     add("Open Questions", questionBoard(lines));
+  }
+  if (kind?.label === "Data model") {
+    add("Entities", entityDiagram(lines));
+    add("Consistency Requirements", consistencyGroups(lines));
   }
   if (kind) add("Builder Check", builderBar(lines));
   return out;
@@ -549,6 +769,13 @@ ul.chips li{font-size:12.5px;line-height:1.3;padding:3px 9px;border-radius:999px
 .bcheck .sw{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:6px;vertical-align:-1px}
 .r-answered{background:var(--ok)}.r-agent{background:var(--accent)}.r-user{background:var(--warn)}
 .r-deferred{background:var(--muted)}.r-other{background:color-mix(in srgb,var(--muted) 45%,transparent)}
+.erd .scroll{overflow-x:auto}.erd svg{display:block;margin:0 auto;max-width:none;font-family:inherit}
+.erd .node rect{fill:var(--panel);stroke:var(--line)}.erd .node.unlisted rect:first-of-type{stroke-dasharray:4 3;stroke:var(--muted)}
+.erd .node .name{font-size:12.5px;font-weight:600;fill:var(--text)}.erd .node .owner{font-size:11px;fill:var(--muted)}
+.erd .edge path{fill:none;stroke:var(--accent);stroke-width:1.6;opacity:.7}.erd .edge .card{font-size:11px;font-weight:700;fill:var(--accent)}
+.erd .edge:hover path{opacity:1;stroke-width:2.4}
+.erd .legend{list-style:none;margin:10px 0 0;padding:0;display:flex;flex-wrap:wrap;gap:6px 16px;font-size:13px}
+.erd .sw{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:6px;vertical-align:-1px}
 .summary{display:flex;flex-direction:column;gap:10px}
 .summary .claim{display:block;text-decoration:none;color:var(--text);font-size:15.5px;line-height:1.5;
 border-left:3px solid var(--warn);padding:2px 0 2px 12px}

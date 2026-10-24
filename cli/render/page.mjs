@@ -116,6 +116,10 @@ section.changes h2{margin:0;border:0;padding:0;font-size:17px}
 .dl.add{background:var(--ok-bg)}.dl.add .o{color:var(--ok)}
 .dl.del{background:var(--bad-bg)}.dl.del .o{color:var(--bad)}
 .dl.del .t{text-decoration:line-through;text-decoration-color:color-mix(in srgb,var(--bad) 45%,transparent)}
+.cov{display:flex;height:6px;border-radius:999px;overflow:hidden;gap:2px;margin:8px 0 6px;background:var(--code)}
+.cov span:first-child{background:var(--ok)}.cov span:last-child{background:var(--code)}
+li.miss{color:var(--muted)}li.miss a{color:var(--muted)}.mark{display:inline-block;width:18px;font-weight:700}
+li.hit .mark{color:var(--ok)}
 button{font:inherit;font-weight:600;padding:8px 14px;border-radius:6px;border:1px solid var(--line);cursor:pointer;
 background:var(--panel);color:var(--text)}button.primary{background:var(--ok);border-color:var(--ok);color:var(--panel)}
 `;
@@ -186,6 +190,7 @@ function approvalBadge(approval) {
  * @param {object|null} p.approval     verify() receipt entry, if any
  * @param {Array<object>} p.findings   detector findings for named files
  * @param {object|null} [p.changes]    approvedDiff() result when the approval is stale
+ * @param {Array<object>} [p.active]   the project's active principles, from .groundwork/context.md
  * @param {string|null} p.checkpoint   checkpoint id an approval would record
  * @param {{token: string}|null} p.form present only in --serve mode
  */
@@ -204,15 +209,39 @@ export function buildPage(p) {
           .map((q) => `<li>${renderInline(q.text)}<div class="small">${escapeHtml(q.source)}</div></li>`)
           .join("")}</ul>`;
 
-  const principles =
-    a.cited.length === 0
-      ? `<p class="small">No principles cited.</p>`
-      : `<ul class="plain">${a.cited
-          .map(
-            (pr) =>
-              `<li><a href="${PRINCIPLE_URL}/${escapeHtml(pr.category)}/${escapeHtml(pr.id)}.md">${escapeHtml(pr.title)}</a> <span class="small">${escapeHtml(pr.id)}</span></li>`,
-          )
-          .join("")}</ul>`;
+  const principleLink = (pr) =>
+    pr.category
+      ? `<a href="${PRINCIPLE_URL}/${escapeHtml(pr.category)}/${escapeHtml(pr.id)}.md">${escapeHtml(pr.title)}</a>`
+      : escapeHtml(pr.title);
+  const citedIds = new Set(a.cited.map((pr) => pr.id));
+  const active = p.active ?? [];
+  let principlesTitle = "Principles cited";
+  let principles;
+  if (active.length > 0) {
+    // Coverage against the project's active set (ADR-009): "not addressed" is information, not an error.
+    const addressed = active.filter((pr) => citedIds.has(pr.id)).length;
+    const extra = a.cited.filter((pr) => !active.some((x) => x.id === pr.id));
+    principlesTitle = "Active principles";
+    principles = `<p class="small">${addressed} of ${active.length} addressed in this ${escapeHtml(kindLabel.toLowerCase())}. Not every principle bears on every artifact.</p>
+<div class="cov"><span style="flex:${addressed}"></span><span style="flex:${active.length - addressed}"></span></div>
+<ul class="plain">${active
+      .map((pr) => {
+        const hit = citedIds.has(pr.id);
+        return `<li class="${hit ? "hit" : "miss"}"><span class="mark">${hit ? "✓" : "–"}</span>${principleLink(pr)} <span class="small">${hit ? escapeHtml(pr.id) : "not addressed"}</span></li>`;
+      })
+      .join("")}</ul>${
+      extra.length
+        ? `<p class="small" style="margin-top:10px">Also cited: ${extra.map((pr) => principleLink(pr)).join(", ")}</p>`
+        : ""
+    }`;
+  } else {
+    principles =
+      a.cited.length === 0
+        ? `<p class="small">No principles cited.</p>`
+        : `<ul class="plain">${a.cited
+            .map((pr) => `<li>${principleLink(pr)} <span class="small">${escapeHtml(pr.id)}</span></li>`)
+            .join("")}</ul>`;
+  }
 
   const findings =
     p.findings.length === 0
@@ -267,7 +296,7 @@ export function buildPage(p) {
 <aside>
 <div class="card"><h2>Decision</h2>${decide}</div>
 <div class="card"><h2>Open questions for you</h2>${questions}</div>
-<div class="card"><h2>Principles cited</h2>${principles}</div>
+<div class="card"><h2>${principlesTitle}</h2>${principles}</div>
 <div class="card"><h2>Detector findings</h2>${findings}</div>
 </aside>
 </main>
