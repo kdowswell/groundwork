@@ -10,6 +10,7 @@ can't: the real Skill tool, the lifecycle hooks, and the `groundwork-builder` su
 | `spec-builder-check` | ADR-007 builder check: the `groundwork-builder` subagent runs, the spec gets a Builder Check section, and every user question comes in one message |
 | `render-offer` | `rule:router-offer-render`: a long spec gets a review-page offer at acceptance; no server and no decision without the user |
 | `delta-rides-with-code` | ADR-012, `rule:router-delta-rides-with-code`: a later session implements an approved change plan, applies its delta to the spec, and records the amendment without a second approval |
+| `plan-nudge` | ADR-013: several source files changed with no plan in sight get one advisory mention of `/groundwork plan`; the work still finishes |
 | `stop-hook-secret` | ADR-006 hooks: an edit to a file holding a credential ends with the key moved out of source |
 
 ```bash
@@ -21,7 +22,7 @@ npm run eval:plugin -- --case render-offer --runs 1   # one case, one run per ar
   precedence, so if it is stale every run fails with "Invalid API key"; unset it for the run
   (`env -u ANTHROPIC_API_KEY npm run eval:plugin`).
 - **Cost.** Each run is a full Claude Code session: about $0.15–$0.60 per run at the default
-  model, so the full suite (5 cases × 2 runs × 2 arms) is roughly $6. Add `--max-cost-usd` for a
+  model, so the full suite (6 cases × 2 runs × 2 arms) is roughly $7. Add `--max-cost-usd` for a
   hard ceiling, and `--model` / `--judge-model` to pin models in CI.
 - **Scaffolds.** Each run starts in an empty directory. A case's `scaffold.sh` seeds it
   (`_lib/workspace.sh`: project context, fixtures from `_fixtures/`, and a local link to this

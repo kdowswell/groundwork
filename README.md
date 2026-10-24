@@ -85,6 +85,19 @@ still unresolved. The plugin ships them in `hooks/hooks.json`. Without the plugi
 `npx @kdowswell/groundwork install --hooks` registers the same hooks (use one or the other, not both).
 All hooks fail open: a broken hook never blocks the agent.
 
+The same hooks keep an eye on unplanned work without getting in the way
+([ADR-013](docs/decisions/ADR-013-plan-nudge.md)). When a session has changed three or more
+source files and no change plan is approved or in progress (and nothing was approved in the
+last two weeks), the agent mentions once that `/groundwork plan` can capture the change, then
+carries on. Small fixes and planned work never see it. Teams that want a hard gate can opt in:
+
+```json
+{ "planGate": { "mode": "strict", "afterFiles": 3 } }
+```
+
+in `.groundwork/config.json` blocks one Stop per session in the same situation; `"mode": "off"`
+turns the nudge off.
+
 See the before/after [case study](docs/case-study.md): the same service goes from 25
 findings (6 errors) to zero, with each fix mapped to a principle.
 

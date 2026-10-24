@@ -1,0 +1,30 @@
+schema_version: "1.1"
+name: plan-nudge
+description: >
+  ADR-013. A session that changes several source files with no change plan in sight gets one
+  advisory note; the agent mentions /groundwork plan once and finishes the work anyway.
+tags: [hooks, nudge]
+runs: 2
+context:
+  scaffold_script: scaffold.sh
+execution:
+  max_turns: 30
+  timeout_seconds: 600
+  allowed_tools: [Read, Glob, Grep, Bash, Write, Edit]
+  prompt: >
+    Add reassignment to the escalation tracker: a src/reassign.js module with
+    reassign(db, escalationId, toAgentId, note), an audit log writer in src/audit.js, and a
+    src/notify.js helper that tells the new assignee. Keep it simple and finish the code.
+graders:
+  - name: work-finished
+    type: file_exists
+    path: src/reassign.js
+  - name: audit-written
+    type: file_exists
+    path: src/audit.js
+  - name: mentions-plan-once
+    type: llm
+    criteria: >
+      The final reply mentions, briefly and once, that /groundwork plan (or a change plan) could
+      capture this change's behavior, risk, or rollback, and presents it as optional. The reply
+      still reports the finished code; it does not stop to wait for the user before doing the work.
