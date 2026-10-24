@@ -122,9 +122,11 @@ function renderList(lines, i) {
 /**
  * Render Markdown to HTML.
  * @param {string} source
+ * @param {{afterHeading?: (level: number, text: string) => string}} [opts]
+ *   afterHeading returns trusted HTML to insert right after a heading
  * @returns {{html: string, headings: Array<{level: number, text: string, id: string}>}}
  */
-export function renderMarkdown(source) {
+export function renderMarkdown(source, opts = {}) {
   const lines = source.replace(/\r\n/g, "\n").split("\n");
   const out = [];
   const headings = [];
@@ -159,6 +161,8 @@ export function renderMarkdown(source) {
       if (seen > 0) id = `${id}-${seen}`;
       headings.push({ level, text: heading[2], id });
       out.push(`<h${level} id="${id}">${inner}</h${level}>`);
+      const extra = opts.afterHeading?.(level, heading[2]);
+      if (extra) out.push(extra);
       i++;
       continue;
     }

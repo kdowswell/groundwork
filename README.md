@@ -245,6 +245,13 @@ Pages are generated, git-ignored, and contain no scripts
 data model is long or still has open questions, `/groundwork` offers the page at the
 acceptance Checkpoint.
 
+The page also draws what the artifact's template sections describe, so nobody has to author a
+diagram ([ADR-009](docs/decisions/ADR-009-derived-review-visuals.md)). An architecture sketch
+gets a system map (components in lanes by where they run, and the components each data-flow
+step touches), its dependencies grouped by severity, and what the user waits for versus what
+runs in the background. A stale artifact opens with its changes since approval. Sections that
+are missing or don't follow the template draw nothing.
+
 ## Repo Structure
 
 ```
