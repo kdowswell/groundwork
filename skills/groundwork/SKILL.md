@@ -107,7 +107,8 @@ ten-year-old codebase is still Define work. <!-- rule:router-phase-from-request 
   session, or your own confidence is not approval. <!-- rule:router-approval-is-the-users -->
 - Before a playbook builds on an artifact from an earlier step (a spec, a sketch, a data
   model), run `groundwork verify <artifact>`. If it fails (unapproved, changed since
-  approval, or changes requested), tell the user which and re-ask that artifact's acceptance
+  approval, or changes requested), tell the user which (for a change since approval, run
+  `groundwork verify <artifact> --diff` and show what changed) and re-ask that artifact's acceptance
   Checkpoint before continuing. Do not proceed silently, and do not approve it yourself to get
   past the check. If the CLI is unavailable, say the approval could not be verified and ask
   the user to confirm. When no such artifact exists, the request itself is the input: draft
@@ -121,3 +122,6 @@ ten-year-old codebase is still Define work. <!-- rule:router-phase-from-request 
   A decision made in the page is already recorded: confirm it with
   `groundwork verify <artifact>` instead of running `approve` again. Don't offer it for short
   artifacts with nothing open. <!-- rule:router-offer-render -->
+- Don't write approval status into an artifact (a "Draft, awaiting acceptance" banner, an
+  "Approved" line). The receipt is the status, and editing the artifact to update a banner
+  makes its approval stale. <!-- rule:router-no-status-in-artifact -->

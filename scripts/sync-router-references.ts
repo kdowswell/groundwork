@@ -1,8 +1,9 @@
 #!/usr/bin/env tsx
 /**
  * Compiles the 15 standalone phase skills into router playbooks under
- * skills/groundwork/reference/, and syncs the union of their principles
- * into skills/groundwork/reference/principles/ so relative
+ * skills/groundwork/reference/, and syncs every library principle (the
+ * `principles` command can select any of them) into
+ * skills/groundwork/reference/principles/ so relative
  * `principles/<id>.md` links keep working inside the router skill.
  *
  * The standalone skills remain the source of truth. Hand-authored playbooks
@@ -138,6 +139,8 @@ async function main(): Promise<void> {
     const id = parsed.data.id as string | undefined;
     if (!id) continue;
     principleIndex.set(id, filePath);
+    // `principles` can select any library principle, so every one must be loadable.
+    principleUnion.add(id);
     allPrinciples.push({
       id,
       title: String(parsed.data.title ?? id),

@@ -14,7 +14,8 @@ import { join, resolve } from "node:path";
 import { afterAll, describe, expect, it } from "vitest";
 import { doctor } from "../cli/commands/doctor.mjs";
 import { install } from "../cli/commands/install.mjs";
-import { approve, verify } from "../cli/commands/approvals.mjs";
+import { approve, approvedDiff, snapshotPath, verify } from "../cli/commands/approvals.mjs";
+import { diffHunks, formatUnified, lineDiff } from "../cli/render/diff.mjs";
 
 const ROOT = resolve(__dirname, "..");
 const BIN = join(ROOT, "cli/bin/groundwork.mjs");
@@ -365,6 +366,54 @@ describe("groundwork approve / verify", () => {
     expect(verify(dir).receipts[0].status).toBe("missing");
   });
 
+  it("snapshots the decided-on text and reports what changed since (ADR-009)", () => {
+    const dir = projectWithSpec();
+    approve(dir, "docs/specs/orders.md", { checkpoint: "scope", now: NOW });
+    const snap = snapshotPath(dir, "docs/specs/orders.md");
+    expect(snap).toBe(join(dir, ".groundwork/approvals/docs__specs__orders.md.snapshot"));
+    expect(readFileSync(snap, "utf8")).toBe("# Orders\n\nScope: v1.\n");
+    expect(approvedDiff(dir, "docs/specs/orders.md")).toMatchObject({ status: "fresh" });
+
+    writeFileSync(join(dir, "docs/specs/orders.md"), "# Orders\n\nScope: v1 and v2.\nOwner: ops.\n");
+    expect(verify(dir).receipts[0]).toMatchObject({ status: "stale", changes: { added: 2, removed: 1 } });
+    const d = approvedDiff(dir, "docs/specs/orders.md");
+    expect(d.ops!.filter((o: any) => o.op !== " ").map((o: any) => `${o.op}${o.text}`)).toEqual([
+      "-Scope: v1.",
+      "+Scope: v1 and v2.",
+      "+Owner: ops.",
+    ]);
+
+    // A snapshot that doesn't hash to the receipt is never trusted.
+    writeFileSync(snap, "# Orders\n\nforged approved text\n");
+    expect(verify(dir).receipts[0]).toMatchObject({ status: "stale", changes: null });
+    expect(approvedDiff(dir, "docs/specs/orders.md").reason).toMatch(/no snapshot/);
+
+    // Pre-ADR-009 receipts (no snapshot) still verify; they just can't diff.
+    rmSync(snap);
+    expect(verify(dir).receipts[0]).toMatchObject({ status: "stale", changes: null });
+  });
+
+  it("refuses to write a snapshot through a symlink", () => {
+    const outside = tempDir();
+    const victim = join(outside, "victim.txt");
+    writeFileSync(victim, "keep\n");
+    const dir = projectWithSpec();
+    mkdirSync(join(dir, ".groundwork/approvals"), { recursive: true });
+    symlinkSync(victim, snapshotPath(dir, "docs/specs/orders.md"));
+    expect(() => approve(dir, "docs/specs/orders.md", { checkpoint: "scope" })).toThrow(/regular file/);
+    expect(readFileSync(victim, "utf8")).toBe("keep\n");
+  });
+
+  it("CLI: verify --diff prints the change since the decision", () => {
+    const dir = projectWithSpec();
+    expect(runCli(["approve", "docs/specs/orders.md", "--checkpoint=scope"], { cwd: dir }).status).toBe(0);
+    writeFileSync(join(dir, "docs/specs/orders.md"), "# Orders\n\nScope: v2.\n");
+    const out = runCli(["verify", "docs/specs/orders.md", "--diff"], { cwd: dir });
+    expect(out.status).toBe(1);
+    expect(out.stdout).toContain("+1 −1 lines since the decision");
+    expect(out.stdout).toContain("-Scope: v1.\n+Scope: v2.");
+  });
+
   it("records delegated decisions as the agent's, and changes-requested never passes", () => {
     const dir = projectWithSpec();
     const { receipt } = approve(dir, "docs/specs/orders.md", {
@@ -479,11 +528,14 @@ describe("groundwork approve / verify", () => {
     expect(verify(dir4).receipts[0].message).toMatch(/escapes/);
   });
 
-  it("leaves no temp files behind after writing a receipt", () => {
+  it("leaves no temp files behind after writing a receipt and snapshot", () => {
     const dir = projectWithSpec();
     approve(dir, "docs/specs/orders.md", { checkpoint: "scope", now: NOW });
     approve(dir, "docs/specs/orders.md", { checkpoint: "scope", now: NOW });
-    expect(readdirSync(join(dir, ".groundwork/approvals"))).toEqual(["docs__specs__orders.md.json"]);
+    expect(readdirSync(join(dir, ".groundwork/approvals")).sort()).toEqual([
+      "docs__specs__orders.md.json",
+      "docs__specs__orders.md.snapshot",
+    ]);
   });
 
   it("doctor reports stale approvals even without a context file", () => {
@@ -514,5 +566,29 @@ describe("plugin agents", () => {
     expect(frontmatter).toMatch(/^name: groundwork-builder$/m);
     expect(frontmatter).toMatch(/^tools: Read$/m);
     expect(frontmatter).toMatch(/^description: .*builder check/m);
+  });
+});
+
+describe("line diff", () => {
+  const ops = (a: string, b: string) => lineDiff(a, b)!.map((o: any) => `${o.op}${o.text}`);
+
+  it("finds a minimal edit script", () => {
+    expect(ops("a\nb\nc\n", "a\nb\nc\n")).toEqual([" a", " b", " c"]);
+    expect(ops("", "x\n")).toEqual(["+x"]);
+    expect(ops("x\n", "")).toEqual(["-x"]);
+    expect(ops("a\nb\nc\nd\n", "a\nc\nd\ne\n")).toEqual([" a", "-b", " c", " d", "+e"]);
+    expect(ops("a\r\nb\r\n", "a\nb\n")).toEqual([" a", " b"]);
+  });
+
+  it("groups hunks with context and formats unified output", () => {
+    const before = Array.from({ length: 20 }, (_, i) => `line ${i + 1}`).join("\n");
+    const after = before.replace("line 2\n", "line two\n").replace("line 19", "line nineteen");
+    const d = lineDiff(before, after)!;
+    const hunks = diffHunks(d, 3);
+    expect(hunks.map((h: any) => [h.aStart, h.aLen, h.bStart, h.bLen])).toEqual([
+      [1, 5, 1, 5],
+      [16, 5, 16, 5],
+    ]);
+    expect(formatUnified(d, "a", "b")).toContain("@@ -1,5 +1,5 @@\n line 1\n-line 2\n+line two\n line 3");
   });
 });

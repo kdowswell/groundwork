@@ -6,6 +6,7 @@
  * themes, no scripts, and a Content-Security-Policy that blocks every network
  * load. Approval happens through a plain form post, and only in --serve mode.
  */
+import { diffHunks, diffStats } from "./diff.mjs";
 import { escapeHtml, parseTable, renderInline, renderMarkdown } from "./markdown.mjs";
 
 /** Artifact kinds groundwork produces, keyed by their H1 prefix. */
@@ -27,6 +28,12 @@ function sectionTable(lines, name) {
   return null;
 }
 
+/** Index of the first header matching `pattern`, or `fallback`. */
+function column(table, pattern, fallback) {
+  const i = table.header.findIndex((h) => pattern.test(h));
+  return i === -1 ? fallback : i;
+}
+
 /**
  * Extract the decision-relevant structure from an artifact's Markdown.
  * @param {string} source
@@ -40,18 +47,24 @@ export function analyzeArtifact(source, principles = []) {
 
   const questions = [];
   const builder = sectionTable(lines, "Builder Check");
-  for (const row of builder?.rows ?? []) {
-    const resolution = row[1] ?? "";
-    if (/^\s*(\*\*)?user\b/i.test(resolution) && !/answered|resolved/i.test(resolution)) {
-      questions.push({ source: "Builder check", text: row[0] });
+  // Artifacts often prepend a "#" column, so find columns by header, not position.
+  if (builder) {
+    const qCol = column(builder, /question/i, 0);
+    const rCol = column(builder, /resolution/i, qCol + 1);
+    for (const row of builder.rows) {
+      const resolution = row[rCol] ?? "";
+      if (/^\s*(\*\*)?user\b/i.test(resolution) && !/answered|resolved/i.test(resolution)) {
+        questions.push({ source: "Builder check", text: row[qCol] ?? "" });
+      }
     }
   }
   const open = sectionTable(lines, "Open Questions");
   if (open) {
-    const catCol = open.header.findIndex((h) => /category/i.test(h));
+    const qCol = column(open, /question/i, 0);
+    const catCol = column(open, /category/i, -1);
     for (const row of open.rows) {
       if (catCol !== -1 && /blocking/i.test(row[catCol] ?? "")) {
-        questions.push({ source: "Blocking open question", text: row[0] });
+        questions.push({ source: "Blocking open question", text: row[qCol] ?? "" });
       }
     }
   }
@@ -90,6 +103,7 @@ main{display:grid;grid-template-columns:minmax(0,1fr) 340px;gap:24px;padding:24p
 main>*{min-width:0}article,aside{overflow-wrap:anywhere}
 article,aside .card{background:var(--panel);border:1px solid var(--line);border-radius:10px}
 article{padding:8px 28px 28px}aside .card{padding:16px;margin-bottom:16px}
+aside pre code{white-space:pre-wrap;overflow-wrap:anywhere}
 aside h2{font-size:14px;text-transform:uppercase;letter-spacing:.04em;color:var(--muted);margin:0 0 10px}
 article>h1:first-of-type{display:none}article h1{font-size:24px}article h2{border-bottom:1px solid var(--line);padding-bottom:4px;margin-top:28px}
 code{background:var(--code);padding:1px 5px;border-radius:4px;font:13px/1.5 ui-monospace,Menlo,monospace}
@@ -104,6 +118,19 @@ ul.plain li:first-child{border-top:0}.badge{display:inline-block;padding:2px 10p
 textarea{width:100%;min-height:80px;font:inherit;padding:8px;border-radius:6px;border:1px solid var(--line);
 background:var(--bg);color:var(--text)}
 .actions{display:flex;gap:8px;margin-top:10px;flex-wrap:wrap}
+section.changes{border:1px solid var(--line);border-radius:8px;margin:20px 0 8px;overflow:hidden}
+section.changes>header{padding:10px 14px;border-bottom:1px solid var(--line);background:var(--bg)}
+section.changes h2{margin:0;border:0;padding:0;font-size:17px}
+.stat-add{color:var(--ok);font-weight:600}.stat-del{color:var(--bad);font-weight:600}
+.hunk{font:12.5px/1.55 ui-monospace,Menlo,monospace;overflow-x:auto}
+.hunk+.hunk{border-top:1px dashed var(--line)}
+.hh{padding:4px 14px;color:var(--muted);background:var(--code)}
+.dl{display:grid;grid-template-columns:3.2em 3.2em 1.4em minmax(0,1fr);white-space:pre-wrap;overflow-wrap:anywhere}
+.dl .n{color:var(--muted);text-align:right;padding-right:6px;user-select:none}
+.dl .o{text-align:center;user-select:none}
+.dl.add{background:var(--ok-bg)}.dl.add .o{color:var(--ok)}
+.dl.del{background:var(--bad-bg)}.dl.del .o{color:var(--bad)}
+.dl.del .t{text-decoration:line-through;text-decoration-color:color-mix(in srgb,var(--bad) 45%,transparent)}
 button{font:inherit;font-weight:600;padding:8px 14px;border-radius:6px;border:1px solid var(--line);cursor:pointer;
 background:var(--panel);color:var(--text)}button.primary{background:var(--ok);border-color:var(--ok);color:var(--panel)}
 `;
@@ -116,12 +143,48 @@ const STATUS = {
   unapproved: { cls: "warn", text: "Not yet approved" },
 };
 
+const MAX_DIFF_LINES = 400;
+
+/** "Changes since approval" for a stale artifact (ADR-009). */
+function changesSection(approval, changes) {
+  if (!approval || approval.status !== "stale" || !changes) return "";
+  const when = `${escapeHtml(approval.decision)} on ${escapeHtml(approval.date ?? "")}`;
+  const head = (summary) =>
+    `<header><h2>Changes since approval</h2><div class="small">${summary}</div></header>`;
+  if (changes.ops === undefined) {
+    return `<section class="changes" id="changes">${head(
+      `This file changed after it was ${when}, but no snapshot of that version was saved, so the change can't be shown. Approvals recorded from now on keep one.`,
+    )}</section>`;
+  }
+  if (changes.ops === null) {
+    return `<section class="changes" id="changes">${head(`This file changed too much since it was ${when} to show a diff. Review it in full.`)}</section>`;
+  }
+  const { added, removed } = diffStats(changes.ops);
+  let shown = 0;
+  const hunks = [];
+  for (const h of diffHunks(changes.ops)) {
+    if (shown >= MAX_DIFF_LINES) break;
+    const rows = h.lines.slice(0, MAX_DIFF_LINES - shown).map((o) => {
+      const cls = o.op === "+" ? "add" : o.op === "-" ? "del" : "ctx";
+      const mark = o.op === " " ? "" : o.op === "-" ? "−" : "+";
+      return `<div class="dl ${cls}"><span class="n">${o.a ?? ""}</span><span class="n">${o.b ?? ""}</span><span class="o">${mark}</span><span class="t">${escapeHtml(o.text) || " "}</span></div>`;
+    });
+    shown += rows.length;
+    hunks.push(`<div class="hunk"><div class="hh">Line ${h.bStart}</div>${rows.join("")}</div>`);
+  }
+  const more = shown >= MAX_DIFF_LINES ? `<div class="hh">Diff truncated at ${MAX_DIFF_LINES} lines.</div>` : "";
+  return `<section class="changes" id="changes">${head(
+    `<span class="stat-add">+${added}</span> <span class="stat-del">−${removed}</span> lines since it was ${when}. Approving now records the current version.`,
+  )}${hunks.join("")}${more}</section>`;
+}
+
 function approvalBadge(approval) {
   if (!approval) return `<span class="badge warn">Not yet approved</span>`;
   if (approval.status === "fresh" && approval.decision === "changes-requested") {
     return `<span class="badge bad">Changes requested (${escapeHtml(approval.date ?? "")})</span>`;
   }
   const s = STATUS[approval.status] ?? STATUS.unapproved;
+  if (approval.status === "stale") return `<a class="badge ${s.cls}" href="#changes">${s.text}</a>`;
   const suffix =
     approval.status === "fresh"
       ? ` ${escapeHtml(approval.date ?? "")}${approval.decidedBy === "agent-delegated" ? " · delegated to agent" : ""}`
@@ -137,6 +200,7 @@ function approvalBadge(approval) {
  * @param {ReturnType<typeof analyzeArtifact>} p.analysis
  * @param {object|null} p.approval     verify() receipt entry, if any
  * @param {Array<object>} p.findings   detector findings for named files
+ * @param {object|null} [p.changes]    approvedDiff() result when the approval is stale
  * @param {string|null} p.checkpoint   checkpoint id an approval would record
  * @param {{token: string}|null} p.form present only in --serve mode
  */
@@ -211,7 +275,7 @@ export function buildPage(p) {
 <header><div class="wrap"><div class="meta">${escapeHtml(kindLabel)} · <code>${escapeHtml(p.artifactPath)}</code> · sha256 ${escapeHtml(p.sha256.slice(0, 12))}…</div>
 <h1>${escapeHtml(a.title)}</h1>${approvalBadge(p.approval)}</div></header>
 <main>
-<article>${working}${body}</article>
+<article>${changesSection(p.approval, p.changes ?? null)}${working}${body}</article>
 <aside>
 <div class="card"><h2>Decision</h2>${decide}</div>
 <div class="card"><h2>Open questions for you</h2>${questions}</div>

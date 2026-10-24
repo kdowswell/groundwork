@@ -6,11 +6,13 @@
  * the artifact's SHA-256 at that moment. `verify` reports receipts whose
  * artifact changed (stale) or disappeared (missing), so post-approval drift is
  * mechanically detectable. Receipts live in .groundwork/approvals/ and are
- * committed with the repository.
+ * committed with the repository, each beside a snapshot of the text that was
+ * decided on, so a stale receipt can show what changed (ADR-009).
  */
 import { createHash } from "node:crypto";
 import { existsSync, lstatSync, readFileSync, readdirSync, realpathSync } from "node:fs";
 import { join, relative, resolve, sep } from "node:path";
+import { diffStats, formatUnified, lineDiff } from "../render/diff.mjs";
 import {
   ensureProjectDir,
   isInside,
@@ -29,8 +31,15 @@ const CHECKPOINT_ID = /^[a-z0-9][a-z0-9-]*(\/[a-z0-9][a-z0-9-]*)?$/;
  * does not invalidate every receipt; no other normalization (ADR-007).
  */
 export function digestFile(absPath) {
-  const text = readFileSync(absPath, "utf8").replace(/\r\n/g, "\n");
-  return createHash("sha256").update(text, "utf8").digest("hex");
+  return digestText(readFileSync(absPath, "utf8"));
+}
+
+function normalize(text) {
+  return text.replace(/\r\n/g, "\n");
+}
+
+function digestText(text) {
+  return createHash("sha256").update(normalize(text), "utf8").digest("hex");
 }
 
 /** Repo-relative POSIX path, or throw when the artifact is outside the root. */
@@ -39,6 +48,11 @@ const toArtifactPath = (root, artifact) => toProjectPath(root, artifact);
 /** One receipt per artifact: docs/specs/x.md → docs__specs__x.md.json */
 export function receiptPath(root, artifactPath) {
   return join(root, APPROVALS_DIR, `${artifactPath.replaceAll("/", "__")}.json`);
+}
+
+/** The decided-on text, beside its receipt: docs__specs__x.md.snapshot */
+export function snapshotPath(root, artifactPath) {
+  return receiptPath(root, artifactPath).replace(/\.json$/, ".snapshot");
 }
 
 /**
@@ -68,10 +82,12 @@ export function approve(root, artifact, opts) {
     throw new Error(`--decision must be one of: ${DECISIONS.join(", ")}`);
   }
 
+  // Digest and snapshot come from one read, so they always describe the same text.
+  const text = normalize(readFileSync(abs, "utf8"));
   const receipt = {
     version: 1,
     artifact: artifactPath,
-    sha256: digestFile(abs),
+    sha256: digestText(text),
     checkpoint,
     decision,
     // A delegated choice is the agent's, and must never read as the user's.
@@ -94,6 +110,11 @@ export function approve(root, artifact, opts) {
       );
     }
   }
+  const snapshot = snapshotPath(root, artifactPath);
+  if (lstatSync(snapshot, { throwIfNoEntry: false }) !== undefined && !isRegularFile(snapshot)) {
+    throw new Error(`${relative(root, snapshot)} is not a regular file (symlink?) — refusing to overwrite`);
+  }
+  writeFileSafe(dir, snapshot, text);
   writeFileSafe(dir, path, `${JSON.stringify(receipt, null, 2)}\n`);
   return { receipt, path, replaced };
 }
@@ -141,7 +162,47 @@ function checkReceipt(root, file) {
     date: receipt.date,
   };
   if (!existsSync(abs)) return { ...base, status: "missing" };
-  return { ...base, status: digestFile(abs) === receipt.sha256 ? "fresh" : "stale" };
+  const current = normalize(readFileSync(abs, "utf8"));
+  if (digestText(current) === receipt.sha256) return { ...base, status: "fresh" };
+  const approved = readSnapshot(root, receipt);
+  if (approved === null) return { ...base, status: "stale", changes: null };
+  const ops = lineDiff(approved, current);
+  return { ...base, status: "stale", changes: ops ? diffStats(ops) : { tooLarge: true } };
+}
+
+/**
+ * The text a receipt was decided on, or null when there is no snapshot or it
+ * doesn't hash to the receipt's digest (a mismatched snapshot is never trusted).
+ */
+function readSnapshot(root, receipt) {
+  const file = snapshotPath(root, receipt.artifact);
+  if (!isRegularFile(file)) return null;
+  const text = normalize(readFileSync(file, "utf8"));
+  return digestText(text) === receipt.sha256 ? text : null;
+}
+
+/**
+ * Diff between the version an artifact's receipt was decided on and the file now.
+ * @returns {{status: string, approved?: string, current?: string, ops?: Array<object>|null,
+ *   reason?: string}}
+ *   ops is null when the change is too large to diff; reason explains a missing diff
+ */
+export function approvedDiff(root, artifact) {
+  const artifactPath = toArtifactPath(root, artifact);
+  const file = receiptPath(root, artifactPath);
+  if (!existsSync(file)) return { status: "unapproved", reason: "no receipt" };
+  const { receipt, error } = readReceipt(file);
+  if (error) return { status: "invalid", reason: error };
+  if (receipt.artifact !== artifactPath) return { status: "invalid", reason: "receipt names another artifact" };
+  const abs = join(root, artifactPath);
+  if (!existsSync(abs) || !resolvesInside(root, abs)) return { status: "missing", reason: "artifact missing" };
+  const current = normalize(readFileSync(abs, "utf8"));
+  if (digestText(current) === receipt.sha256) return { status: "fresh", reason: "unchanged" };
+  const approved = readSnapshot(root, receipt);
+  if (approved === null) {
+    return { status: "stale", reason: "no snapshot of the approved version (approved before snapshots, or the snapshot doesn't match)" };
+  }
+  return { status: "stale", approved, current, ops: lineDiff(approved, current) };
 }
 
 /**
@@ -194,6 +255,27 @@ export function formatApproveHuman(result) {
   );
 }
 
+function changeNote(changes) {
+  if (!changes) return "no snapshot of the approved version — re-approve to enable diffs";
+  if (changes.tooLarge) return "changed too much to diff";
+  return `+${changes.added} −${changes.removed} lines since the decision (verify --diff shows them)`;
+}
+
+/** Unified diffs for each stale receipt that has a usable snapshot. */
+export function formatVerifyDiff(root, result) {
+  const out = [];
+  for (const r of result.receipts) {
+    if (r.status !== "stale") continue;
+    const d = approvedDiff(root, r.artifact);
+    if (!d.ops) {
+      out.push(`${r.artifact}: ${d.ops === null ? "changed too much to diff" : d.reason}`);
+      continue;
+    }
+    out.push(formatUnified(d.ops, `${r.artifact} (${r.decision} ${r.date})`, `${r.artifact} (now)`));
+  }
+  return out.join("\n\n");
+}
+
 export function formatVerifyHuman(result) {
   if (result.receipts.length === 0) return "No approval receipts in .groundwork/approvals/.";
   const lines = [];
@@ -205,6 +287,7 @@ export function formatVerifyHuman(result) {
     const mark = r.status === "fresh" ? "✓" : "✗";
     const decision = r.decision ? ` ${r.decision} @ ${r.checkpoint} (${r.date})` : "";
     lines.push(`  ${mark} ${r.status.padEnd(10)} ${r.artifact}${decision}`);
+    if (r.status === "stale") lines.push(`               ${changeNote(r.changes)}`);
     if (STATUS_NOTE[r.status]) lines.push(`               ${STATUS_NOTE[r.status]}`);
     else if (r.decision === "changes-requested") {
       lines.push("               changes requested — revise, then re-ask the Checkpoint");
