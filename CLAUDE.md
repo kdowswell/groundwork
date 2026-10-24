@@ -42,9 +42,10 @@ groundwork/
 │   ├── commands/           doctor, install, approvals (ADR-007), render (ADR-008), safe-fs
 │   ├── render/             Safe Markdown subset → self-contained review page (ADR-008)
 │   └── data/               GENERATED principle index (sync:router)
-├── eval/                   Two harnesses:
+├── eval/                   Three harnesses:
 │   ├── harness.ts          Quality: skill-vs-baseline A/B with LLM judge (eval/cases/, 15 skills)
-│   └── behavior/           Behavior: real-model tool-trace assertions on router rules
+│   ├── behavior/           Behavior: real-model tool-trace assertions on router rules
+│   └── plugin/             `claude plugin eval` cases: real Claude Code, with vs. without the plugin
 ├── examples/case-study/    SlopMart before/after fixtures (detector tests + docs/case-study.md)
 ├── context/                Project context artifacts
 │   ├── project-context.template.md   Project context capture (principle selection input)
@@ -152,4 +153,5 @@ npm run sync:all          # regenerate synced principles + router playbooks
 npm run typecheck         # TypeScript type checking on scripts
 npm test                  # vitest: detector, CLI, behavior (behavior skips without ANTHROPIC_API_KEY)
 npm run eval              # LLM-judged skill evals (costs tokens; not run in CI)
+npm run eval:plugin       # real Claude Code with/without the plugin (eval/plugin/; ~$5, not run in CI)
 ```

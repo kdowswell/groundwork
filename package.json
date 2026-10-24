@@ -28,7 +28,8 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest run --passWithNoTests",
     "eval": "tsx eval/harness.ts",
-    "eval:skill": "tsx eval/harness.ts"
+    "eval:skill": "tsx eval/harness.ts",
+    "eval:plugin": "claude plugin eval . --scaffold --trust-plugin --allow-tools Bash Write Edit --no-publish"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.132.1",

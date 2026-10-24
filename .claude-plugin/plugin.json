@@ -9,5 +9,14 @@
   "homepage": "https://github.com/kdowswell/groundwork",
   "repository": "https://github.com/kdowswell/groundwork",
   "license": "MIT",
-  "keywords": ["architecture", "skills", "principles", "production", "detector"]
+  "keywords": [
+    "architecture",
+    "skills",
+    "principles",
+    "production",
+    "detector"
+  ],
+  "experimental": {
+    "evals": "eval/plugin"
+  }
 }

@@ -1,0 +1,37 @@
+schema_version: "1.1"
+name: spec-builder-check
+description: >
+  Builder check (ADR-007). Drafting a spec runs the read-only groundwork-builder reviewer,
+  records a Builder Check section, and brings the user one round of questions at the end.
+tags: [spec, builder-check]
+runs: 2
+context:
+  scaffold_script: scaffold.sh
+execution:
+  max_turns: 40
+  timeout_seconds: 900
+  allowed_tools: [Read, Glob, Grep, Bash, Skill, Write, Edit, Agent]
+  prompt: >
+    /groundwork:groundwork spec an internal tool for our support leads to see which
+    escalations are stuck and reassign them. Write the spec to docs/spec.md.
+graders:
+  - name: builder-subagent
+    type: tool_used
+    tool: Agent
+    input_match: "groundwork-builder"
+    arm: with-only
+  - name: spec-written
+    type: file_exists
+    path: docs/spec.md
+  - name: builder-check-section
+    type: regex
+    pattern: "## Builder Check"
+    target: { source: file, path: docs/spec.md }
+  - name: one-round-of-questions
+    type: llm
+    criteria: >
+      The reply delivers the drafted spec and then asks the user every remaining question in this
+      one message, without holding any back for a later turn. The questions are only ones whose
+      answers change what gets built; calls the agent could make itself are made and labeled
+      instead. It either asks the user to accept the spec or says acceptance comes once these
+      answers are in.
