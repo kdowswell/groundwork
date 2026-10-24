@@ -14,7 +14,7 @@ import { dirname, join, posix, relative, resolve, sep } from "node:path";
 import { fileURLToPath } from "node:url";
 import { detect } from "../engine/detect.mjs";
 import { analyzeArtifact, buildPage, messagePage } from "../render/page.mjs";
-import { approve, approvedDiff, digestFile, verify } from "./approvals.mjs";
+import { amendmentDiff, approve, approvedDiff, digestFile, verify } from "./approvals.mjs";
 import { activePrincipleIds } from "./doctor.mjs";
 import {
   ensureProjectDir,
@@ -43,6 +43,28 @@ function activePrinciples(root) {
   const file = join(root, ".groundwork", "context.md");
   if (!existsSync(file) || !isRegularFile(file) || !resolvesInside(root, file)) return [];
   return activePrincipleIds(readFileSync(file, "utf8"));
+}
+
+/**
+ * A change plan's baseline (ADR-012): the spec named on its `Baseline:` line, with that spec's
+ * approval status, or `observed` when the plan plans against observed behavior.
+ */
+function changePlanBaseline(root, artifactPath, source) {
+  const line = source.replace(/\r\n/g, "\n").split("\n").find((l) => /^\**Baseline:?\**:?/i.test(l.trim()));
+  if (!line) return null;
+  const rest = line.replace(/^[^:]*:\**\s*/, "");
+  if (/^observed\b/i.test(rest.replace(/[`*_]/g, ""))) return { observed: true };
+  const named = rest.match(/`?([^\s`()|]+\.md)`?/)?.[1];
+  if (!named) return null;
+  for (const candidate of [named, posix.join(posix.dirname(artifactPath), named)]) {
+    const abs = resolve(root, candidate);
+    if (existsSync(abs) && isRegularFile(abs) && resolvesInside(root, abs)) {
+      const path = relative(root, abs).split(sep).join("/");
+      const receipt = verify(root, path).receipts[0];
+      return { path, found: true, approval: receipt && receipt.status !== "unapproved" ? receipt : null };
+    }
+  }
+  return { path: named, found: false };
 }
 
 /** Detector findings for project files the artifact names (never outside the root). */
@@ -93,7 +115,9 @@ export function render(root, artifact, opts = {}) {
   const receipt = verify(root, artifactPath).receipts[0];
   const approval = receipt && receipt.status !== "unapproved" ? receipt : null;
   const findings = findingsForNamedFiles(root, artifactPath, analysis.namedPaths);
-  const changes = approval?.status === "stale" ? approvedDiff(root, artifactPath) : null;
+  const changes = approval?.status === "stale" && !approval.lapsed ? approvedDiff(root, artifactPath) : null;
+  const amendment = approval?.decision === "amended" ? amendmentDiff(root, artifactPath) : null;
+  const baseline = analysis.kind?.label === "Change plan" ? changePlanBaseline(root, artifactPath, source) : null;
 
   const html = buildPage({
     source,
@@ -103,6 +127,8 @@ export function render(root, artifact, opts = {}) {
     approval,
     findings,
     changes,
+    amendment,
+    baseline,
     active,
     checkpoint,
     form: opts.form ?? null,

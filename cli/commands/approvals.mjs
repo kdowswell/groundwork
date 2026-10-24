@@ -23,7 +23,9 @@ import {
 } from "./safe-fs.mjs";
 
 export const APPROVALS_DIR = join(".groundwork", "approvals");
-export const DECISIONS = ["approved", "changes-requested", "delegated"];
+export const DECISIONS = ["approved", "changes-requested", "delegated", "amended"];
+/** Plan decisions an amendment may rest on (ADR-012). */
+const AMENDABLE_FROM = ["approved", "delegated"];
 const CHECKPOINT_ID = /^[a-z0-9][a-z0-9-]*(\/[a-z0-9][a-z0-9-]*)?$/;
 
 /**
@@ -55,13 +57,40 @@ export function snapshotPath(root, artifactPath) {
   return receiptPath(root, artifactPath).replace(/\.json$/, ".snapshot");
 }
 
+/** For an amended receipt, the text before the amendment: docs__specs__x.md.previous.snapshot */
+export function previousSnapshotPath(root, artifactPath) {
+  return receiptPath(root, artifactPath).replace(/\.json$/, ".previous.snapshot");
+}
+
+/**
+ * Why a plan can't carry an amendment right now, or null when it can: its receipt must exist,
+ * be an approval (or delegation), and match the plan file as it is now.
+ */
+function planStanding(root, planPath, expectedSha) {
+  const file = receiptPath(root, planPath);
+  if (!existsSync(file)) return { error: `${planPath} has no approval receipt` };
+  const { receipt, error } = readReceipt(file);
+  if (error) return { error: `${planPath}'s receipt is invalid: ${error}` };
+  if (!AMENDABLE_FROM.includes(receipt.decision)) {
+    return { error: `${planPath} was not approved (decision: ${receipt.decision})` };
+  }
+  const abs = resolve(root, planPath);
+  if (!existsSync(abs) || !resolvesInside(root, abs)) return { error: `${planPath} no longer exists` };
+  if (digestFile(abs) !== receipt.sha256) return { error: `${planPath} changed after it was approved` };
+  if (expectedSha !== undefined && receipt.sha256 !== expectedSha) {
+    return { error: `${planPath} was re-decided after this amendment` };
+  }
+  return { receipt };
+}
+
 /**
  * Record a Checkpoint decision for an artifact.
  * @param {string} root project root
  * @param {string} artifact path to the artifact (relative to root, or absolute)
  * @param {object} opts
  * @param {string} opts.checkpoint "<skill>/<checkpoint>" or a single kebab-case id
- * @param {string} [opts.decision] approved | changes-requested | delegated
+ * @param {string} [opts.decision] approved | changes-requested | delegated | amended
+ * @param {string} [opts.via] for amended: the approved plan whose delta this applies (ADR-012)
  * @param {string} [opts.notes]
  * @param {Date} [opts.now]
  * @returns {{receipt: object, path: string, replaced: boolean}}
@@ -71,7 +100,25 @@ export function approve(root, artifact, opts) {
   const abs = join(root, artifactPath);
   if (!existsSync(abs)) throw new Error(`artifact does not exist: ${artifactPath}`);
 
-  const checkpoint = opts.checkpoint;
+  const path = receiptPath(root, artifactPath);
+  const priorFile = lstatSync(path, { throwIfNoEntry: false }) !== undefined;
+  const prior = priorFile && isRegularFile(path) ? readReceipt(path).receipt : undefined;
+
+  // An amendment applies an approved plan's delta (ADR-012): it is the agent's act, rests on the
+  // plan's approval, and keeps the spec's checkpoint unless one is given.
+  let via;
+  if (opts.decision === "amended") {
+    if (typeof opts.via !== "string" || opts.via === "") {
+      throw new Error("--decision=amended needs --via=<approved plan path>");
+    }
+    const planPath = toArtifactPath(root, opts.via);
+    if (planPath === artifactPath) throw new Error("an artifact can't amend itself");
+    const standing = planStanding(root, planPath);
+    if (standing.error) throw new Error(`can't amend ${artifactPath}: ${standing.error}`);
+    via = { artifact: planPath, sha256: standing.receipt.sha256 };
+  }
+
+  const checkpoint = opts.checkpoint ?? (via ? prior?.checkpoint : undefined);
   if (typeof checkpoint !== "string" || !CHECKPOINT_ID.test(checkpoint)) {
     throw new Error(
       'approve needs --checkpoint=<id>, kebab-case, optionally "<skill>/<checkpoint>"',
@@ -91,14 +138,14 @@ export function approve(root, artifact, opts) {
     checkpoint,
     decision,
     // A delegated choice is the agent's, and must never read as the user's.
-    decidedBy: decision === "delegated" ? "agent-delegated" : "user",
+    decidedBy: decision === "delegated" ? "agent-delegated" : decision === "amended" ? "agent-amended" : "user",
     date: (opts.now ?? new Date()).toISOString().slice(0, 10),
   };
+  if (via) receipt.via = via;
   if (opts.notes) receipt.notes = String(opts.notes);
 
   const dir = ensureProjectDir(root, APPROVALS_DIR);
-  const path = receiptPath(root, artifactPath);
-  const replaced = lstatSync(path, { throwIfNoEntry: false }) !== undefined;
+  const replaced = priorFile;
   if (replaced) {
     if (!isRegularFile(path)) {
       throw new Error(`${relative(root, path)} is not a regular file (symlink?) — refusing to overwrite`);
@@ -113,6 +160,18 @@ export function approve(root, artifact, opts) {
   const snapshot = snapshotPath(root, artifactPath);
   if (lstatSync(snapshot, { throwIfNoEntry: false }) !== undefined && !isRegularFile(snapshot)) {
     throw new Error(`${relative(root, snapshot)} is not a regular file (symlink?) — refusing to overwrite`);
+  }
+  if (via) {
+    // Keep the pre-amendment text so a reviewer can see exactly what the amendment changed.
+    const previous = previousSnapshotPath(root, artifactPath);
+    if (lstatSync(previous, { throwIfNoEntry: false }) !== undefined && !isRegularFile(previous)) {
+      throw new Error(`${relative(root, previous)} is not a regular file (symlink?) — refusing to overwrite`);
+    }
+    const before = prior ? readSnapshot(root, prior) : null;
+    if (before !== null) {
+      writeFileSafe(dir, previous, before);
+      receipt.previous = { sha256: prior.sha256, decision: prior.decision, date: prior.date };
+    }
   }
   writeFileSafe(dir, snapshot, text);
   writeFileSafe(dir, path, `${JSON.stringify(receipt, null, 2)}\n`);
@@ -134,13 +193,17 @@ function readReceipt(file) {
   if (!DECISIONS.includes(receipt.decision)) {
     return { error: `unknown decision "${receipt.decision}"` };
   }
+  if (receipt.decision === "amended" && (typeof receipt.via?.artifact !== "string" || typeof receipt.via?.sha256 !== "string")) {
+    return { error: 'an amended receipt needs "via" (the plan it applies)' };
+  }
   return { receipt };
 }
 
 /**
  * Status of one receipt:
- *   fresh    artifact unchanged since the decision
- *   stale    artifact changed after the decision — re-ask the Checkpoint
+ *   fresh    artifact unchanged since the decision (for an amendment: and its plan still approved)
+ *   stale    artifact changed after the decision, or an amendment's plan no longer stands —
+ *            re-ask the Checkpoint
  *   missing  artifact no longer exists
  *   invalid  receipt is malformed
  */
@@ -161,9 +224,16 @@ function checkReceipt(root, file) {
     decidedBy: receipt.decidedBy,
     date: receipt.date,
   };
+  if (receipt.via) base.via = receipt.via.artifact;
   if (!existsSync(abs)) return { ...base, status: "missing" };
   const current = normalize(readFileSync(abs, "utf8"));
-  if (digestText(current) === receipt.sha256) return { ...base, status: "fresh" };
+  if (digestText(current) === receipt.sha256) {
+    if (receipt.decision !== "amended") return { ...base, status: "fresh" };
+    const standing = planStanding(root, receipt.via.artifact, receipt.via.sha256);
+    return standing.error
+      ? { ...base, status: "stale", lapsed: standing.error }
+      : { ...base, status: "fresh" };
+  }
   const approved = readSnapshot(root, receipt);
   if (approved === null) return { ...base, status: "stale", changes: null };
   const ops = lineDiff(approved, current);
@@ -203,6 +273,27 @@ export function approvedDiff(root, artifact) {
     return { status: "stale", reason: "no snapshot of the approved version (approved before snapshots, or the snapshot doesn't match)" };
   }
   return { status: "stale", approved, current, ops: lineDiff(approved, current) };
+}
+
+/**
+ * For an amended artifact: the diff from the version before the amendment to the amended text,
+ * i.e. what applying the plan's delta changed (ADR-012). Null when there is no usable
+ * pre-amendment snapshot.
+ * @returns {{via: string, previous: object, ops: Array<object>|null} | null}
+ */
+export function amendmentDiff(root, artifact) {
+  const artifactPath = toArtifactPath(root, artifact);
+  const file = receiptPath(root, artifactPath);
+  if (!existsSync(file)) return null;
+  const { receipt } = readReceipt(file);
+  if (receipt?.decision !== "amended" || !receipt.previous) return null;
+  const prevFile = previousSnapshotPath(root, artifactPath);
+  if (!isRegularFile(prevFile)) return null;
+  const before = normalize(readFileSync(prevFile, "utf8"));
+  if (digestText(before) !== receipt.previous.sha256) return null;
+  const after = readSnapshot(root, receipt);
+  if (after === null) return null;
+  return { via: receipt.via.artifact, previous: receipt.previous, ops: lineDiff(before, after) };
 }
 
 /**
@@ -247,7 +338,12 @@ const STATUS_NOTE = {
 
 export function formatApproveHuman(result) {
   const { receipt } = result;
-  const who = receipt.decidedBy === "user" ? "by the user" : "delegated to the agent";
+  const who =
+    receipt.decidedBy === "user"
+      ? "by the user"
+      : receipt.decidedBy === "agent-amended"
+        ? `amended by the agent via ${receipt.via.artifact}`
+        : "delegated to the agent";
   return (
     `✓ ${result.replaced ? "Replaced" : "Recorded"} ${receipt.decision} ` +
     `for ${receipt.artifact} at ${receipt.checkpoint} (${who})\n` +
@@ -265,7 +361,7 @@ function changeNote(changes) {
 export function formatVerifyDiff(root, result) {
   const out = [];
   for (const r of result.receipts) {
-    if (r.status !== "stale") continue;
+    if (r.status !== "stale" || r.lapsed) continue;
     const d = approvedDiff(root, r.artifact);
     if (!d.ops) {
       out.push(`${r.artifact}: ${d.ops === null ? "changed too much to diff" : d.reason}`);
@@ -285,8 +381,13 @@ export function formatVerifyHuman(result) {
       continue;
     }
     const mark = r.status === "fresh" ? "✓" : "✗";
-    const decision = r.decision ? ` ${r.decision} @ ${r.checkpoint} (${r.date})` : "";
+    const via = r.via ? ` via ${r.via}` : "";
+    const decision = r.decision ? ` ${r.decision} @ ${r.checkpoint} (${r.date})${via}` : "";
     lines.push(`  ${mark} ${r.status.padEnd(10)} ${r.artifact}${decision}`);
+    if (r.lapsed) {
+      lines.push(`               amendment no longer stands: ${r.lapsed} — re-ask the Checkpoint`);
+      continue;
+    }
     if (r.status === "stale") lines.push(`               ${changeNote(r.changes)}`);
     if (STATUS_NOTE[r.status]) lines.push(`               ${STATUS_NOTE[r.status]}`);
     else if (r.decision === "changes-requested") {

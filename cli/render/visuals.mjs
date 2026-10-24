@@ -687,6 +687,103 @@ function consistencyGroups(lines) {
   return `<figure class="viz consistency"><figcaption>Consistency boundaries by requirement</figcaption><div class="sev-cols">${cols.join("")}</div></figure>`;
 }
 
+// ---------------------------------------------------------------------------
+// Safe change plan (ADR-012)
+
+/** The Behavior Delta as Added / Modified / Removed / Unchanged columns. */
+function deltaColumns(lines) {
+  const body = sectionLines(lines, "Behavior Delta");
+  if (!body) return "";
+  const group = (pattern) => subsection(body, pattern);
+  const added = group(/^###\s+added/i);
+  const modified = group(/^###\s+modified/i);
+  const removed = group(/^###\s+removed/i);
+  const unchanged = group(/^###\s+unchanged/i);
+  if (!added && !modified && !removed && !unchanged) return "";
+
+  const items = (sub) => (sub ? listItems(sub.lines).filter((i) => !/^\{\{|^\.{3}$/.test(plain(i))) : []);
+  const rows = [];
+  if (modified) {
+    for (let i = 0; i < modified.lines.length; i++) {
+      if (modified.lines[i].includes("|") && /^\s*\|?\s*:?-{2,}/.test(modified.lines[i + 1] ?? "")) {
+        const t = parseTable(modified.lines, i);
+        const b = column(t, /before/i, 0);
+        const a = column(t, /after/i, 1);
+        const ref = column(t, /reference|spec|evidence/i, -1);
+        for (const r of t.rows) {
+          const before = plain(r[b]);
+          const after = plain(r[a]);
+          if ((before || after) && !/^\.{3}$/.test(before)) rows.push({ before, after, ref: ref === -1 ? "" : plain(r[ref]) });
+        }
+        break;
+      }
+    }
+    // Modified written as a list ("Before → After") instead of a table.
+    if (rows.length === 0) {
+      for (const i of items(modified)) {
+        const [before, after] = plain(i).split(/\s*(?:→|->)\s*/);
+        rows.push(after ? { before, after, ref: "" } : { before: "", after: before, ref: "" });
+      }
+    }
+  }
+  // Keep the whole item: a bold lead-in stays bold, and the explanation after it stays visible.
+  const item = (i) => {
+    const bold = i.match(/^\s*\*\*([^*]+)\*\*\s*(.*)$/);
+    return bold
+      ? `<strong>${escapeHtml(plain(bold[1]))}</strong> ${escapeHtml(clip(plain(bold[2]), 200))}`
+      : escapeHtml(clip(plain(i), 200));
+  };
+  const list = (arr) => (arr.length ? `<ul>${arr.map((i) => `<li>${item(i)}</li>`).join("")}</ul>` : `<p class="small">None.</p>`);
+  const col = (cls, label, count, html) =>
+    `<section class="dcol ${cls}"><h4>${label} <span>${count}</span></h4>${html}</section>`;
+  const mod = rows.length
+    ? `<ul class="mods">${rows
+        .map(
+          (r) =>
+            `<li><span class="was">${escapeHtml(r.before || "—")}</span><span class="arrow">→</span><span class="now">${escapeHtml(r.after || "—")}</span>${
+              r.ref ? `<span class="ref">${escapeHtml(r.ref)}</span>` : ""
+            }</li>`,
+        )
+        .join("")}</ul>`
+    : `<p class="small">None.</p>`;
+  const a = items(added);
+  const rm = items(removed);
+  const un = items(unchanged);
+  return `<figure class="viz delta"><figcaption>What this change adds, modifies, and removes, and what must keep working</figcaption><div class="dcols">${col("d-add", "Added", a.length, list(a))}${col("d-mod", "Modified", rows.length, mod)}${col("d-rem", "Removed", rm.length, list(rm))}${col("d-keep", "Unchanged", un.length, list(un))}</div>${
+    un.length === 0 ? `<p class="banner warn">No Unchanged items: nothing says which adjacent behavior must keep working.</p>` : ""
+  }</figure>`;
+}
+
+const SEVERITIES = ["catastrophic", "degraded", "silent", "none"];
+
+/** Blast radius severity as a callout. */
+function blastCallout(lines) {
+  const body = sectionLines(lines, "Blast Radius");
+  if (!body) return "";
+  const text = plain(body.join(" "));
+  const m = text.match(/severity:\s*([a-z /]+?)(?=\s+affected:|\s*$|[.;])/i);
+  if (!m) return "";
+  const found = SEVERITIES.filter((sv) => new RegExp(`\\b${sv}\\b`, "i").test(m[1]));
+  // The template's own "Catastrophic / Degraded / Silent / None" placeholder names all four.
+  if (found.length === 0 || found.length === SEVERITIES.length) return "";
+  const cls = found.includes("catastrophic") ? "bad" : found.includes("silent") || found.includes("degraded") ? "warn" : "ok";
+  const affected = text.match(/affected:\s*(.+)$/i)?.[1] ?? "";
+  return `<figure class="viz callout ${cls}"><span>Blast radius</span><strong>${escapeHtml(found.map((f) => f[0].toUpperCase() + f.slice(1)).join(", "))}</strong>${
+    affected && !/^\.{3}$/.test(affected) ? `<em>${escapeHtml(clip(affected, 220))}</em>` : ""
+  }</figure>`;
+}
+
+/** One-way doors in the rollback strategy, called out when there are any. */
+function oneWayDoors(lines) {
+  const body = sectionLines(lines, "Rollback Strategy");
+  if (!body) return "";
+  const line = body.find((l) => /one-way doors?:/i.test(l));
+  if (!line) return "";
+  const what = plain(line.replace(/^.*one-way doors?:\s*/i, ""));
+  if (!what || /^(none|n\/a|-+|\{\{.*)/i.test(what)) return "";
+  return `<figure class="viz callout bad"><span>One-way door</span><strong>${escapeHtml(clip(what, 300))}</strong><em>Can't be rolled back. The deployment sequence must treat it as final.</em></figure>`;
+}
+
 /**
  * Visuals for an artifact, keyed by the slug of the `##` heading they sit under.
  * The key TOP holds a summary shown at the top of the document.
@@ -712,6 +809,11 @@ export function deriveVisuals(kind, source) {
     if (summary) out.set(TOP, summary);
     add("Scope", scopeColumns(lines));
     add("Open Questions", questionBoard(lines));
+  }
+  if (kind?.label === "Change plan") {
+    add("Behavior Delta", deltaColumns(lines));
+    add("Blast Radius", blastCallout(lines));
+    add("Rollback Strategy", oneWayDoors(lines));
   }
   if (kind?.label === "Data model") {
     add("Entities", entityDiagram(lines));
@@ -776,6 +878,22 @@ ul.chips li{font-size:12.5px;line-height:1.3;padding:3px 9px;border-radius:999px
 .erd .edge:hover path{opacity:1;stroke-width:2.4}
 .erd .legend{list-style:none;margin:10px 0 0;padding:0;display:flex;flex-wrap:wrap;gap:6px 16px;font-size:13px}
 .erd .sw{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:6px;vertical-align:-1px}
+.dcols{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px}
+.dcol{border:1px solid var(--line);border-radius:8px;background:var(--panel);padding:10px 12px;border-top-width:3px;min-width:0}
+.dcol h4{margin:0 0 6px;font-size:13px}.dcol h4 span{color:var(--muted);font-weight:500}
+.dcol ul{margin:0;padding-left:18px;font-size:13px;line-height:1.4}.dcol li{padding:3px 0}
+.d-add{border-top-color:var(--ok)}.d-mod{border-top-color:var(--accent)}.d-rem{border-top-color:var(--bad)}.d-keep{border-top-color:var(--muted)}
+.d-rem li{text-decoration:line-through;text-decoration-color:color-mix(in srgb,var(--bad) 50%,transparent)}
+.dcol ul.mods{list-style:none;padding:0}.mods li{display:grid;gap:2px;border-top:1px solid var(--line);padding:6px 0}
+.mods li:first-child{border-top:0}.mods .was{color:var(--muted)}.mods .arrow{color:var(--accent);font-weight:700;line-height:1}
+.mods .ref{font-size:11.5px;color:var(--muted)}
+.d-mod{grid-column:span 2}@media (max-width:560px){.d-mod{grid-column:auto}}
+figure.callout{display:flex;flex-direction:column;gap:2px;border-left-width:4px}
+figure.callout span{font-size:12px;letter-spacing:.04em;text-transform:uppercase;font-weight:600}
+figure.callout em{font-style:normal;font-size:13px;color:var(--muted)}
+figure.callout.bad{border-left-color:var(--bad)}figure.callout.bad span{color:var(--bad)}
+figure.callout.warn{border-left-color:var(--warn)}figure.callout.warn span{color:var(--warn)}
+figure.callout.ok{border-left-color:var(--ok)}figure.callout.ok span{color:var(--ok)}
 .summary{display:flex;flex-direction:column;gap:10px}
 .summary .claim{display:block;text-decoration:none;color:var(--text);font-size:15.5px;line-height:1.5;
 border-left:3px solid var(--warn);padding:2px 0 2px 12px}

@@ -30,7 +30,7 @@ what the request needs — never preload multiple playbooks. <!-- rule:router-pr
 2. **Route the request** using the Commands table and Routing rules below. Load exactly one
    playbook from `reference/` and follow it. <!-- rule:router-one-playbook -->
 3. **Verify artifacts you will build on.** If the playbook starts from an existing spec,
-   sketch, or data model file (named in the request or present in the project), run
+   sketch, data model, or change plan file (named in the request or present in the project), run
    `npx @kdowswell/groundwork verify <file>` from the project root before following the playbook, and act on
    the result as the Approvals section says. <!-- rule:router-verify-handoff -->
 4. **Honor active principles.** If project context names active principles, they constrain every
@@ -55,7 +55,7 @@ what the request needs — never preload multiple playbooks. <!-- rule:router-pr
 | `triage` | Evolve | Categorize and prioritize technical debt | [reference/triage.md](reference/triage.md) |
 | `upgrade [dep]` | Evolve | Plan a safe dependency upgrade | [reference/upgrade.md](reference/upgrade.md) |
 | `retro [incident]` | Evolve | Blameless incident retrospective | [reference/retro.md](reference/retro.md) |
-| `plan [change]` | Evolve | Safe change plan: blast radius, rollback, test coverage | [reference/plan.md](reference/plan.md) |
+| `plan [change]` | Evolve | Safe change plan: behavior delta against the spec, blast radius, rollback, test coverage | [reference/plan.md](reference/plan.md) |
 | `strangle [component]` | Evolve | Incrementally replace a legacy component | [reference/strangle.md](reference/strangle.md) |
 
 ## Routing
@@ -109,7 +109,7 @@ ten-year-old codebase is still Define work. <!-- rule:router-phase-from-request 
   next reply. Never record `approved` for an answer the user did not give. Silence, an earlier
   session, or your own confidence is not approval. <!-- rule:router-approval-is-the-users -->
 - Before a playbook builds on an artifact from an earlier step (a spec, a sketch, a data
-  model), run `npx @kdowswell/groundwork verify <artifact>`. If it fails (unapproved, changed since
+  model, a change plan), run `npx @kdowswell/groundwork verify <artifact>`. If it fails (unapproved, changed since
   approval, or changes requested), tell the user which (for a change since approval, run
   `npx @kdowswell/groundwork verify <artifact> --diff` and show what changed) and re-ask that artifact's acceptance
   Checkpoint before continuing. Do not proceed silently, and do not approve it yourself to get
@@ -117,7 +117,7 @@ ten-year-old codebase is still Define work. <!-- rule:router-phase-from-request 
   the user to confirm. When no such artifact exists, the request itself is the input: draft
   from it, stating the requirements you assumed, rather than stopping to ask for one.
   <!-- rule:router-verify-handoff -->
-- When you ask a spec, sketch, or data model's acceptance Checkpoint and the artifact is long
+- When you ask a spec, sketch, data model, or change plan's acceptance Checkpoint and the artifact is long
   (more than about 80 lines) or still has open questions for the user, offer a review page
   once, alongside the question: `npx @kdowswell/groundwork render <artifact> --serve` shows it beside its
   open questions, cited principles, and detector findings, and records the user's decision
@@ -128,3 +128,8 @@ ten-year-old codebase is still Define work. <!-- rule:router-phase-from-request 
 - Don't write approval status into an artifact (a "Draft, awaiting acceptance" banner, an
   "Approved" line). The receipt is the status, and editing the artifact to update a banner
   makes its approval stale. <!-- rule:router-no-status-in-artifact -->
+- When you implement an approved change plan, apply its Behavior Delta to the baseline spec in
+  the same change set as the code, then record it with
+  `npx @kdowswell/groundwork approve <spec> --decision=amended --via=<plan>`. The user approved the
+  delta with the plan: don't ask them to approve the spec again, and don't leave the spec edit
+  for a later step. <!-- rule:router-delta-rides-with-code -->

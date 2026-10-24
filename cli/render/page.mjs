@@ -15,6 +15,7 @@ export const ARTIFACT_KINDS = [
   { prefix: "Spec:", label: "Spec", checkpoint: "greenfield-spec-from-idea/accept" },
   { prefix: "Architecture:", label: "Architecture sketch", checkpoint: "greenfield-architecture-sketch/accept" },
   { prefix: "Data Model:", label: "Data model", checkpoint: "greenfield-data-model-first/accept" },
+  { prefix: "Safe Change Plan:", label: "Change plan", checkpoint: "brownfield-safe-change-plan/accept" },
 ];
 
 const PRINCIPLE_URL = "https://github.com/kdowswell/groundwork/blob/main/principles";
@@ -149,9 +150,16 @@ function changesSection(approval, changes) {
     return `<section class="changes" id="changes">${head(`This file changed too much since it was ${when} to show a diff. Review it in full.`)}</section>`;
   }
   const { added, removed } = diffStats(changes.ops);
+  return `<section class="changes" id="changes">${head(
+    `<span class="stat-add">+${added}</span> <span class="stat-del">−${removed}</span> lines since it was ${when}. Approving now records the current version.`,
+  )}${diffBlock(changes.ops)}</section>`;
+}
+
+/** Diff hunks as rows with old and new line numbers, capped at MAX_DIFF_LINES. */
+function diffBlock(ops) {
   let shown = 0;
   const hunks = [];
-  for (const h of diffHunks(changes.ops)) {
+  for (const h of diffHunks(ops)) {
     if (shown >= MAX_DIFF_LINES) break;
     const rows = h.lines.slice(0, MAX_DIFF_LINES - shown).map((o) => {
       const cls = o.op === "+" ? "add" : o.op === "-" ? "del" : "ctx";
@@ -162,18 +170,50 @@ function changesSection(approval, changes) {
     hunks.push(`<div class="hunk"><div class="hh">Line ${h.bStart}</div>${rows.join("")}</div>`);
   }
   const more = shown >= MAX_DIFF_LINES ? `<div class="hh">Diff truncated at ${MAX_DIFF_LINES} lines.</div>` : "";
-  return `<section class="changes" id="changes">${head(
-    `<span class="stat-add">+${added}</span> <span class="stat-del">−${removed}</span> lines since it was ${when}. Approving now records the current version.`,
-  )}${hunks.join("")}${more}</section>`;
+  return `${hunks.join("")}${more}`;
 }
 
-function approvalBadge(approval) {
+/** For a spec amended by a change plan (ADR-012): what applying the plan's delta changed. */
+function amendmentSection(amendment) {
+  if (!amendment) return "";
+  const head = `<header><h2>Amended by <code>${escapeHtml(amendment.via)}</code></h2><div class="small">`;
+  if (!amendment.ops) {
+    return `<section class="changes" id="amendment">${head}The amendment changed too much to show as a diff.</div></header></section>`;
+  }
+  const { added, removed } = diffStats(amendment.ops);
+  return `<section class="changes" id="amendment">${head}<span class="stat-add">+${added}</span> <span class="stat-del">−${removed}</span> lines applied from the plan's behavior delta to the version ${escapeHtml(amendment.previous.decision)} on ${escapeHtml(amendment.previous.date)}. Check them against the plan; code review covers the edit.</div></header>${diffBlock(amendment.ops)}</section>`;
+}
+
+/** The spec a change plan departs from, and its approval status (ADR-012). */
+function baselineCard(baseline) {
+  if (!baseline) return "";
+  let body;
+  if (baseline.observed) {
+    body = `<p class="small">No spec: the plan's Before items cite observed behavior. Check each one's evidence.</p>`;
+  } else if (!baseline.found) {
+    body = `<p><code>${escapeHtml(baseline.path)}</code></p><p class="banner warn">Named as the baseline but not found in the project.</p>`;
+  } else {
+    body = `<p><code>${escapeHtml(baseline.path)}</code></p>${approvalBadge(baseline.approval, "", "")}`;
+  }
+  return `<div class="card"><h2>Baseline</h2>${body}</div>`;
+}
+
+function approvalBadge(approval, changesHref = "#changes", amendmentHref = "#amendment") {
   if (!approval) return `<span class="badge warn">Not yet approved</span>`;
+  if (approval.status === "stale" && approval.lapsed) {
+    return `<span class="badge bad">Amendment lapsed: ${escapeHtml(approval.lapsed)}</span>`;
+  }
+  if (approval.status === "fresh" && approval.decision === "amended") {
+    const text = `Amended via ${escapeHtml(approval.via ?? "a change plan")} (${escapeHtml(approval.date ?? "")})`;
+    return amendmentHref ? `<a class="badge ok" href="${amendmentHref}">${text}</a>` : `<span class="badge ok">${text}</span>`;
+  }
   if (approval.status === "fresh" && approval.decision === "changes-requested") {
     return `<span class="badge bad">Changes requested (${escapeHtml(approval.date ?? "")})</span>`;
   }
   const s = STATUS[approval.status] ?? STATUS.unapproved;
-  if (approval.status === "stale") return `<a class="badge ${s.cls}" href="#changes">${s.text}</a>`;
+  if (approval.status === "stale") {
+    return changesHref ? `<a class="badge ${s.cls}" href="${changesHref}">${s.text}</a>` : `<span class="badge ${s.cls}">${s.text}</span>`;
+  }
   const suffix =
     approval.status === "fresh"
       ? ` ${escapeHtml(approval.date ?? "")}${approval.decidedBy === "agent-delegated" ? " · delegated to agent" : ""}`
@@ -191,6 +231,8 @@ function approvalBadge(approval) {
  * @param {Array<object>} p.findings   detector findings for named files
  * @param {object|null} [p.changes]    approvedDiff() result when the approval is stale
  * @param {Array<object>} [p.active]   the project's active principles, from .groundwork/context.md
+ * @param {object|null} [p.amendment]  amendmentDiff() result for an amended artifact (ADR-012)
+ * @param {object|null} [p.baseline]   a change plan's baseline spec and its approval (ADR-012)
  * @param {string|null} p.checkpoint   checkpoint id an approval would record
  * @param {{token: string}|null} p.form present only in --serve mode
  */
@@ -292,9 +334,10 @@ export function buildPage(p) {
 <header><div class="wrap"><div class="meta">${escapeHtml(kindLabel)} · <code>${escapeHtml(p.artifactPath)}</code> · sha256 ${escapeHtml(p.sha256.slice(0, 12))}…</div>
 <h1>${escapeHtml(a.title)}</h1>${approvalBadge(p.approval)}</div></header>
 <main>
-<article>${changesSection(p.approval, p.changes ?? null)}${working}${visuals.get(TOP) ?? ""}${body}</article>
+<article>${changesSection(p.approval, p.changes ?? null)}${amendmentSection(p.approval?.status === "fresh" ? (p.amendment ?? null) : null)}${working}${visuals.get(TOP) ?? ""}${body}</article>
 <aside>
 <div class="card"><h2>Decision</h2>${decide}</div>
+${baselineCard(p.baseline ?? null)}
 <div class="card"><h2>Open questions for you</h2>${questions}</div>
 <div class="card"><h2>${principlesTitle}</h2>${principles}</div>
 <div class="card"><h2>Detector findings</h2>${findings}</div>

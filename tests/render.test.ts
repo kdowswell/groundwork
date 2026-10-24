@@ -416,6 +416,66 @@ Suppressed or excluded:
   });
 });
 
+describe("change plans (ADR-012)", () => {
+  const FIXTURES = join(__dirname, "../eval/plugin/_fixtures");
+  const PLAN = readFileSync(join(FIXTURES, "plan-team-calendars.md"), "utf8");
+  function brownfield() {
+    const dir = tempDir();
+    mkdirSync(join(dir, "docs"), { recursive: true });
+    writeFileSync(join(dir, "docs/spec.md"), readFileSync(join(FIXTURES, "spec-long.md"), "utf8"));
+    writeFileSync(join(dir, "docs/plan.md"), PLAN);
+    return dir;
+  }
+
+  it("recognizes the plan and draws its delta, blast radius, and baseline", () => {
+    const dir = brownfield();
+    approve(dir, "docs/spec.md", { checkpoint: "greenfield-spec-from-idea/accept" });
+    const r = render(dir, "docs/plan.md", { write: false });
+    expect(r.checkpoint).toBe("brownfield-safe-change-plan/accept");
+    const counts = [...r.html.matchAll(/<section class="dcol ([a-z-]+)"><h4>(\w+) <span>(\d+)/g)].map((m) => `${m[2]} ${m[3]}`);
+    expect(counts).toEqual(["Added 2", "Modified 3", "Removed 1", "Unchanged 3"]);
+    expect(r.html).toContain("<strong>Team calendars.</strong> Each team has its own business-hours calendar");
+    expect(r.html).toContain('<span class="was">One business-hours calendar for all teams in v1</span>');
+    expect(r.html).toContain('<span class="ref">Scope, item 19 (Business calendar)</span>');
+    expect(r.html).toMatch(/<figure class="viz callout warn"><span>Blast radius<\/span><strong>Silent<\/strong>/);
+    expect(r.html).not.toContain("<span>One-way door</span>"); // "One-way doors: None" draws no callout
+    expect(r.html).toMatch(/<h2>Baseline<\/h2><p><code>docs\/spec\.md<\/code><\/p><span class="badge ok">Approved, unchanged since/);
+  });
+
+  it("flags a missing Unchanged list, a one-way door, and an observed-behavior baseline", () => {
+    const dir = brownfield();
+    const risky = PLAN.replace(/### Unchanged[\s\S]*?(?=## Blast Radius)/, "")
+      .replace("One-way doors: None", "One-way doors: dropping the shared calendar table")
+      .replace("Baseline: docs/spec.md (approved 2026-10-20)", "Baseline: observed behavior (no spec): src/idle.js");
+    writeFileSync(join(dir, "docs/plan.md"), risky);
+    const { html } = render(dir, "docs/plan.md", { write: false });
+    expect(html).toContain("No Unchanged items");
+    expect(html).toMatch(/<span>One-way door<\/span><strong>dropping the shared calendar table<\/strong>/);
+    expect(html).toContain("No spec: the plan's Before items cite observed behavior.");
+  });
+
+  it("shows an amended spec's own change, and its lapse when the plan changes", () => {
+    const dir = brownfield();
+    approve(dir, "docs/spec.md", { checkpoint: "greenfield-spec-from-idea/accept" });
+    approve(dir, "docs/plan.md", { checkpoint: "brownfield-safe-change-plan/accept" });
+    const spec = readFileSync(join(dir, "docs/spec.md"), "utf8");
+    writeFileSync(join(dir, "docs/spec.md"), spec.replace("One business-hours calendar for all teams in v1.", "Each team's own business-hours calendar."));
+    approve(dir, "docs/spec.md", { decision: "amended", via: "docs/plan.md" } as any);
+
+    const amended = render(dir, "docs/spec.md", { write: false }).html;
+    expect(amended).toContain('<a class="badge ok" href="#amendment">Amended via docs/plan.md');
+    expect(amended).toContain('<section class="changes" id="amendment">');
+    expect(amended).toMatch(/stat-add">\+1<.*stat-del">−1</);
+    // The plan's page shows its baseline as amended, without a link to a section it doesn't have.
+    expect(render(dir, "docs/plan.md", { write: false }).html).toMatch(/<span class="badge ok">Amended via docs\/plan\.md/);
+
+    writeFileSync(join(dir, "docs/plan.md"), `${PLAN}\nEdited after approval.\n`);
+    const lapsed = render(dir, "docs/spec.md", { write: false }).html;
+    expect(lapsed).toContain("Amendment lapsed: docs/plan.md changed after it was approved");
+    expect(lapsed).not.toContain('id="amendment"');
+  });
+});
+
 describe("changes since approval (ADR-009)", () => {
   it("opens a stale artifact's page with the diff against the approved snapshot", () => {
     const dir = project();
