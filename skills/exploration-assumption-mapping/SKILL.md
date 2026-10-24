@@ -1,5 +1,6 @@
 ---
 name: exploration-assumption-mapping
+disable-model-invocation: true
 title: "Assumption Mapping"
 description: >
   Surfaces and ranks the riskiest assumptions in a plan so the most dangerous

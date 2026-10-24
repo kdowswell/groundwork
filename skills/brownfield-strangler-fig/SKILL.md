@@ -1,5 +1,6 @@
 ---
 name: brownfield-strangler-fig
+disable-model-invocation: true
 title: "Strangler Fig"
 description: >
   Incrementally replaces a legacy component by routing new traffic to the

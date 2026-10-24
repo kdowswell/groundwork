@@ -22,7 +22,10 @@ Notes:
   `skills/groundwork/scripts/engine/` so the Claude Code hook works without an npm install
   in the consumer repo.
 - `--all-skills` additionally installs the 15 standalone phase skills for harnesses/users
-  that prefer direct invocation (e.g. `/brownfield-safe-change-plan`) over the router.
+  that prefer direct invocation (e.g. `/brownfield-safe-change-plan`) over the router. Each
+  sets `disable-model-invocation: true` (ADR-011), so it runs when typed by name but isn't
+  listed to the model; the router is the model's only entry point. Harnesses that ignore the
+  field still auto-invoke them.
 - Official skills docs: [Claude Code](https://code.claude.com/docs/en/skills),
   [Cursor](https://cursor.com/docs/context/skills),
   [Codex CLI](https://developers.openai.com/codex/skills),

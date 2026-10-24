@@ -1,5 +1,6 @@
 ---
 name: greenfield-spec-from-idea
+disable-model-invocation: true
 title: "Spec From Idea"
 description: >
   Translates a raw idea, one-pager, or conversation into a structured spec with

@@ -1,5 +1,6 @@
 ---
 name: brownfield-debt-triage
+disable-model-invocation: true
 title: "Debt Triage"
 description: >
   Categorizes and prioritizes technical debt so the team consciously decides
