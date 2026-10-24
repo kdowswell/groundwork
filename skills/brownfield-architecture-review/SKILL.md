@@ -1,5 +1,6 @@
 ---
 name: brownfield-architecture-review
+disable-model-invocation: true
 title: "Brownfield Architecture Review"
 description: >
   Assesses an existing system against the principle library to identify

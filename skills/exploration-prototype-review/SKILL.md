@@ -1,5 +1,6 @@
 ---
 name: exploration-prototype-review
+disable-model-invocation: true
 title: "Prototype Review"
 description: >
   Evaluates a proof-of-concept for architectural soundness and identifies what

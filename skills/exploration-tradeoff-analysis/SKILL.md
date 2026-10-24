@@ -1,5 +1,6 @@
 ---
 name: exploration-tradeoff-analysis
+disable-model-invocation: true
 title: "Tradeoff Analysis"
 description: >
   Produces a structured comparison of two or more approaches that captures the

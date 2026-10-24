@@ -1,5 +1,6 @@
 ---
 name: exploration-research-spike
+disable-model-invocation: true
 title: "Research Spike"
 description: >
   Runs a time-boxed technical investigation with a defined question, approach,

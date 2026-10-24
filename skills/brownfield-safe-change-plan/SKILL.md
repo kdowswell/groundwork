@@ -1,5 +1,6 @@
 ---
 name: brownfield-safe-change-plan
+disable-model-invocation: true
 title: "Safe Change Plan"
 description: >
   Plans a change to a production system with an explicit rollback strategy,

@@ -1,5 +1,6 @@
 ---
 name: greenfield-adr-setup
+disable-model-invocation: true
 title: "ADR Setup"
 description: >
   Establishes Architecture Decision Records so structural decisions are

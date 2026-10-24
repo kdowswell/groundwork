@@ -22,3 +22,4 @@ Never edit an accepted ADR's decision — write a new one that supersedes it.
 - [ADR-008: Generated HTML review views over Markdown sources](ADR-008-generated-html-review-views.md)
 - [ADR-009: Review visuals derived from artifact structure, and diffs against the approved version](ADR-009-derived-review-visuals.md)
 - [ADR-010: Publish as the scoped npm package @kdowswell/groundwork](ADR-010-scoped-npm-package.md)
+- [ADR-011: The router is the model's only entry point; phase skills are invoked by name](ADR-011-router-only-model-invocation.md)

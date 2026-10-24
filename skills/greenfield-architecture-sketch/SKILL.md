@@ -1,5 +1,6 @@
 ---
 name: greenfield-architecture-sketch
+disable-model-invocation: true
 title: "Architecture Sketch"
 description: >
   Defines system boundaries, key components, data flows, and critical interfaces

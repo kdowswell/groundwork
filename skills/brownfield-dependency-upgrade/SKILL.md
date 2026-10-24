@@ -1,5 +1,6 @@
 ---
 name: brownfield-dependency-upgrade
+disable-model-invocation: true
 title: "Dependency Upgrade"
 description: >
   Safely upgrades a dependency by validating compatibility, checking security

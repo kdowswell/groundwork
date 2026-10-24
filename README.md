@@ -168,6 +168,12 @@ npx @kdowswell/groundwork update                       # refresh an existing ins
 
 Then open `/plugin` and install groundwork from the list.
 
+Whichever way you install, the model sees one skill: the `/groundwork` router, which carries the
+context, approval, and verification rules. The 15 phase skills set `disable-model-invocation`, so
+they add nothing to every session's context and run only when you type one by name, such as
+`/groundwork:greenfield-spec-from-idea` from the plugin
+([ADR-011](docs/decisions/ADR-011-router-only-model-invocation.md)).
+
 ### Manual copy
 
 ```bash

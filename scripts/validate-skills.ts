@@ -148,6 +148,17 @@ function validateFile(
     );
   }
 
+  // ADR-011: the model sees only the router; phase skills stay invocable by name.
+  if (data.phase) {
+    if (data["disable-model-invocation"] !== true) {
+      messages.push(
+        "phase skills must set disable-model-invocation: true (ADR-011: the router is the model's only entry point)",
+      );
+    }
+  } else if (data["disable-model-invocation"] === true) {
+    messages.push("the router must stay model-invocable: remove disable-model-invocation (ADR-011)");
+  }
+
   // Quality checks
   if (typeof data.description === "string") {
     const whenErr = checkDescriptionWhen(data.description);
