@@ -7,6 +7,8 @@
  * Skipped entirely when no ANTHROPIC_API_KEY is available, so CI without
  * secrets stays green. A full sweep costs a few cents.
  */
+import { readFileSync } from "node:fs";
+import path from "node:path";
 import { afterAll, describe, expect, it } from "vitest";
 import {
   cliCalls,
@@ -161,32 +163,9 @@ Escalation — owned by the support-operations team.
     expect(finalText.toLowerCase()).toMatch(/chang|stale|approv|confirm/);
   }, 180_000);
 
-  const LONG_SPEC = [
-    "# Spec: Escalation tracker",
-    "",
-    "## Problem",
-    "Support leads cannot see which escalations are stuck without asking in chat.",
-    "",
-    "## Scope",
-    "### In scope",
-    ...Array.from({ length: 60 }, (_, i) => `- Capability ${i + 1}: leads can filter escalations by attribute ${i + 1}`),
-    "### Non-goals",
-    ...Array.from({ length: 15 }, (_, i) => `- Out of scope item ${i + 1}`),
-    "",
-    "## Success Criteria",
-    ...Array.from({ length: 12 }, (_, i) => `${i + 1}. Measurable outcome ${i + 1} holds for two weeks`),
-    "",
-    "## Primary Data Entity",
-    "Name: Escalation",
-    "Owner: support-operations",
-    "",
-    "## Builder Check",
-    "| Question (from a cold read) | Resolution |",
-    "|---|---|",
-    "| Which notification channel? | Agent call: in-app only |",
-    "| Can one escalation have two owners? | User: changes the data model |",
-    "",
-  ].join("\n");
+  // Shared with the plugin eval: realistic, complete, and with no user question left open, so
+  // acceptance is legitimately the next step and length alone triggers the review-page offer.
+  const LONG_SPEC = readFileSync(path.resolve(__dirname, "../plugin/_fixtures/spec-long.md"), "utf8");
   const SHORT_SPEC = `# Spec: Rename button
 
 ## Problem
@@ -203,7 +182,7 @@ In: relabel it "Export". Out: anything else.
   const ACCEPT_ASK =
     "/groundwork spec docs/spec.md — the draft is written and the builder check is done. Take me to the acceptance checkpoint.";
 
-  it("rule:router-offer-render — a long spec with open questions gets a review-page offer, and nothing is recorded", async () => {
+  it("rule:router-offer-render — a long spec gets a review-page offer at acceptance, and nothing is recorded", async () => {
     const dir = workspace({ ".groundwork/context.md": CONTEXT_MD, "docs/spec.md": LONG_SPEC });
     const { trace, finalText } = await runScenario({ workspace: dir, userMessage: ACCEPT_ASK });
 

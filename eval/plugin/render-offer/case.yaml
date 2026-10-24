@@ -1,8 +1,9 @@
 schema_version: "1.1"
 name: render-offer
 description: >
-  rule:router-offer-render. A long spec with open questions gets a review-page offer at its
-  acceptance Checkpoint; the agent neither starts the server nor records a decision unasked.
+  rule:router-offer-render. A long spec (about 100 lines, nothing left open for the user) gets a
+  review-page offer at its acceptance Checkpoint; the agent neither starts the server nor
+  records a decision unasked.
 tags: [router, render]
 runs: 2
 context:
