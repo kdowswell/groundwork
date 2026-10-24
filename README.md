@@ -230,6 +230,22 @@ into implementation, and `verify --diff` (or the review page) shows exactly what
 ([ADR-009](docs/decisions/ADR-009-derived-review-visuals.md)). Delegated decisions are recorded
 as the agent's (`decidedBy: "agent-delegated"`), never as yours.
 
+Changes to a running system work the same way
+([ADR-012](docs/decisions/ADR-012-brownfield-behavior-deltas.md)). `/groundwork plan` writes the
+change as a **behavior delta** against the spec: what is added, what is modified (before →
+after), what is removed, and what must keep working. You approve the plan once, before code.
+When the change is implemented, the agent applies the delta to the spec **in the same change
+set as the code**, so your pull request carries both and code review covers the spec edit. It
+records that edit as an amendment rather than asking you again:
+
+```bash
+npx @kdowswell/groundwork approve docs/spec.md --decision=amended --via=docs/plan-calendars.md
+```
+
+An amendment is the agent's (`decidedBy: "agent-amended"`) and stands only while the plan's
+approval does. The spec's review page shows exactly what the amendment changed, so it can be
+checked against the plan.
+
 Before asking you to accept a spec, sketch, or data model, the playbook runs a **builder
 check**. A fresh reviewer reads only the artifact, as the engineer who must build it, and lists
 what it would still need to ask. The agent fixes wording the reviewer misread, makes and labels

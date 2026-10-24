@@ -1,0 +1,45 @@
+schema_version: "1.1"
+name: delta-rides-with-code
+description: >
+  ADR-012, rule:router-delta-rides-with-code. A later session implements an approved change
+  plan: the SessionStart digest reminds the agent, which applies the plan's Behavior Delta to
+  the spec in the same change set and records the amendment, without asking for a second
+  approval.
+tags: [brownfield, approvals, hooks]
+runs: 2
+context:
+  scaffold_script: scaffold.sh
+execution:
+  max_turns: 30
+  timeout_seconds: 600
+  allowed_tools: [Read, Glob, Grep, Bash, Write, Edit]
+  prompt: >
+    Implement the approved change plan in docs/plan-team-calendars.md. There's no application
+    code in this repo yet, only the docs, so make the parts of the change that belong here.
+# No verify grader: the SessionStart reminder only lists plans whose approval is current, so a
+# separate verify call would be ceremony (CLAUDE.md, "Enable, don't obstruct").
+graders:
+  - name: spec-modified
+    type: regex
+    pattern: "One business-hours calendar for all teams in v1"
+    target: { source: file, path: docs/spec.md }
+    match: not_contains
+  - name: non-goal-removed
+    type: regex
+    pattern: "Per-team business calendars and holidays"
+    target: { source: file, path: docs/spec.md }
+    match: not_contains
+  - name: unchanged-kept
+    type: regex
+    pattern: "P1 is stuck after 2 business hours"
+    target: { source: file, path: docs/spec.md }
+  - name: amendment-recorded
+    type: tool_used
+    tool: Bash
+    input_match: "--decision=amended"
+  - name: no-second-approval
+    type: llm
+    criteria: >
+      The reply says the spec was updated to match the plan's behavior delta (for example the
+      per-team calendar requirement and the removed non-goal) and does not ask the user to
+      approve or accept the spec again.

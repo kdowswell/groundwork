@@ -22,8 +22,9 @@ import {
   statSync,
   unlinkSync,
 } from "node:fs";
+import { createHash } from "node:crypto";
 import { homedir } from "node:os";
-import { dirname, join, relative, resolve } from "node:path";
+import { dirname, join, relative, resolve, sep } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import { analyzeContext, findContextFile } from "./context.mjs";
 
@@ -107,6 +108,37 @@ function proposedAdrs(repoRoot) {
   return found;
 }
 
+/**
+ * Approved change plans whose behavior delta hasn't been applied to a spec yet (ADR-012), so the
+ * agent remembers, in whatever later session implements the plan, to update the spec in the same
+ * change set. Plans changed since approval are skipped: they can't be implemented as approved.
+ */
+function pendingDeltas(repoRoot) {
+  const dir = join(repoRoot, ".groundwork", "approvals");
+  if (!existsSync(dir)) return [];
+  const receipts = [];
+  for (const name of readdirSync(dir)) {
+    if (!name.endsWith(".json")) continue;
+    try {
+      receipts.push(JSON.parse(readFileSync(join(dir, name), "utf8")));
+    } catch {
+      // A malformed receipt is doctor's to report, not the session digest's.
+    }
+  }
+  const applied = new Set(receipts.filter((r) => r?.decision === "amended").map((r) => r.via?.artifact));
+  const pending = [];
+  for (const r of receipts) {
+    if (r?.checkpoint !== "brownfield-safe-change-plan/accept") continue;
+    if (!["approved", "delegated"].includes(r.decision) || applied.has(r.artifact)) continue;
+    const abs = resolve(repoRoot, r.artifact);
+    if (!abs.startsWith(repoRoot + sep) || !existsSync(abs)) continue;
+    const text = readFileSync(abs, "utf8").replace(/\r\n/g, "\n");
+    if (createHash("sha256").update(text, "utf8").digest("hex") !== r.sha256) continue;
+    pending.push(r.artifact);
+  }
+  return pending.sort();
+}
+
 function onSessionStart(event) {
   pruneLedgers();
   const contextPath = findContextFile(event.cwd ?? process.cwd());
@@ -126,6 +158,11 @@ function onSessionStart(event) {
   const proposed = proposedAdrs(repoRoot);
   if (proposed.length > 0) {
     lines.push(`Proposed (undecided) ADRs: ${proposed.join(", ")}.`);
+  }
+  for (const plan of pendingDeltas(repoRoot)) {
+    lines.push(
+      `Approved change plan ${plan}: when you implement it, apply its Behavior Delta to its baseline spec in the same change set, then record it with \`npx @kdowswell/groundwork approve <spec> --decision=amended --via=${plan}\`. Don't ask the user to approve the spec again.`,
+    );
   }
   lines.push("Load the full context through the /groundwork router when doing architecture work.");
   additionalContext("SessionStart", lines.join("\n"));

@@ -14,7 +14,7 @@ import { join, resolve } from "node:path";
 import { afterAll, describe, expect, it } from "vitest";
 import { doctor } from "../cli/commands/doctor.mjs";
 import { install } from "../cli/commands/install.mjs";
-import { approve, approvedDiff, snapshotPath, verify } from "../cli/commands/approvals.mjs";
+import { amendmentDiff, approve, approvedDiff, snapshotPath, verify } from "../cli/commands/approvals.mjs";
 import { diffHunks, formatUnified, lineDiff } from "../cli/render/diff.mjs";
 
 const ROOT = resolve(__dirname, "..");
@@ -258,6 +258,26 @@ describe("hook script", () => {
     expect(ctx).not.toContain("ADR-002-y.md");
   });
 
+  it("SessionStart reminds the agent of approved change plans whose delta isn't applied yet (ADR-012)", () => {
+    const dir = tempDir();
+    mkdirSync(join(dir, ".groundwork"));
+    mkdirSync(join(dir, "docs"));
+    writeFileSync(join(dir, ".groundwork/context.md"), "# Project Context\n\n## Active Principles\n- secrets-management — x\n");
+    writeFileSync(join(dir, "docs/spec.md"), "# Spec: X\n\nOne calendar.\n");
+    writeFileSync(join(dir, "docs/plan.md"), "# Safe Change Plan: Y\n\nBaseline: docs/spec.md\n");
+    approve(dir, "docs/spec.md", { checkpoint: "greenfield-spec-from-idea/accept" });
+    const digest = () => JSON.parse(runHook({ hook_event_name: "SessionStart", cwd: dir })).hookSpecificOutput.additionalContext as string;
+
+    expect(digest()).not.toContain("Approved change plan"); // not approved yet
+    approve(dir, "docs/plan.md", { checkpoint: "brownfield-safe-change-plan/accept" });
+    expect(digest()).toContain("Approved change plan docs/plan.md: when you implement it, apply its Behavior Delta");
+    expect(digest()).toContain("--decision=amended --via=docs/plan.md");
+
+    writeFileSync(join(dir, "docs/spec.md"), "# Spec: X\n\nPer-team calendars.\n");
+    approve(dir, "docs/spec.md", { decision: "amended", via: "docs/plan.md" } as any);
+    expect(digest()).not.toContain("Approved change plan"); // applied: nothing to remind
+  });
+
   it("Stop blocks once on unresolved errors from files edited this turn, then clears", () => {
     const session = newSession();
     runHook({
@@ -412,6 +432,70 @@ describe("groundwork approve / verify", () => {
     expect(out.status).toBe(1);
     expect(out.stdout).toContain("+1 −1 lines since the decision");
     expect(out.stdout).toContain("-Scope: v1.\n+Scope: v2.");
+  });
+
+  describe("amendments (ADR-012)", () => {
+    function projectWithPlan() {
+      const dir = projectWithSpec();
+      approve(dir, "docs/specs/orders.md", { checkpoint: "greenfield-spec-from-idea/accept", now: NOW });
+      writeFileSync(join(dir, "docs/specs/plan.md"), "# Safe Change Plan: v2\n\nModified: v1 -> v2\n");
+      return dir;
+    }
+    const amend = (dir: string, via = "docs/specs/plan.md") =>
+      approve(dir, "docs/specs/orders.md", { decision: "amended", via, now: NOW } as any);
+
+    it("records the agent's amendment against an approved plan, keeping the spec's checkpoint", () => {
+      const dir = projectWithPlan();
+      const plan = approve(dir, "docs/specs/plan.md", { checkpoint: "brownfield-safe-change-plan/accept", now: NOW });
+      writeFileSync(join(dir, "docs/specs/orders.md"), "# Orders\n\nScope: v2.\n");
+      expect(verify(dir, "docs/specs/orders.md").ok).toBe(false); // edited, not yet recorded
+
+      const { receipt } = amend(dir);
+      expect(receipt).toMatchObject({
+        decision: "amended",
+        decidedBy: "agent-amended",
+        checkpoint: "greenfield-spec-from-idea/accept",
+        via: { artifact: "docs/specs/plan.md", sha256: plan.receipt.sha256 },
+        previous: { decision: "approved" },
+      });
+      expect(verify(dir, "docs/specs/orders.md")).toMatchObject({ ok: true, receipts: [{ status: "fresh", via: "docs/specs/plan.md" }] });
+      // The amendment's own change, before → after, for reviewers.
+      const d = amendmentDiff(dir, "docs/specs/orders.md")!;
+      expect(d.ops!.filter((o: any) => o.op !== " ").map((o: any) => `${o.op}${o.text}`)).toEqual(["-Scope: v1.", "+Scope: v2."]);
+    });
+
+    it("refuses an amendment without a standing plan approval", () => {
+      const dir = projectWithPlan();
+      expect(() => approve(dir, "docs/specs/orders.md", { decision: "amended" } as any)).toThrow(/--via/);
+      expect(() => amend(dir)).toThrow(/no approval receipt/);
+      approve(dir, "docs/specs/plan.md", { checkpoint: "plan", decision: "changes-requested" });
+      expect(() => amend(dir)).toThrow(/not approved/);
+      approve(dir, "docs/specs/plan.md", { checkpoint: "plan" });
+      writeFileSync(join(dir, "docs/specs/plan.md"), "# Safe Change Plan: v3\n");
+      expect(() => amend(dir)).toThrow(/changed after it was approved/);
+      expect(() => amend(dir, "docs/specs/orders.md")).toThrow(/amend itself/);
+      // An amended spec with no prior receipt needs an explicit checkpoint.
+      const fresh = projectWithSpec();
+      writeFileSync(join(fresh, "docs/specs/plan.md"), "# Safe Change Plan: v2\n");
+      approve(fresh, "docs/specs/plan.md", { checkpoint: "plan" });
+      expect(() => amend(fresh)).toThrow(/--checkpoint/);
+    });
+
+    it("lapses when the plan changes or is re-decided, and verify says why", () => {
+      const dir = projectWithPlan();
+      approve(dir, "docs/specs/plan.md", { checkpoint: "plan", now: NOW });
+      amend(dir);
+      writeFileSync(join(dir, "docs/specs/plan.md"), "# Safe Change Plan: v2, edited\n");
+      expect(verify(dir, "docs/specs/orders.md").receipts[0]).toMatchObject({
+        status: "stale",
+        lapsed: expect.stringMatching(/changed after it was approved/),
+      });
+      approve(dir, "docs/specs/plan.md", { checkpoint: "plan", now: NOW }); // re-approved: a new decision
+      expect(verify(dir, "docs/specs/orders.md").receipts[0].lapsed).toMatch(/re-decided/);
+      const out = runCli(["verify", "docs/specs/orders.md"], { cwd: dir });
+      expect(out.status).toBe(1);
+      expect(out.stdout).toContain("amendment no longer stands");
+    });
   });
 
   it("records delegated decisions as the agent's, and changes-requested never passes", () => {

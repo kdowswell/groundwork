@@ -121,6 +121,21 @@ groundwork/
 - Principle Application synthesizes how the principle applies in *this specific phase and context*
 - Output Format describes the artifact's structure, not its content
 
+## Developer Experience: Enable, Don't Obstruct
+
+groundwork makes the well-grounded choice the easy one without getting in the way (ADR-012).
+Every feature must hold to these:
+
+1. **Advise by default; block rarely.** The only hard stops are the Stop hook on an `error`
+   finding, once per turn (ADR-006), and declining to build on an unapproved or changed
+   artifact, which asks the user rather than refusing (ADR-007). Don't add another.
+2. **Ask at most once, at a natural moment:** before building, or in the pull request. Never as a
+   follow-up chore after the work is done.
+3. **Documentation changes travel in the same change set as the code they describe.**
+4. **Approvals gate intent before code exists.** Once code is being written in a branch, code
+   review is the gate; add no ceremony on top of it.
+5. **Anything heavier is opt-in:** the review page, `--all-skills`, any gate that would stop work.
+
 ## Router, Sync, and CLI Invariants
 
 - The 15 phase skills are the source of truth; `skills/groundwork/reference/*.md` (except
