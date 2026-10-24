@@ -292,12 +292,194 @@ function syncAsync(lines) {
   return `<figure class="viz syncasync"><figcaption>What the user waits for, and what happens in the background</figcaption><div class="two">${column(false)}${column(true)}</div></figure>`;
 }
 
+// ---------------------------------------------------------------------------
+// Spec, and the builder check shared by all three artifacts
+
+/** Top-level list items (bullets or numbers) with continuation lines folded in. */
+function listItems(body) {
+  const items = [];
+  for (const line of body) {
+    const m = line.match(/^([-*+]|\d+[.)])\s+(.*)$/);
+    if (m) items.push(m[2]);
+    else if (items.length > 0 && /^\s+\S/.test(line)) items[items.length - 1] += ` ${line.trim()}`;
+    else if (items.length > 0 && line.trim() !== "") break;
+  }
+  return items;
+}
+
+/** Lines under the first `### ` heading matching `pattern` inside a section body. */
+function subsection(body, pattern) {
+  const start = body.findIndex((l) => /^###\s/.test(l) && pattern.test(l));
+  if (start === -1) return null;
+  let end = start + 1;
+  while (end < body.length && !/^###\s/.test(body[end])) end++;
+  return { heading: plain(body[start].replace(/^###\s+/, "")), lines: body.slice(start + 1, end) };
+}
+
+/** An item's short title: its bold lead-in, else its first sentence. */
+function itemTitle(text) {
+  const bold = text.match(/^\s*\*\*([^*]+)\*\*/);
+  const raw = bold ? bold[1] : plain(text).split(/(?<=\.)\s+(?=[A-Z])/)[0];
+  return clip(plain(raw).replace(/\.$/, ""), 110);
+}
+
+function scopeColumns(lines) {
+  const body = sectionLines(lines, "Scope");
+  if (!body) return "";
+  const inScope = subsection(body, /in scope/i);
+  const out = subsection(body, /non-goal|out of scope/i);
+  if (!inScope || !out) return "";
+  const col = (sub, cls, label) => {
+    const items = listItems(sub.lines);
+    const tag = cls === "in" ? "ol" : "ul";
+    const qualifier = sub.heading.match(/\(([^)]*)\)\s*$/)?.[1] ?? "";
+    return `<section class="scope-col ${cls}"><h4>${label} <span>${items.length}</span></h4>${
+      qualifier ? `<div class="small">${escapeHtml(qualifier)}</div>` : ""
+    }<${tag}>${items.map((i) => `<li title="${escapeHtml(plain(i))}">${escapeHtml(itemTitle(i))}</li>`).join("")}</${tag}></section>`;
+  };
+  if (listItems(inScope.lines).length === 0 && listItems(out.lines).length === 0) return "";
+  return `<figure class="viz scope"><figcaption>What this builds, and what it deliberately doesn't</figcaption><div class="two">${col(inScope, "in", "In scope")}${col(out, "out", "Not doing")}</div></figure>`;
+}
+
+/** "Blocking: owner action, needed…" → {key: "Blocking", note: "owner action, needed…"}. */
+function questionCategory(raw) {
+  const text = plain(raw);
+  const known = text.match(/^(blocking|deferrable|deferred)\b[\s,:;.—–-]*(.*)$/i);
+  if (known) {
+    const key = /^block/i.test(known[1]) ? "Blocking" : "Deferrable";
+    return { key, note: known[2].replace(/^\((.*)\)$/, "$1") };
+  }
+  const head = text.split(/[,:;(]/)[0].trim();
+  return { key: clip(head || "Uncategorized", 28), note: text.slice(head.length).replace(/^[\s,:;]+/, "") };
+}
+
+function questionBoard(lines) {
+  const table = sectionTable(lines, "Open Questions");
+  if (!table) return "";
+  const qCol = column(table, /question/i, 0);
+  const catCol = column(table, /category/i, -1);
+  const ownerCol = column(table, /owner/i, -1);
+  const numCol = column(table, /^#$|^no\.?$/i, -1);
+  if (catCol === -1) return "";
+  const questions = table.rows
+    .map((r) => ({
+      n: numCol === -1 ? "" : plain(r[numCol]),
+      text: plain(r[qCol]),
+      ...questionCategory(r[catCol] ?? ""),
+      owner: ownerCol === -1 ? "" : plain(r[ownerCol]),
+    }))
+    .filter((q) => q.text && !/^\.{3}$/.test(q.text));
+  if (questions.length === 0) return "";
+
+  const order = ["Blocking", "Deferrable"];
+  const keys = [...new Set(questions.map((q) => q.key))].sort(
+    (a, b) => (order.indexOf(a) + 1 || 9) - (order.indexOf(b) + 1 || 9),
+  );
+  const owners = new Map();
+  for (const q of questions) if (q.owner) owners.set(q.owner, (owners.get(q.owner) ?? 0) + 1);
+  const ownerLine =
+    owners.size > 0
+      ? `<ul class="chips owners">${[...owners]
+          .sort((a, b) => b[1] - a[1])
+          .map(([o, c]) => `<li>${escapeHtml(o)} <b>${c}</b></li>`)
+          .join("")}</ul>`
+      : "";
+  const cols = keys.map((key) => {
+    const qs = questions.filter((q) => q.key === key);
+    const cls = key === "Blocking" ? "sev-bad" : key === "Deferrable" ? "sev-ok" : "";
+    return `<section class="sev ${cls}"><h4>${escapeHtml(key)} <span>${qs.length}</span></h4><ul>${qs
+      .map(
+        (q) =>
+          `<li>${q.n ? `<b class="qn">${escapeHtml(q.n)}</b> ` : ""}<strong>${escapeHtml(q.text)}</strong>${
+            q.note ? `<span>${escapeHtml(clip(q.note, 140))}</span>` : ""
+          }${q.owner ? `<i class="owner">${escapeHtml(q.owner)}</i>` : ""}</li>`,
+      )
+      .join("")}</ul></section>`;
+  });
+  return `<figure class="viz board"><figcaption>Open questions by category, with who owns the answer</figcaption>${ownerLine}<div class="sev-cols">${cols.join("")}</div></figure>`;
+}
+
+const RESOLUTIONS = [
+  { key: "Answered", test: /^answered/i, cls: "r-answered" },
+  { key: "Agent call", test: /^agent call/i, cls: "r-agent" },
+  { key: "User", test: /^user\b/i, cls: "r-user" },
+  { key: "Deferred", test: /^defer/i, cls: "r-deferred" },
+];
+
+function builderBar(lines) {
+  const table = sectionTable(lines, "Builder Check");
+  if (!table) return "";
+  const qCol = column(table, /question/i, 0);
+  const rCol = column(table, /resolution/i, qCol + 1);
+  const counts = new Map();
+  let total = 0;
+  for (const r of table.rows) {
+    const q = plain(r[qCol]);
+    const res = plain(r[rCol]);
+    if (!q || /^\.{3}$/.test(q) || !res) continue;
+    const known = RESOLUTIONS.find((k) => k.test.test(res));
+    const key = known ? known.key : clip(res.split(/[:;(,]/)[0].trim() || "Other", 24);
+    counts.set(key, (counts.get(key) ?? 0) + 1);
+    total++;
+  }
+  if (total < 2) return "";
+  const keys = [...counts.keys()].sort((a, b) => {
+    const ia = RESOLUTIONS.findIndex((k) => k.key === a);
+    const ib = RESOLUTIONS.findIndex((k) => k.key === b);
+    return (ia === -1 ? 9 : ia) - (ib === -1 ? 9 : ib) || counts.get(b) - counts.get(a);
+  });
+  const cls = (key) => RESOLUTIONS.find((k) => k.key === key)?.cls ?? "r-other";
+  const segs = keys
+    .map(
+      (k) =>
+        `<span class="seg ${cls(k)}" style="flex:${counts.get(k)}" title="${escapeHtml(k)}: ${counts.get(k)}"></span>`,
+    )
+    .join("");
+  const legend = keys
+    .map((k) => `<li><i class="sw ${cls(k)}"></i>${escapeHtml(k)} <b>${counts.get(k)}</b></li>`)
+    .join("");
+  return `<figure class="viz bcheck"><figcaption>How the builder check's ${total} questions were resolved</figcaption><div class="bar">${segs}</div><ul class="legend">${legend}</ul></figure>`;
+}
+
+/** Spec summary at the top of the page: the riskiest assumption and counts that link to sections. */
+function specSummary(lines) {
+  const body = sectionLines(lines, "Riskiest Assumption");
+  const claim = body ? plain(body.join("\n").trim().split(/\n\s*\n/)[0] ?? "") : "";
+  const stats = [];
+  const scope = sectionLines(lines, "Scope");
+  const inScope = scope && subsection(scope, /in scope/i);
+  const out = scope && subsection(scope, /non-goal|out of scope/i);
+  if (inScope) stats.push(["scope", `${listItems(inScope.lines).length} in scope`]);
+  if (out) stats.push(["scope", `${listItems(out.lines).length} not doing`]);
+  const criteria = sectionLines(lines, "Success Criteria");
+  if (criteria) stats.push(["success-criteria", `${listItems(criteria).length} success criteria`]);
+  const open = sectionTable(lines, "Open Questions");
+  if (open) {
+    const catCol = column(open, /category/i, -1);
+    const blocking = catCol === -1 ? 0 : open.rows.filter((r) => /^\W*blocking/i.test(plain(r[catCol]))).length;
+    stats.push(["open-questions", `${open.rows.length} open questions${blocking ? `, ${blocking} blocking` : ""}`]);
+  }
+  if (!claim && stats.length === 0) return "";
+  return `<figure class="viz summary">${
+    claim
+      ? `<a class="claim" href="#riskiest-assumption"><span>Riskiest assumption</span>${escapeHtml(clip(claim, 600))}</a>`
+      : ""
+  }${
+    stats.length
+      ? `<ul class="chips stats">${stats.map(([id, t]) => `<li><a href="#${id}">${escapeHtml(t)}</a></li>`).join("")}</ul>`
+      : ""
+  }</figure>`;
+}
+
 /**
  * Visuals for an artifact, keyed by the slug of the `##` heading they sit under.
+ * The key TOP holds a summary shown at the top of the document.
  * @param {{label: string} | null} kind
  * @param {string} source
  * @returns {Map<string, string>}
  */
+export const TOP = "@top";
+
 export function deriveVisuals(kind, source) {
   const lines = source.replace(/\r\n/g, "\n").split("\n");
   const out = new Map();
@@ -309,6 +491,13 @@ export function deriveVisuals(kind, source) {
     add("External Dependencies", dependencies(lines));
     add("Sync / Async Boundary", syncAsync(lines));
   }
+  if (kind?.label === "Spec") {
+    const summary = specSummary(lines);
+    if (summary) out.set(TOP, summary);
+    add("Scope", scopeColumns(lines));
+    add("Open Questions", questionBoard(lines));
+  }
+  if (kind) add("Builder Check", builderBar(lines));
   return out;
 }
 
@@ -345,4 +534,24 @@ box-shadow:0 0 0 3px var(--bg)}
 .lane-col h4{margin:0 0 6px;font-size:13px}.lane-col .group+.group{margin-top:8px}
 ul.chips{list-style:none;margin:4px 0 0;padding:0;display:flex;flex-wrap:wrap;gap:6px}
 ul.chips li{font-size:12.5px;line-height:1.3;padding:3px 9px;border-radius:999px;background:var(--code)}
+.scope .two{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:10px}
+.scope-col{border:1px solid var(--line);border-radius:8px;background:var(--panel);padding:10px 12px;border-top-width:3px}
+.scope-col.in{border-top-color:var(--ok)}.scope-col.out{border-top-color:var(--muted)}
+.scope-col h4{margin:0 0 4px;font-size:13px}.scope-col h4 span{color:var(--muted);font-weight:500}
+.scope-col ol,.scope-col ul{margin:6px 0 0;padding-left:20px;font-size:13px;line-height:1.4}.scope-col li{padding:3px 0}
+.scope-col.out li{color:var(--muted)}
+.board .owners{margin:0 0 10px}.board .owners b{font-weight:600;color:var(--muted)}
+.board li strong{font-weight:500}.board .qn{color:var(--muted);font-weight:600}
+.board li .owner{display:table;margin-top:4px;font-style:normal;font-size:11.5px;padding:0 8px;border-radius:999px;background:var(--code)}
+.bcheck .bar{display:flex;height:12px;border-radius:999px;overflow:hidden;gap:2px}
+.bcheck .legend{list-style:none;margin:10px 0 0;padding:0;display:flex;flex-wrap:wrap;gap:6px 16px;font-size:13px}
+.bcheck .legend b{color:var(--muted);font-weight:600}
+.bcheck .sw{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:6px;vertical-align:-1px}
+.r-answered{background:var(--ok)}.r-agent{background:var(--accent)}.r-user{background:var(--warn)}
+.r-deferred{background:var(--muted)}.r-other{background:color-mix(in srgb,var(--muted) 45%,transparent)}
+.summary{display:flex;flex-direction:column;gap:10px}
+.summary .claim{display:block;text-decoration:none;color:var(--text);font-size:15.5px;line-height:1.5;
+border-left:3px solid var(--warn);padding:2px 0 2px 12px}
+.summary .claim span{display:block;font-size:12px;letter-spacing:.04em;text-transform:uppercase;color:var(--warn);font-weight:600}
+.summary .stats{margin:0}.summary .stats a{color:inherit;text-decoration:none}
 `;

@@ -74,6 +74,10 @@ describe("markdown renderer", () => {
     expect(html).toContain("<ul><li>a<ul><li>b</li></ul></li><li>c</li></ul>");
     expect(html).toContain("<td><code>**1**</code></td>");
     expect(html).toContain("Name: A<br>");
+    // Hard-wrapped prose joins with a space; short fact lines and hard breaks keep their break.
+    const prose = renderMarkdown(`${"x".repeat(70)}\nwraps here\n\nline one  \nline two`).html;
+    expect(prose).toContain(`${"x".repeat(70)}\nwraps here</p>`);
+    expect(prose).toContain("line one<br>\nline two");
     expect(html).toContain("<pre><code>&lt;b&gt;raw&lt;/b&gt;</code></pre>");
   });
 });
@@ -226,12 +230,87 @@ describe("architecture visuals (ADR-009)", () => {
     expect(noLanes).toContain("Add a <code>Runs on</code> column");
     expect(noLanes).not.toContain('class="lane"');
     expect(page("# Architecture: Bare\n\nJust prose.\n")).not.toContain("<figure");
-    expect(page(SPEC)).not.toContain("<figure"); // spec visuals are a later step
     const huge = ARCH.replace(
       "| 4 |",
       Array.from({ length: 12 }, (_, i) => `| x${i} | **Extra ${i}** | Backend | Stateless | More |\n`).join("") + "| 4 |",
     );
     expect(page(huge)).not.toContain(MAP);
+  });
+});
+
+const FULL_SPEC = `# Spec: Escalation tracker
+
+## Scope
+### In scope (v1: one team)
+1. **Escalation board.** Leads see stuck items.
+2. **Owner changes.** Reassign in one step.
+
+### Non-goals (explicitly out of scope)
+- Customer-facing status pages. They belong to support.
+- <script>alert(1)</script>
+
+## Success Criteria
+1. Leads find stuck items in under a minute.
+
+## Open Questions
+| # | Question | Category | Owner |
+|---|---|---|---|
+| 1 | Sync from ticketing or create here? | Blocking: needed before the model | Ops lead |
+| 2 | Exclude nights from idle time? | Deferrable (UX in build) | PM |
+| 3 | Which region? | Nice to know | PM |
+
+## Riskiest Assumption
+Leads will check a board rather than wait for chat pings,
+often enough to catch stuck escalations within a day.
+
+If false, alerts matter more than the board.
+
+## Builder Check
+| Question (from a cold read) | Resolution |
+|---|---|
+| What counts as stuck? | Answered in spec (wording tightened) |
+| Which channel? | Agent call: in-app only |
+| Two owners? | User: changes the data model |
+| Night hours? | Deferrable: Open Question 2 |
+| Board columns? | Method content (ops lead) |
+`;
+
+describe("spec visuals (ADR-009)", () => {
+  const page = (source: string) => render(project(source), "docs/spec.md", { write: false }).html;
+
+  it("opens with the riskiest assumption and counts that link to their sections", () => {
+    const html = page(FULL_SPEC);
+    const top = html.slice(html.indexOf("<article>"), html.indexOf('<h2 id="scope">'));
+    expect(top).toContain('<a class="claim" href="#riskiest-assumption"><span>Riskiest assumption</span>Leads will check a board rather than wait for chat pings, often enough');
+    expect(top).not.toContain("If false"); // only the claim, not the consequences
+    expect([...top.matchAll(/<li><a href="#([a-z-]+)">([^<]+)<\/a>/g)].map((m) => `${m[1]}: ${m[2]}`)).toEqual([
+      "scope: 2 in scope",
+      "scope: 2 not doing",
+      "success-criteria: 1 success criteria",
+      "open-questions: 3 open questions, 1 blocking",
+    ]);
+  });
+
+  it("puts scope side by side and open questions on a board with owners", () => {
+    const html = page(FULL_SPEC);
+    expect(html).toMatch(/<section class="scope-col in"><h4>In scope <span>2<\/span><\/h4><div class="small">v1: one team<\/div><ol><li[^>]*>Escalation board<\/li>/);
+    expect(html).toMatch(/<section class="scope-col out">.*<ul><li[^>]*>Customer-facing status pages<\/li><li[^>]*>&lt;script&gt;alert\(1\)&lt;\/script&gt;<\/li><\/ul>/);
+    expect(html).not.toContain("<script>");
+    expect(html).toContain('<ul class="chips owners"><li>PM <b>2</b></li><li>Ops lead <b>1</b></li></ul>');
+    const order = [...html.matchAll(/<section class="sev [^"]*"><h4>([^<]+) <span>(\d+)/g)].map((m) => `${m[1]} ${m[2]}`);
+    expect(order).toEqual(["Blocking 1", "Deferrable 1", "Nice to know 1"]);
+    expect(html).toContain('<b class="qn">1</b> <strong>Sync from ticketing or create here?</strong><span>needed before the model</span><i class="owner">Ops lead</i>');
+    expect(html).toContain("<span>UX in build</span>"); // "(UX in build)" loses its parentheses
+  });
+
+  it("draws the builder-check bar for every artifact kind", () => {
+    const legend = (html: string) => [...html.matchAll(/<li><i class="sw ([a-z-]+)"><\/i>([^<]+) <b>(\d+)/g)].map((m) => `${m[2]} ${m[3]} ${m[1]}`);
+    const expected = ["Answered 1 r-answered", "Agent call 1 r-agent", "User 1 r-user", "Deferred 1 r-deferred", "Method content 1 r-other"];
+    expect(legend(page(FULL_SPEC))).toEqual(expected);
+    const checkOnly = FULL_SPEC.slice(FULL_SPEC.indexOf("## Builder Check"));
+    expect(legend(page(`# Architecture: X\n\n${checkOnly}`))).toEqual(expected);
+    expect(legend(page(`# Data Model: X\n\n${checkOnly}`))).toEqual(expected);
+    expect(page(`# Meeting notes\n\n${checkOnly}`)).not.toContain('class="viz bcheck"'); // not a groundwork artifact
   });
 });
 

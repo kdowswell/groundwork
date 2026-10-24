@@ -8,7 +8,7 @@
  */
 import { diffHunks, diffStats } from "./diff.mjs";
 import { escapeHtml, renderInline, renderMarkdown, slugify } from "./markdown.mjs";
-import { column, deriveVisuals, sectionTable, VISUAL_CSS } from "./visuals.mjs";
+import { column, deriveVisuals, sectionTable, TOP, VISUAL_CSS } from "./visuals.mjs";
 
 /** Artifact kinds groundwork produces, keyed by their H1 prefix. */
 export const ARTIFACT_KINDS = [
@@ -263,7 +263,7 @@ export function buildPage(p) {
 <header><div class="wrap"><div class="meta">${escapeHtml(kindLabel)} · <code>${escapeHtml(p.artifactPath)}</code> · sha256 ${escapeHtml(p.sha256.slice(0, 12))}…</div>
 <h1>${escapeHtml(a.title)}</h1>${approvalBadge(p.approval)}</div></header>
 <main>
-<article>${changesSection(p.approval, p.changes ?? null)}${working}${body}</article>
+<article>${changesSection(p.approval, p.changes ?? null)}${working}${visuals.get(TOP) ?? ""}${body}</article>
 <aside>
 <div class="card"><h2>Decision</h2>${decide}</div>
 <div class="card"><h2>Open questions for you</h2>${questions}</div>
