@@ -298,6 +298,7 @@ npm run sync:all          # regenerate synced principles + router playbooks (CI-
 npm run typecheck         # TypeScript
 npm test                  # detector, CLI, and behavior suites (behavior skips without ANTHROPIC_API_KEY)
 npm run eval              # LLM-judged skill-vs-baseline eval (45+ cases, costs tokens)
+npm run eval:plugin       # end-to-end plugin cases in real Claude Code, with vs. without (eval/plugin/)
 ```
 
 ## Source Frameworks

@@ -69,7 +69,7 @@ The agent draws the structural questions out of the spec and proposes a sketch. 
    - **Answered by the sketch:** the reviewer missed it. Tighten the wording so the next reader won't.
    - **Your call:** the answer doesn't change what gets built, or one option is clearly right. Decide, write the answer into the sketch, and label it "Agent call:".
    - **For the user:** the answer changes what gets built.
-   Bring the user only the last group, in one round. Record every question and its resolution in the sketch's Builder Check section. The section is never left out; if the cold read finds nothing, write "No open questions."
+   Bring the user only the last group, in one round. Ask all of them in that one message, however many there are; do not hold any back for a later turn. Record every question and its resolution in the sketch's Builder Check section. The section is never left out; if the cold read finds nothing, write "No open questions."
 
 9. **Record the user's decision.** When the user answers the acceptance Checkpoint, run `npx @kdowswell/groundwork approve <architecture path> --checkpoint=greenfield-architecture-sketch/accept`, adding `--decision=changes-requested` if they asked for changes or `--decision=delegated` if they told you to decide. Record only an answer the user gave in this conversation. If they decided in the review page, it is already recorded: confirm with `npx @kdowswell/groundwork verify` instead of recording it again, and never submit the page yourself. With no one available to answer, record nothing and leave the artifact marked as a draft. If the CLI is unavailable, write the decision and date at the top of the artifact instead and say it is unverified.
 

@@ -12,3 +12,4 @@ eval/results/
 
 # detector fixture: the case-study "before" service deliberately commits a fake .env
 !examples/case-study/before/.env
+eval/plugin/results/

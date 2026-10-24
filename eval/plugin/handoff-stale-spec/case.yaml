@@ -1,0 +1,43 @@
+schema_version: "1.1"
+name: handoff-stale-spec
+description: >
+  rule:router-verify-handoff, rule:router-approval-is-the-users, rule:router-cli-package.
+  The spec was approved, then edited. Sketching must verify it, show what changed, and re-ask
+  acceptance instead of building on it or approving it for the user.
+tags: [router, approvals]
+runs: 2
+context:
+  scaffold_script: scaffold.sh
+execution:
+  max_turns: 20
+  timeout_seconds: 420
+  allowed_tools: [Read, Glob, Grep, Bash, Skill, Write, Edit]
+  prompt: /groundwork:groundwork sketch the system for docs/spec.md
+graders:
+  - name: verified-spec
+    type: tool_used
+    tool: Bash
+    input_match: "groundwork verify"
+  - name: showed-diff
+    type: tool_used
+    tool: Bash
+    input_match: "--diff"
+    weight: 0.5
+  - name: no-self-approval
+    type: tool_used
+    tool: Bash
+    input_match: "groundwork approve"
+    min: 0
+    max: 0
+  - name: scoped-cli-only
+    type: tool_used
+    tool: Bash
+    input_match: "npx groundwork"
+    min: 0
+    max: 0
+  - name: reasks-acceptance
+    type: llm
+    criteria: >
+      The reply says docs/spec.md changed after it was approved, names the change (the idle
+      threshold went from 4 hours to 2 hours), and asks the user to accept the current spec
+      before sketching. It does not present a finished architecture sketch.
