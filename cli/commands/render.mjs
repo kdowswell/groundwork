@@ -14,7 +14,7 @@ import { dirname, join, posix, relative, resolve, sep } from "node:path";
 import { fileURLToPath } from "node:url";
 import { detect } from "../engine/detect.mjs";
 import { analyzeArtifact, buildPage, messagePage } from "../render/page.mjs";
-import { approve, digestFile, verify } from "./approvals.mjs";
+import { approve, approvedDiff, digestFile, verify } from "./approvals.mjs";
 import {
   ensureProjectDir,
   isRegularFile,
@@ -82,6 +82,7 @@ export function render(root, artifact, opts = {}) {
   const receipt = verify(root, artifactPath).receipts[0];
   const approval = receipt && receipt.status !== "unapproved" ? receipt : null;
   const findings = findingsForNamedFiles(root, artifactPath, analysis.namedPaths);
+  const changes = approval?.status === "stale" ? approvedDiff(root, artifactPath) : null;
 
   const html = buildPage({
     source,
@@ -90,6 +91,7 @@ export function render(root, artifact, opts = {}) {
     analysis,
     approval,
     findings,
+    changes,
     checkpoint,
     form: opts.form ?? null,
   });

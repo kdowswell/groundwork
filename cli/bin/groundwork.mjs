@@ -7,7 +7,7 @@
  *   npx groundwork install [--providers=claude,github,cursor,agents] [--all-skills] [--global] [--hooks]
  *   npx groundwork update  (same as install; idempotent)
  *   npx groundwork approve <artifact> --checkpoint=<id> [--decision=...] [--notes=...]
- *   npx groundwork verify [artifact] [--json]
+ *   npx groundwork verify [artifact] [--json] [--diff]
  *   npx groundwork render <artifact> [--serve] [--checkpoint=<id>] [--port=<n>]
  */
 import { readFileSync } from "node:fs";
@@ -22,6 +22,7 @@ import {
   verify,
   formatApproveHuman,
   formatVerifyHuman,
+  formatVerifyDiff,
   DECISIONS,
 } from "../commands/approvals.mjs";
 import { render, serve } from "../commands/render.mjs";
@@ -63,6 +64,7 @@ Usage:
       --notes=<text>           optional context for the decision
   groundwork verify [file]     report approval receipts that are stale or missing their file;
                                with a file, exit 0 only if it has a fresh, non-rejected receipt
+      --diff                   also print what changed since each stale decision
       --json                   JSON output
   groundwork render <file>     write a review page for a spec, sketch, or data model
                                to .groundwork/review/ (self-contained HTML)
@@ -138,6 +140,10 @@ async function main() {
       console.log(
         args.flags.json ? JSON.stringify({ version: 1, ...result }, null, 2) : formatVerifyHuman(result),
       );
+      if (args.flags.diff && !args.flags.json) {
+        const diff = formatVerifyDiff(process.cwd(), result);
+        if (diff) console.log(`\n${diff}`);
+      }
       process.exit(result.ok ? 0 : 1);
       break;
     }

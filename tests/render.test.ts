@@ -3,6 +3,7 @@ import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, symlinkSync, 
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterAll, describe, expect, it } from "vitest";
+import { approve } from "../cli/commands/approvals.mjs";
 import { render, serve } from "../cli/commands/render.mjs";
 import { renderMarkdown } from "../cli/render/markdown.mjs";
 import { analyzeArtifact } from "../cli/render/page.mjs";
@@ -92,6 +93,11 @@ describe("artifact analysis", () => {
     expect(a.namedPaths).toContain("src/server.js");
     expect(a.workingSpec).toBe(false);
     expect(analyzeArtifact("# Architecture: X\n\n## Working Spec (unapproved)\n- y").workingSpec).toBe(true);
+    // A leading "#" column doesn't get mistaken for the question.
+    const numbered = analyzeArtifact(
+      "# Spec: X\n\n## Open Questions\n| # | Question | Category |\n|---|---|---|\n| 3 | Who owns the profile? | Blocking |\n",
+    );
+    expect(numbered.questions.map((q: any) => q.text)).toEqual(["Who owns the profile?"]);
   });
 });
 
@@ -147,6 +153,29 @@ function post(url: string, fields: Record<string, string>, headers: Record<strin
 
 const tokenOf = (html: string) => html.match(/name="token" value="([0-9a-f]+)"/)![1];
 const receiptPath = (dir: string) => join(dir, ".groundwork/approvals/docs__spec.md.json");
+
+describe("changes since approval (ADR-009)", () => {
+  it("opens a stale artifact's page with the diff against the approved snapshot", () => {
+    const dir = project();
+    approve(dir, "docs/spec.md", { checkpoint: "greenfield-spec-from-idea/accept" });
+    writeFileSync(join(dir, "docs/spec.md"), SPEC.replace("Owner: support-operations", "Owner: <b>support-leads</b>"));
+    const { html } = render(dir, "docs/spec.md", { write: false });
+    expect(html).toContain('<a class="badge bad" href="#changes">Changed since approval</a>');
+    expect(html).toContain('<section class="changes" id="changes">');
+    expect(html).toMatch(/stat-add">\+1<.*stat-del">−1</);
+    expect(html).toContain("Owner: &lt;b&gt;support-leads&lt;/b&gt;"); // diff text is escaped
+    expect(html).not.toContain("<b>support-leads");
+
+    rmSync(join(dir, ".groundwork/approvals/docs__spec.md.snapshot"));
+    expect(render(dir, "docs/spec.md", { write: false }).html).toContain("no snapshot of that version was saved");
+  });
+
+  it("shows no changes section for a fresh approval", () => {
+    const dir = project();
+    approve(dir, "docs/spec.md", { checkpoint: "greenfield-spec-from-idea/accept" });
+    expect(render(dir, "docs/spec.md", { write: false }).html).not.toContain('id="changes"');
+  });
+});
 
 describe("groundwork render --serve", () => {
   it("records the user's approval pinned to the rendered digest, then shuts down", async () => {

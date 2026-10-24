@@ -210,11 +210,14 @@ npx groundwork approve docs/specs/orders.md --checkpoint=greenfield-spec-from-id
 npx groundwork approve docs/specs/orders.md --checkpoint=scope --decision=delegated   # "you pick"
 npx groundwork verify                        # exit 1 if any approved artifact changed or vanished
 npx groundwork verify docs/specs/orders.md   # exit 0 only if this artifact may proceed
+npx groundwork verify --diff                 # also print what changed since each stale decision
 ```
 
-Receipts live in `.groundwork/approvals/` and are meant to be committed. Editing an
-approved artifact makes its receipt stale, so drift after approval shows up in `verify` and
-`doctor` instead of slipping silently into implementation. Delegated decisions are recorded
+Receipts live in `.groundwork/approvals/` and are meant to be committed, each beside a
+`.snapshot` of the text that was decided on. Editing an approved artifact makes its receipt
+stale, so drift after approval shows up in `verify` and `doctor` instead of slipping silently
+into implementation, and `verify --diff` (or the review page) shows exactly what changed
+([ADR-009](docs/decisions/ADR-009-derived-review-visuals.md)). Delegated decisions are recorded
 as the agent's (`decidedBy: "agent-delegated"`), never as yours.
 
 Before asking you to accept a spec, sketch, or data model, the playbook runs a **builder

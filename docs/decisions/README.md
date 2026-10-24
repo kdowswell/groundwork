@@ -20,3 +20,4 @@ Never edit an accepted ADR's decision — write a new one that supersedes it.
 - [ADR-006: Plugin-shipped lifecycle hooks with a single fail-open dispatcher](ADR-006-plugin-lifecycle-hooks.md)
 - [ADR-007: Hash-pinned checkpoint approvals and a builder check](ADR-007-hash-pinned-checkpoint-approvals.md)
 - [ADR-008: Generated HTML review views over Markdown sources](ADR-008-generated-html-review-views.md)
+- [ADR-009: Review visuals derived from artifact structure, and diffs against the approved version](ADR-009-derived-review-visuals.md)
