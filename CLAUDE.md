@@ -36,7 +36,7 @@ groundwork/
 │   └── brownfield-*/       Phase 3: 6 skills
 ├── agents/                 Plugin subagents: groundwork-builder (read-only builder check, ADR-007)
 ├── hooks/hooks.json        Plugin lifecycle hooks → hook.mjs (SessionStart/PostToolUse/Stop, ADR-006)
-├── cli/                    npx groundwork CLI — plain ESM, ZERO runtime dependencies (ADR-005)
+├── cli/                    npx @kdowswell/groundwork CLI — plain ESM, ZERO runtime dependencies (ADR-005)
 │   ├── bin/groundwork.mjs  Commands: detect, doctor, install, update, approve, verify, render
 │   ├── engine/             Detector rules (each maps to a principle id), scanner, reporters
 │   ├── commands/           doctor, install, approvals (ADR-007), render (ADR-008), safe-fs
@@ -131,6 +131,9 @@ groundwork/
 - The CLI (`cli/**`) is plain ESM with zero runtime dependencies (ADR-005). Do not add
   imports beyond `node:` builtins. Every detector rule MUST carry a `principle` field naming
   an existing principle id, and must prefer silence over false positives.
+- The npm package is `@kdowswell/groundwork` (ADR-010). Write every documented or agent-facing
+  command as `npx @kdowswell/groundwork <command>`, never bare `npx groundwork`: that name on
+  npm is an unrelated package. The installed bin stays `groundwork`.
 - Hooks (`hooks/hooks.json`, `install --hooks`) all route through `hook.mjs`, which must stay
   fail-open (always exit 0) and may block only at Stop, only on `error` findings, and only once
   per turn (`stop_hook_active`). See ADR-006.

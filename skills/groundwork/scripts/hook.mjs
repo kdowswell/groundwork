@@ -186,7 +186,7 @@ async function onStop(event) {
       "This check runs once per turn.";
   }
   if (warns.length > 0) {
-    payload.systemMessage = `groundwork: ${warns.length} warning(s) remain in files changed this turn — run \`npx groundwork detect\` for details.`;
+    payload.systemMessage = `groundwork: ${warns.length} warning(s) remain in files changed this turn — run \`npx @kdowswell/groundwork detect\` for details.`;
   }
   if (Object.keys(payload).length > 0) emit(payload);
 }

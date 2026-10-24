@@ -21,8 +21,12 @@ per-project context file, and a deterministic detector that enforces what the sk
 
 ```bash
 # from your project root
-npx groundwork install        # installs the /groundwork skill into detected harnesses
+npx @kdowswell/groundwork install        # installs the /groundwork skill into detected harnesses
 ```
+
+The package is **`@kdowswell/groundwork`**. The unscoped `groundwork` package on npm is
+unrelated, so always use the scoped name with `npx`. Installed as a dev dependency
+(`npm i -D @kdowswell/groundwork`), the command is plain `groundwork`.
 
 Then, inside your AI coding tool:
 
@@ -35,7 +39,7 @@ Then, inside your AI coding tool:
 And in CI or locally, no LLM required:
 
 ```bash
-npx groundwork detect .       # deterministic production-readiness + AI-slop scan
+npx @kdowswell/groundwork detect .       # deterministic production-readiness + AI-slop scan
 ```
 
 ## The /groundwork Router
@@ -57,16 +61,16 @@ the standalone skills stay the source of truth and remain individually installab
 
 ## The Detector
 
-`npx groundwork detect` runs deterministic rules — no LLM, no API key — across two families:
+`npx @kdowswell/groundwork detect` runs deterministic rules — no LLM, no API key — across two families:
 production-posture gaps (missing lockfile, no CI, no tests, unpinned base images, `.env` not
 ignored, containers running as root) and AI-slop tells (hardcoded secrets, empty catch
 blocks, mock data on real code paths, "in a real application you would…" comments, wildcard
 CORS, missing HTTP timeouts). **Every finding names the principle it enforces.**
 
 ```bash
-npx groundwork detect --json .        # CI-friendly output, exit 1 on errors
-npx groundwork detect --strict .      # exit 1 on warnings too
-npx groundwork doctor                 # check .groundwork/context.md and approvals for drift
+npx @kdowswell/groundwork detect --json .        # CI-friendly output, exit 1 on errors
+npx @kdowswell/groundwork detect --strict .      # exit 1 on warnings too
+npx @kdowswell/groundwork doctor                 # check .groundwork/context.md and approvals for drift
 ```
 
 Waive intentional findings inline (`// groundwork-disable <rule-id>: reason`, plus
@@ -78,7 +82,7 @@ injects a digest of `.groundwork/context.md` (Active Principles, staleness, Prop
 **after each edit** it scans the edited file and feeds findings back to the agent; and at
 **stop** it re-scans every file changed that turn, blocking once if an `error` finding is
 still unresolved. The plugin ships them in `hooks/hooks.json`. Without the plugin,
-`npx groundwork install --hooks` registers the same hooks (use one or the other, not both).
+`npx @kdowswell/groundwork install --hooks` registers the same hooks (use one or the other, not both).
 All hooks fail open: a broken hook never blocks the agent.
 
 See the before/after [case study](docs/case-study.md): the same service goes from 25
@@ -148,12 +152,12 @@ skill lives at `skills/<phase>-<skill-name>/SKILL.md`; the router lives at
 ### Recommended: CLI installer
 
 ```bash
-npx groundwork install                      # auto-detects harness dirs; router skill only
-npx groundwork install --all-skills         # also install the 15 standalone phase skills
-npx groundwork install --providers=claude,github,cursor,agents
-npx groundwork install --global             # user-level (~/.claude), Claude Code only
-npx groundwork install --hooks              # + Claude Code lifecycle hooks (skip if using the plugin)
-npx groundwork update                       # refresh an existing install
+npx @kdowswell/groundwork install                      # auto-detects harness dirs; router skill only
+npx @kdowswell/groundwork install --all-skills         # also install the 15 standalone phase skills
+npx @kdowswell/groundwork install --providers=claude,github,cursor,agents
+npx @kdowswell/groundwork install --global             # user-level (~/.claude), Claude Code only
+npx @kdowswell/groundwork install --hooks              # + Claude Code lifecycle hooks (skip if using the plugin)
+npx @kdowswell/groundwork update                       # refresh an existing install
 ```
 
 ### Claude Code plugin
@@ -198,7 +202,7 @@ npx skills add kdowswell/groundwork --skill greenfield-spec-from-idea
 Run `/groundwork init` once per project. It interviews you (six questions max, skipping
 anything your repo already answers), writes `.groundwork/context.md`, and hands off to
 `/groundwork principles` to select the active principles every later command honors.
-`/groundwork doctor` and `npx groundwork doctor` keep the file honest as the project drifts.
+`/groundwork doctor` and `npx @kdowswell/groundwork doctor` keep the file honest as the project drifts.
 
 ### Checkpoint approvals
 
@@ -206,11 +210,11 @@ When you resolve a Checkpoint, record it as a receipt pinned to the artifact's S
 ([ADR-007](docs/decisions/ADR-007-hash-pinned-checkpoint-approvals.md)):
 
 ```bash
-npx groundwork approve docs/specs/orders.md --checkpoint=greenfield-spec-from-idea/scope
-npx groundwork approve docs/specs/orders.md --checkpoint=scope --decision=delegated   # "you pick"
-npx groundwork verify                        # exit 1 if any approved artifact changed or vanished
-npx groundwork verify docs/specs/orders.md   # exit 0 only if this artifact may proceed
-npx groundwork verify --diff                 # also print what changed since each stale decision
+npx @kdowswell/groundwork approve docs/specs/orders.md --checkpoint=greenfield-spec-from-idea/scope
+npx @kdowswell/groundwork approve docs/specs/orders.md --checkpoint=scope --decision=delegated   # "you pick"
+npx @kdowswell/groundwork verify                        # exit 1 if any approved artifact changed or vanished
+npx @kdowswell/groundwork verify docs/specs/orders.md   # exit 0 only if this artifact may proceed
+npx @kdowswell/groundwork verify --diff                 # also print what changed since each stale decision
 ```
 
 Receipts live in `.groundwork/approvals/` and are meant to be committed, each beside a
@@ -232,8 +236,8 @@ harnesses fall back to a deliberate cold read.
 Long artifacts are easier to judge as a page than in a terminal:
 
 ```bash
-npx groundwork render docs/spec.md           # writes .groundwork/review/docs__spec.md.html
-npx groundwork render docs/spec.md --serve   # same page on 127.0.0.1, with Approve / Request changes
+npx @kdowswell/groundwork render docs/spec.md           # writes .groundwork/review/docs__spec.md.html
+npx @kdowswell/groundwork render docs/spec.md --serve   # same page on 127.0.0.1, with Approve / Request changes
 ```
 
 The page puts the document beside a decision panel: approval status, open questions for you,
@@ -276,7 +280,7 @@ groundwork/
 │   └── brownfield-*/       Existing-system skills (6) — Evolve playbooks
 ├── agents/                 groundwork-builder — read-only builder-check reviewer (plugin)
 ├── hooks/                  hooks.json — Claude Code plugin lifecycle hooks (ADR-006)
-├── cli/                    npx groundwork — detect / doctor / install / update
+├── cli/                    npx @kdowswell/groundwork — detect / doctor / install / update
 │   ├── engine/             Deterministic detector (zero runtime dependencies)
 │   └── data/               Generated principle index
 ├── eval/                   Skill quality harness (LLM judge) + behavior tests (trace asserts)

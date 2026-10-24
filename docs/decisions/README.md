@@ -21,3 +21,4 @@ Never edit an accepted ADR's decision — write a new one that supersedes it.
 - [ADR-007: Hash-pinned checkpoint approvals and a builder check](ADR-007-hash-pinned-checkpoint-approvals.md)
 - [ADR-008: Generated HTML review views over Markdown sources](ADR-008-generated-html-review-views.md)
 - [ADR-009: Review visuals derived from artifact structure, and diffs against the approved version](ADR-009-derived-review-visuals.md)
+- [ADR-010: Publish as the scoped npm package @kdowswell/groundwork](ADR-010-scoped-npm-package.md)
