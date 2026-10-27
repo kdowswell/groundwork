@@ -65,7 +65,8 @@ the standalone skills stay the source of truth and remain individually installab
 production-posture gaps (missing lockfile, no CI, no tests, unpinned base images, `.env` not
 ignored, containers running as root) and AI-slop tells (hardcoded secrets, empty catch
 blocks, mock data on real code paths, "in a real application you would…" comments, wildcard
-CORS, missing HTTP timeouts). **Every finding names the principle it enforces.**
+CORS, missing HTTP timeouts, dependencies added to `package.json` without being installed, which
+is how an invented package name gets in). **Every finding names the principle it enforces.**
 
 ```bash
 npx @kdowswell/groundwork detect --json .        # CI-friendly output, exit 1 on errors
@@ -143,7 +144,7 @@ findings (6 errors) to zero, with each fix mapped to a principle.
 
 ## Principle Library
 
-40 principles across 8 categories:
+41 principles across 8 categories:
 
 | Category | Principles |
 |---|---|
@@ -153,7 +154,7 @@ findings (6 errors) to zero, with each fix mapped to a principle.
 | **Observability** | Structured Logging, Distributed Tracing, SLO / Error Budgets, Alerting Strategy, ML/AI Observability |
 | **Data** | Data Ownership, Consistency Models, Event Sourcing, Schema Evolution |
 | **Design** | API Contract First, Bounded Contexts, Conway's Law Alignment, Fallacies of Distributed Computing, Field-First, Idempotency by Design, Separation of Concerns |
-| **Delivery** | CI/CD Pipeline, Blue-Green / Canary, Feature Flags, Infrastructure as Code, Testing Strategy |
+| **Delivery** | CI/CD Pipeline, Blue-Green / Canary, Feature Flags, Infrastructure as Code, Testing Strategy, Executable Architecture Guardrails |
 | **Operations** | Incident Response, Runbooks, Capacity Planning, FinOps Cost Visibility, Tech Debt Management |
 
 ## Installation
@@ -301,7 +302,7 @@ are missing or don't follow the template draw nothing.
 
 ```
 groundwork/
-├── principles/             Architectural principle library (40 across 8 categories)
+├── principles/             Architectural principle library (41 across 8 categories)
 │   ├── _schema/            Frontmatter JSON Schema
 │   └── {category}/         One .md file per principle
 ├── skills/                 Agent Skills (flat)

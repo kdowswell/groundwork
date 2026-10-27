@@ -59,7 +59,8 @@ export function detect(target, opts = {}) {
     if (content === null) continue;
     const waivers = parseWaivers(content);
     for (const rule of applicable) {
-      for (const hit of rule.check(content, relPath)) {
+      // Rules may read another file relative to the scan root (e.g. a manifest's lockfile).
+      for (const hit of rule.check(content, relPath, { read })) {
         if (isWaived(waivers, rule.id, hit.line)) continue;
         findings.push({
           rule: rule.id,

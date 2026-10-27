@@ -51,6 +51,7 @@ The agent reads the signals in the project context and matches them against each
    | `per_customer_integrations` | Product integrates with each customer's external systems | `fault-isolation` |
    | `async_processing` | Background jobs, queues, event pipelines, or "eventual consistency" mentioned | `async-processing` |
    | `greenfield_ideation` | Stage is ideation or discovery with no working system yet | `data-ownership`, `field-first` (if applicable) |
+   | `agent_authored_code` | AI coding agents write or change a meaningful share of the code, and the code outlives a prototype | `executable-architecture-guardrails`, `supply-chain-security` |
 
 3. **Pull mandatory principles.** For each PRESENT signal, add the listed principles to the active set. These are non-negotiable — do not drop them based on count caps or team preference.
 
