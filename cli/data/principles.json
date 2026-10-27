@@ -75,9 +75,19 @@
     "category": "scalability"
   },
   {
+    "id": "deterministic-core-probabilistic-edge",
+    "title": "Deterministic Core, Probabilistic Edge",
+    "category": "design"
+  },
+  {
     "id": "distributed-tracing",
     "title": "Distributed Tracing",
     "category": "observability"
+  },
+  {
+    "id": "eval-driven-development",
+    "title": "Eval-Driven Development",
+    "category": "delivery"
   },
   {
     "id": "event-sourcing",
@@ -158,6 +168,11 @@
     "id": "ml-ai-observability",
     "title": "ML and AI System Observability",
     "category": "observability"
+  },
+  {
+    "id": "model-as-versioned-dependency",
+    "title": "Model as a Versioned Dependency",
+    "category": "delivery"
   },
   {
     "id": "prompt-injection-containment",
