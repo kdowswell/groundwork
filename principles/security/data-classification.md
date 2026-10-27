@@ -11,18 +11,24 @@ sources:
     url: https://gdpr-info.eu/art-5-gdpr/
   - name: HIPAA Security Rule — 45 CFR Part 164 Subpart C
     url: https://www.hhs.gov/hipaa/for-professionals/security/index.html
+  - name: "OWASP Top 10 for LLM Applications 2025"
+    url: "https://genai.owasp.org/llm-top-10/"
+  - name: "OWASP Top 10 for Agentic Applications 2026 (Dec 2025)"
+    url: "https://genai.owasp.org/2025/12/09/owasp-top-10-for-agentic-applications/"
 applies_when:
   scope: [new_build, epic, feature]
   scale: [solo, team, enterprise]
   stage: [discovery, refinement, build]
   domains: [financial_services, healthcare, defense, government, ecommerce, education, any_production]
-tags: [security, data, privacy, pii, phi, compliance, governance]
+tags: [security, data, privacy, pii, phi, compliance, governance, llm, ai-systems, rag]
 ---
 
 # Data Classification
 
 ## Principle
 Decide what kinds of data your system holds and how sensitive each kind is — before deciding how to protect it. Apply controls (encryption, access, retention, logging) proportional to the classification, so the most sensitive data is hardest to reach and the cheapest data is not over-protected into uselessness.
+
+AI systems create new places for classified data to land. Prompts, completions, tool inputs and outputs, embeddings, agent memory, and traces inherit the highest classification of the data they contain. Enforce the source document's access rules when content is retrieved, so the model never decides who may see what. Keep retrieval and memory stores separated by tenant, record where each stored item came from, and make it possible to remove personal data and roll back poisoned entries.
 
 ## When This Matters
 - You are designing a new data model or adding fields that capture user, customer, patient, or financial information
@@ -31,6 +37,7 @@ Decide what kinds of data your system holds and how sensitive each kind is — b
 - A regulation applies (GDPR, HIPAA, PCI DSS, SOX, FedRAMP) that ties controls to data type
 - You are sharing data with another team, vendor, or AI/ML pipeline
 - You are designing retention, deletion, or right-to-erasure flows
+- A model is given retrieved documents, conversation history, or long-term memory that can contain classified data
 
 ## When This Doesn't Matter
 - Systems that only handle synthetic test data or fully public information (open data, marketing pages)
@@ -44,6 +51,9 @@ Decide what kinds of data your system holds and how sensitive each kind is — b
 - Who needs access to each category, and is that access enforced by code (roles, row-level filters) rather than convention?
 - How long does each category need to be retained, and what deletes it on schedule or on user request?
 - Do logs, error reports, analytics events, or AI prompts inadvertently include data from a higher classification than the destination is rated for?
+- When a model's context is built from retrieved documents, are each document's access permissions checked for the requesting user before it is included?
+- Where do prompts, outputs, and traces containing classified data get stored, for how long, and who can read them?
+- Can a memory or retrieval store mix tenants, and can an individual's data be found and deleted from it?
 
 ## What Good Looks Like
 - A simple, named classification scheme exists (e.g., public / internal / confidential / restricted) and every data store, table, or topic maps to one
@@ -52,12 +62,16 @@ Decide what kinds of data your system holds and how sensitive each kind is — b
 - PII and other regulated data can be located, exported, and deleted on request without a manual archeology project
 - Logs and observability pipelines redact or omit high-classification data; lower-rated systems do not silently accumulate it
 - Retention is defined per classification and actually executed; "keep forever" is a deliberate, justified exception
+- Retrieval filters documents by the requesting user's permissions before they reach the model; the model is never the authorization layer
+- Vector and memory stores are partitioned by tenant, each entry records its source, and unverified entries expire
+- Prompt and trace logs are classified like the data in them, with retention limits and access controls to match
 
 ## What Goes Wrong When You Skip This
 - Customer Social Security numbers end up in application logs that ship to a third-party log vendor with broad employee read access
 - A "quick" analytics export pipes production PII into a BI tool that contractors can query, creating a regulatory incident the team did not know existed
 - A right-to-erasure request takes weeks because nobody can list every place a user's data lives
 - The same level of expensive encryption and access review is applied to public marketing copy and to medical records, slowing the team and convincing nobody that real risks are managed
+- A company-wide assistant retrieves from one shared index; a junior employee asks about compensation and gets an answer drawn from documents only HR could open
 
 ## Further Reading
-NIST SP 800-60 and SP 800-122 give a systematic approach to categorizing information and protecting PII. GDPR Article 5 establishes the data minimization, purpose limitation, and storage limitation principles that drive classification in practice; the HIPAA Security Rule does the equivalent for protected health information.
+NIST SP 800-60 and SP 800-122 give a systematic approach to categorizing information and protecting PII. GDPR Article 5 establishes the data minimization, purpose limitation, and storage limitation principles that drive classification in practice; the HIPAA Security Rule does the equivalent for protected health information. OWASP's Top 10 for LLM Applications covers sensitive information disclosure (LLM02) and vector and embedding weaknesses (LLM08), including cross-tenant leakage from shared stores; the Agentic Top 10 adds memory and context poisoning (ASI06).

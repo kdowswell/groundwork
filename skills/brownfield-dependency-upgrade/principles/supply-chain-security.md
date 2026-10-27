@@ -5,6 +5,8 @@
 ## Principle
 Treat every dependency, build tool, and CI step as code you ship to production. Pin versions, verify provenance, scan for known vulnerabilities, and keep an inventory of what is actually in your artifacts so you can answer "is this affected?" in minutes — not weeks. Treat a dependency that an AI coding assistant introduced as unverified until someone confirms it exists, is the package that was intended, and is pinned in the lockfile: models invent plausible package names, repeat the same invented names across runs, and attackers register them.
 
+Models, datasets, prompts, tools, and tool servers are components too. Allowlist them, pin them to specific versions or hashes, and review them again when their definitions change: a tool whose description changes after you approved it can quietly redirect an agent.
+
 ## When This Matters
 - You are bootstrapping a new project and choosing dependencies, package managers, and registries
 - You are adding a third-party library, container base image, or build action to the pipeline
@@ -28,6 +30,7 @@ Treat every dependency, build tool, and CI step as code you ship to production. 
 - How do we distinguish a maintained, trusted dependency from an abandoned or single-maintainer package before adopting it?
 - When an agent adds a dependency, what confirms that the package exists, is the one intended (not a near-miss name), and is old and maintained enough to trust — before it is installed?
 - Can a reviewer tell which changes an AI assistant helped write, and is a human still the one accountable for each merged change?
+- Which models, tool servers, and plugins does this system load, who approved them, and what happens if one of them changes its definition after approval?
 
 ## What Good Looks Like
 - Lockfiles pin exact versions and integrity hashes; updates go through review, not silent floor-version bumps
@@ -39,6 +42,7 @@ Treat every dependency, build tool, and CI step as code you ship to production. 
 - A dependency added to a manifest without a matching lockfile entry is flagged at the moment it is added, so its name is checked before anything is installed; installing it then pins it
 - New dependencies proposed by an assistant are checked for existence, age, maintainer history, and closeness to a well-known name before install, and the assistant's instructions say to propose, not silently install
 - AI involvement in a change is recorded in machine-readable commit or review metadata, and a human signs off on what merges; this is an emerging convention, not yet a standard
+- Models and tool servers are allowlisted and pinned; a changed tool definition is detected and re-reviewed before an agent uses it; locally run tool servers execute sandboxed with minimal default access
 
 ## What Goes Wrong When You Skip This
 - A Log4j-class CVE drops on a Friday and nobody can answer which services include it; the team spends a week grepping codebases instead of patching
