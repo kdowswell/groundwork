@@ -5,6 +5,8 @@
 ## Principle
 Wrap new or risky behavior in a runtime switch so that *deploying* the code and *releasing* it to users are two different decisions. Different flag types — release, ops, experiment, permission — have different lifetimes and different owners; treat them differently rather than as one undifferentiated toggle bag.
 
+In features built on language models, the model id and the prompt version are behavior, not constants. Make them flaggable configuration so a new model or prompt can be released to a slice of traffic, compared, and reverted without a deploy. Flag the pair together with the tool definitions they were evaluated with, and only offer values that have passed the eval suite.
+
 ## When This Matters
 - You want to merge to trunk continuously while a feature is still incomplete or unverified in production
 - You need to roll a change out to a small percentage of traffic, observe, and expand or revert without redeploying
@@ -12,6 +14,7 @@ Wrap new or risky behavior in a runtime switch so that *deploying* the code and 
 - You are running A/B tests or holdout experiments and need consistent per-user assignment
 - Different customers, plans, or regions are entitled to different functionality from the same codebase
 - An incident response team needs a kill switch they can flip without waiting on a deploy pipeline
+- A feature calls a language model, and you want to try a new model or prompt version on part of the traffic, or switch back quickly if quality drops
 
 ## When This Doesn't Matter
 - The change is purely additive, low-risk, and easy to roll back via a redeploy (small bug fix, copy change, internal-only tooling)
@@ -27,6 +30,7 @@ Wrap new or risky behavior in a runtime switch so that *deploying* the code and 
 - When will this flag be removed, and what stops the codebase from accumulating dead toggles?
 - Are flag changes logged and auditable, especially for permission and ops toggles that affect security or availability?
 - Does the rollback path involve flipping the flag, redeploying, or both — and have you tested it?
+- For model-backed features: are the model id and prompt version read from flag configuration, and is every value the flag can take one that has passed the evals?
 
 ## What Good Looks Like
 - Flags are declared with an explicit type, owner, and expected end-of-life date in a single registry the team can audit
@@ -35,6 +39,7 @@ Wrap new or risky behavior in a runtime switch so that *deploying* the code and 
 - The flag evaluation layer fails closed to a known-safe default if the configuration store is unreachable
 - Experiments use stable, hashed user assignment so the same user sees the same variant across requests and devices
 - Flag flips emit audit events with actor, timestamp, environment, and reason — so post-incident review can see what changed when
+- The model id and prompt version are an experiment or release flag whose allowed values are evaluated combinations; switching back to the previous pair is one flip, and the active pair is recorded on each request's trace
 
 ## What Goes Wrong When You Skip This
 - A risky deploy ships everything-or-nothing; rollback means a panicked revert and redeploy under incident pressure rather than a single flag flip
@@ -42,3 +47,4 @@ Wrap new or risky behavior in a runtime switch so that *deploying* the code and 
 - An A/B experiment produces noisy results because users were rebucketed on every request, mixing variants together
 - An ops kill switch fails open during an outage because no one defined the safe default, and a third-party dependency outage takes the whole product down
 - Permission flags drift out of sync with the entitlements system, and customers either lose access to features they paid for or gain access to features they did not
+- A model id is hard-coded; when a new model makes answers worse for one customer segment, reverting takes a code change, review, and a full deploy while the bad answers keep going out

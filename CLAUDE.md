@@ -13,7 +13,7 @@ Skills reference principles. Principles know nothing about skills. The principle
 
 ```
 groundwork/
-├── principles/             Distilled architectural principle library (8 categories, 43 files)
+├── principles/             Distilled architectural principle library (8 categories, 46 files)
 │   ├── _schema/            JSON Schema for principle frontmatter
 │   ├── reliability/        Circuit breakers, fault isolation, health checks, degradation, chaos
 │   ├── security/           Secrets, zero trust, least privilege, classification, supply chain

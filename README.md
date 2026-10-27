@@ -144,7 +144,7 @@ findings (6 errors) to zero, with each fix mapped to a principle.
 
 ## Principle Library
 
-43 principles across 8 categories:
+46 principles across 8 categories:
 
 | Category | Principles |
 |---|---|
@@ -153,8 +153,8 @@ findings (6 errors) to zero, with each fix mapped to a principle.
 | **Scalability** | Horizontal Scaling, Caching Strategy, Data Partitioning, Async Processing |
 | **Observability** | Structured Logging, Distributed Tracing, SLO / Error Budgets, Alerting Strategy, ML/AI Observability |
 | **Data** | Data Ownership, Consistency Models, Event Sourcing, Schema Evolution |
-| **Design** | API Contract First, Bounded Contexts, Conway's Law Alignment, Fallacies of Distributed Computing, Field-First, Idempotency by Design, Separation of Concerns |
-| **Delivery** | CI/CD Pipeline, Blue-Green / Canary, Feature Flags, Infrastructure as Code, Testing Strategy, Executable Architecture Guardrails |
+| **Design** | API Contract First, Bounded Contexts, Conway's Law Alignment, Fallacies of Distributed Computing, Field-First, Idempotency by Design, Separation of Concerns, Deterministic Core, Probabilistic Edge |
+| **Delivery** | CI/CD Pipeline, Blue-Green / Canary, Feature Flags, Infrastructure as Code, Testing Strategy, Executable Architecture Guardrails, Eval-Driven Development, Model as a Versioned Dependency |
 | **Operations** | Incident Response, Runbooks, Capacity Planning, FinOps Cost Visibility, Tech Debt Management |
 
 ## Installation
@@ -302,7 +302,7 @@ are missing or don't follow the template draw nothing.
 
 ```
 groundwork/
-├── principles/             Architectural principle library (43 across 8 categories)
+├── principles/             Architectural principle library (46 across 8 categories)
 │   ├── _schema/            Frontmatter JSON Schema
 │   └── {category}/         One .md file per principle
 ├── skills/                 Agent Skills (flat)
