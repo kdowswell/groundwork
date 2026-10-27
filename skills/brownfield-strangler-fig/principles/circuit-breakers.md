@@ -11,6 +11,8 @@ Wrap calls to remote services in a state machine that stops calling them once fa
 - One slow dependency could exhaust a thread pool, connection pool, or async runtime and take down unrelated request paths
 - You serve user-facing traffic with latency budgets that cannot tolerate dependency timeouts piling up
 - You have already added retries — retries amplify load on a failing system and need a stop condition
+- The product calls a hosted model: model providers throttle, run out of quota, and slow down under load, and a single long generation can hold a connection for tens of seconds
+- Agents call other agents or tools in chains, so one misbehaving component can push bad output or retry load through every component downstream of it
 
 ## When This Doesn't Matter
 - The call is in-process or to a local resource (in-memory cache, embedded database) where there is no network failure mode
@@ -26,6 +28,8 @@ Wrap calls to remote services in a state machine that stops calling them once fa
 - Should the breaker be per-instance, per-host, or shared across instances — and how is state observed across the fleet?
 - How will you know in production when a breaker trips, and is that signal wired into alerting?
 - Are different failure types (timeout vs. 5xx vs. 429) treated the same, or do some count more heavily toward tripping?
+- For a model dependency: does the breaker trip on rate-limit and quota-exhaustion responses and on latency, not only on errors? A provider that answers every request in forty seconds is failing even if nothing returns an error
+- Where agents hand work to other agents, is there a breaker at each hand-off that stops a failing or looping agent from flooding the next one?
 
 ## What Good Looks Like
 - Every remote call has an explicit, finite timeout shorter than the upstream caller's budget
@@ -34,9 +38,13 @@ Wrap calls to remote services in a state machine that stops calling them once fa
 - Half-open probes are rate-limited so a recovering dependency is not flooded the moment it comes back
 - Breaker thresholds are tuned to the dependency's actual error profile, not copy-pasted defaults
 - A tripped breaker raises an alert that points to a runbook, not just a generic "errors increased"
+- Breakers on model calls use thresholds on error rate, latency, and rate-limit or quota responses; quota exhaustion opens the breaker until the quota window resets rather than retrying into it
+- Each agent-to-agent and agent-to-tool hand-off has its own breaker and call budget, so a looping or failing agent is cut off at its boundary instead of cascading through the pipeline
 
 ## What Goes Wrong When You Skip This
 - A single slow downstream API consumes every worker thread; unrelated endpoints stop responding even though they have no dependency on the failing service
 - Retry storms hammer a dependency that is already struggling, turning a brownout into a full outage
 - Recovery is slower than necessary because every instance simultaneously rushes the recovering service the moment it returns
 - Incident responders cannot tell which dependency is the root cause because every request looks like a generic timeout
+- A model provider starts throttling; every request retries into the rate limit, burning the remaining quota and holding user requests open until they time out, when an open breaker would have served the fallback within milliseconds
+- An upstream agent starts emitting malformed plans after a bad deploy; downstream agents act on each one in turn, and the fault spreads through the whole pipeline because nothing at the hand-offs stopped it

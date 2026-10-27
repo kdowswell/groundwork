@@ -1,5 +1,10 @@
 [
   {
+    "id": "agent-legible-codebase",
+    "title": "Agent-Legible Codebase",
+    "category": "design"
+  },
+  {
     "id": "alerting-strategy",
     "title": "Alerting Strategy",
     "category": "observability"
@@ -55,6 +60,11 @@
     "category": "data"
   },
   {
+    "id": "context-engineering",
+    "title": "Context Engineering",
+    "category": "design"
+  },
+  {
     "id": "conways-law-organizational-alignment",
     "title": "Organizational Alignment and Conway's Law",
     "category": "design"
@@ -83,6 +93,11 @@
     "id": "distributed-tracing",
     "title": "Distributed Tracing",
     "category": "observability"
+  },
+  {
+    "id": "durable-agent-execution",
+    "title": "Durable Agent Execution",
+    "category": "reliability"
   },
   {
     "id": "eval-driven-development",
@@ -197,6 +212,11 @@
   {
     "id": "separation-of-concerns",
     "title": "Separation of Concerns",
+    "category": "design"
+  },
+  {
+    "id": "simplest-agent-architecture-first",
+    "title": "Simplest Agent Architecture First",
     "category": "design"
   },
   {
