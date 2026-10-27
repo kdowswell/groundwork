@@ -34,10 +34,13 @@
 
 ## Stage
 - Current stage: build
-- Last reviewed: 2026-07-24
+- Last reviewed: 2026-10-27
 
 ## Active Principles
 - testing-strategy — validators, detector tests, and the eval harness are the product's quality bar; a skills library that ships broken guidance is worse than none
 - supply-chain-security — published npm CLI with zero runtime dependencies by policy; lockfile committed; provenance matters because consumers run this in CI
 - separation-of-concerns — the two-layer model (principles = knowledge, skills = process) and the compile step between standalone skills and router playbooks exist to keep responsibilities from bleeding
 - tech-debt-management — generated artifacts are committed and CI-enforced; drift between source and generated output is treated as debt with a mechanical payoff path
+- executable-architecture-guardrails — most changes here are agent-written; invariants (zero runtime deps, generated files in sync, rule markers, principle ids on detector rules) are enforced by validators, sync checks, and tests rather than by review
+- eval-driven-development — the product is prompts: skill and router changes are gated on the quality evals, behavior scenarios, and plugin evals, run on model upgrades too
+- agent-legible-codebase — CLAUDE.md stays a short map of invariants that points to ADRs and validators; it is not a dump of everything an agent might want to know
