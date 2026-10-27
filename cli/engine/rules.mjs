@@ -11,6 +11,7 @@
  * `groundwork-disable[-line|-next-line] <rule-id>: reason` or via
  * .groundwork/config.json detector.ignoreRules / detector.ignoreFiles.
  */
+import { posix } from "node:path";
 
 const CODE = /\.(jsx?|tsx?|mjs|cjs|py|rb|go|java|kt|cs|php|rs|swift|vue|svelte)$/;
 const JS = /\.(jsx?|tsx?|mjs|cjs|vue|svelte)$/;
@@ -49,6 +50,11 @@ function findAll(content, re, message, opts = {}) {
 
 const PLACEHOLDER_VALUE =
   /(^|['"])(x{3,}|your[-_]|my[-_]|<[^>]*>|example|changeme|placeholder|dummy|test|sample|redacted|\$\{|\{\{|%s|\.\.\.)/i;
+
+/** Version specs that don't resolve from the registry, so a lockfile entry proves nothing. */
+const NON_REGISTRY_SPEC = /^(file|link|workspace|portal|git|git\+[a-z]+|github|gitlab|bitbucket|https?):|^[\w.-]+\/[\w.-]+(#.*)?$/i;
+
+const escapeRegex = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 
 export const FILE_RULES = [
   {
@@ -321,6 +327,55 @@ export const FILE_RULES = [
         /^\s*FROM\s+(?!scratch\b)[\w./-]+(:latest)?\s*(AS\s+\w+\s*)?$/i,
         "base image has no version tag (or :latest) — builds are not reproducible",
       );
+    },
+  },
+  {
+    id: "unlocked-dependency",
+    principle: "supply-chain-security",
+    severity: "warn",
+    title: "Dependency missing from the lockfile",
+    files: /(^|\/)package\.json$/,
+    /**
+     * A dependency declared in package.json with no entry in the sibling package-lock.json was
+     * added without installing. Flag it while it is still only a name, so it can be checked
+     * before install: coding assistants sometimes invent plausible package names, and attackers
+     * register them. Silent without an npm lockfile (no-lockfile covers that) or on parse errors.
+     */
+    check(content, relPath, ctx) {
+      const lockRaw = ctx?.read?.(posix.join(posix.dirname(relPath), "package-lock.json"));
+      if (!lockRaw) return [];
+      let pkg;
+      let lock;
+      try {
+        pkg = JSON.parse(content);
+        lock = JSON.parse(lockRaw);
+      } catch {
+        return [];
+      }
+      const isLocked = lock.packages
+        ? (name) => Object.hasOwn(lock.packages, `node_modules/${name}`)
+        : lock.dependencies
+          ? (name) => Object.hasOwn(lock.dependencies, name)
+          : null;
+      if (!isLocked) return [];
+
+      const findings = [];
+      const textLines = content.split("\n");
+      for (const section of ["dependencies", "devDependencies", "optionalDependencies"]) {
+        for (const [name, spec] of Object.entries(pkg[section] ?? {})) {
+          if (NON_REGISTRY_SPEC.test(String(spec)) || isLocked(name)) continue;
+          const re = new RegExp(`"${escapeRegex(name)}"\\s*:`);
+          const index = textLines.findIndex((l) => re.test(l));
+          findings.push({
+            line: index === -1 ? 1 : index + 1,
+            message:
+              `${section}.${name} is declared but has no entry in package-lock.json, so it was added without being installed. ` +
+              "Check that the package exists and is the one intended (assistants sometimes invent plausible names) before installing; installing it pins it.",
+            excerpt: index === -1 ? undefined : textLines[index].trim().slice(0, 120),
+          });
+        }
+      }
+      return findings;
     },
   },
 ];

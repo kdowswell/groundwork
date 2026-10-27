@@ -85,6 +85,11 @@
     "category": "data"
   },
   {
+    "id": "executable-architecture-guardrails",
+    "title": "Executable Architecture Guardrails",
+    "category": "delivery"
+  },
+  {
     "id": "fallacies-of-distributed-computing",
     "title": "Fallacies of Distributed Computing",
     "category": "design"

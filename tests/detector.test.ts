@@ -78,6 +78,63 @@ describe("single-file scans (hook path)", () => {
   });
 });
 
+describe("unlocked-dependency (supply-chain-security)", () => {
+  const lock = (deps: Record<string, string>) =>
+    JSON.stringify({
+      lockfileVersion: 3,
+      packages: {
+        "": { dependencies: deps },
+        ...Object.fromEntries(Object.entries(deps).map(([n, v]) => [`node_modules/${n}`, { version: v.replace(/^\^/, "") }])),
+      },
+    });
+  const pkg = (deps: Record<string, string>, dev: Record<string, string> = {}) =>
+    JSON.stringify({ name: "app", dependencies: deps, devDependencies: dev }, null, 2);
+  const hits = (dir: string, target = dir) =>
+    detect(target).findings.filter((f: any) => f.rule === "unlocked-dependency");
+
+  it("flags a declared dependency the lockfile doesn't have, on its own line", () => {
+    const dir = tempProject({
+      "package.json": pkg({ pino: "^9.5.0", "react-codeshift": "^1.0.0" }),
+      "package-lock.json": lock({ pino: "^9.5.0" }),
+    });
+    const found = hits(dir);
+    expect(found).toHaveLength(1);
+    expect(found[0]).toMatchObject({ severity: "warn", principle: "supply-chain-security", file: "package.json", line: 5 });
+    expect(found[0].message).toContain("dependencies.react-codeshift is declared but has no entry in package-lock.json");
+  });
+
+  it("runs on the single-file scan the edit hook uses, reading the sibling lockfile", () => {
+    const dir = tempProject({
+      "package.json": pkg({}, { "left-padx": "^1.0.0" }),
+      "package-lock.json": lock({}),
+    });
+    expect(hits(dir, join(dir, "package.json")).map((f: any) => f.message)).toEqual([
+      expect.stringContaining("devDependencies.left-padx"),
+    ]);
+  });
+
+  it("stays silent without an npm lockfile, on parse errors, for non-registry specs, and for v1 lockfiles that list it", () => {
+    expect(hits(tempProject({ "package.json": pkg({ ghost: "^1.0.0" }) }))).toEqual([]); // no-lockfile covers it
+    expect(hits(tempProject({ "package.json": pkg({ ghost: "^1.0.0" }), "package-lock.json": "{ not json" }))).toEqual([]);
+    expect(
+      hits(
+        tempProject({
+          "package.json": pkg({ local: "file:../local", ws: "workspace:*", gh: "user/repo#main", tarball: "https://x.example/a.tgz" }),
+          "package-lock.json": lock({}),
+        }),
+      ),
+    ).toEqual([]);
+    expect(
+      hits(
+        tempProject({
+          "package.json": pkg({ pino: "^9.5.0" }),
+          "package-lock.json": JSON.stringify({ lockfileVersion: 1, dependencies: { pino: { version: "9.5.0" } } }),
+        }),
+      ),
+    ).toEqual([]);
+  });
+});
+
 describe("waivers", () => {
   it("respects file-wide, line, and next-line waivers", () => {
     const waivers = parseWaivers(
