@@ -9,6 +9,8 @@ sources:
     url: "https://itrevolution.com/product/accelerate/"
   - name: "DORA — Continuous Delivery capability"
     url: "https://dora.dev/capabilities/continuous-delivery/"
+  - name: "DORA — State of AI-assisted Software Development (2025)"
+    url: "https://dora.dev/research/2025/dora-report/"
   - name: "GitHub Actions documentation"
     url: "https://docs.github.com/en/actions"
 applies_when:
@@ -16,7 +18,7 @@ applies_when:
   scale: [solo, team, enterprise]
   stage: [discovery, refinement, build, maintain]
   domains: [financial_services, healthcare, ecommerce, any_production]
-tags: [delivery, ci-cd, automation, pipeline, deployment]
+tags: [delivery, ci-cd, automation, pipeline, deployment, small-batches, ai-assisted-development]
 ---
 
 # CI/CD Pipeline as Code
@@ -24,12 +26,15 @@ tags: [delivery, ci-cd, automation, pipeline, deployment]
 ## Principle
 Every change to the codebase travels the same automated path from commit to production: build, test, package, deploy. The pipeline is defined in version control alongside the code, runs on every change, and is the single, trusted route to production — humans do not run release steps by hand.
 
+Keep changes small even when producing them is cheap. AI coding agents can generate large changes quickly, and large changes are slower to review, harder to reason about, and riskier to deploy and roll back. Batch size is a property you choose, not a side effect of how fast code appears: split generated work into small, independently mergeable changes, and run the pipeline's fast checks inside the author's loop so an agent fixes its own failures before a human ever reviews the change.
+
 ## When This Matters
 - More than one engineer commits to the same repository, so manual release steps create coordination cost and inconsistency
 - You need to deploy faster than you can manually verify each release end-to-end
 - Regulatory or audit requirements demand an evidence trail showing what was built, tested, and deployed for any given commit
 - Deployments are currently slow, error-prone, or held by a single person who knows the steps
 - You want to use deployment frequency, lead time, change failure rate, and recovery time as feedback signals on engineering health
+- AI coding agents produce a growing share of changes, so change volume and size are rising faster than review capacity
 
 ## When This Doesn't Matter
 - One-off scripts, throwaway experiments, or research notebooks that never reach a user
@@ -44,6 +49,8 @@ Every change to the codebase travels the same automated path from commit to prod
 - How are secrets, signing keys, and deploy credentials provided to the pipeline without exposing them in logs or config?
 - What happens when a deploy fails partway through — is rollback automated, manual, or undefined?
 - Who is paged when the pipeline itself breaks, and how is pipeline reliability tracked separately from application reliability?
+- How large are changes, and is that trending up as more code is generated? What is the upper bound a reviewer can actually reason about?
+- Which pipeline checks can the author (or agent) run locally before opening a change, so the pipeline confirms rather than discovers?
 
 ## What Good Looks Like
 - The pipeline definition is checked into the same repository as the code it builds, and changing it requires a pull request
@@ -52,6 +59,8 @@ Every change to the codebase travels the same automated path from commit to prod
 - Deployment to production is a single, reproducible action that any engineer can trigger and observe, not a runbook full of manual SSH steps
 - Pipeline runs and the artifacts they produce are traceable back to a specific commit, with provenance metadata attached for audit and incident forensics
 - Branches are short-lived, merges to trunk happen daily, and the pipeline keeps trunk continuously deployable
+- Change size is tracked alongside the delivery metrics; generated work is split into small changes, each reviewable and revertible on its own
+- The fast pipeline checks run in the author's loop (editor, agent hook, pre-commit) as well as in CI, so most failures never reach review
 
 ## What Goes Wrong When You Skip This
 - Releases drift between environments because each one was built or configured by hand, and "works in staging, fails in prod" becomes the default outcome of every deploy
@@ -59,6 +68,7 @@ Every change to the codebase travels the same automated path from commit to prod
 - A bad change reaches production because the only test that would have caught it lives on someone's laptop and was skipped under deadline pressure
 - Audit and compliance reviews stall because there is no consistent record of what code, with what tests, was deployed where, when, and by whom
 - Long-lived feature branches accumulate merge conflicts and integration debt that surface as a single high-risk release, raising change failure rate
+- An agent opens a 3,000-line change that "does the whole feature"; review takes days, the reviewer skims, and when it causes an incident the only rollback is reverting everything, including the parts that worked
 
 ## Further Reading
-Humble and Farley's *Continuous Delivery* defines the deployment pipeline in depth; *Accelerate* and the DORA research connect pipeline practices to measurable delivery performance. The GitHub Actions documentation is a practical reference for expressing pipelines as code in a mainstream platform.
+Humble and Farley's *Continuous Delivery* defines the deployment pipeline in depth; *Accelerate* and the DORA research connect pipeline practices to measurable delivery performance. DORA's 2025 report on AI-assisted development finds that AI adoption now raises throughput but still raises delivery instability, and lists working in small batches and strong version control practices among the capabilities that determine whether AI helps or hurts. The GitHub Actions documentation is a practical reference for expressing pipelines as code in a mainstream platform.
