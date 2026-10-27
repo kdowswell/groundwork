@@ -39,6 +39,22 @@ jobs:
       - name: Run tests
         run: npm test
 
+      - name: Package installs alone, with no warnings (ADR-005)
+        run: |
+          npm pack --pack-destination "$RUNNER_TEMP" --silent
+          cd "$(mktemp -d)"
+          npm init -y > /dev/null
+          npm install "$RUNNER_TEMP"/kdowswell-groundwork-*.tgz 2>&1 | tee install.log
+          if grep -qi "warn" install.log; then
+            echo "::error::Installing the packed package printed warnings."
+            exit 1
+          fi
+          if [ "$(ls node_modules)" != "@kdowswell" ]; then
+            echo "::error::The packed package pulled in runtime dependencies: $(ls node_modules | tr '\n' ' ')"
+            exit 1
+          fi
+          npx groundwork version
+
       - name: Detector self-check on fixtures
         run: |
           # before must fail (findings), after must pass clean
