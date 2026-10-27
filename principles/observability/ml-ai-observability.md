@@ -3,64 +3,80 @@ id: ml-ai-observability
 title: ML and AI System Observability
 category: observability
 sources:
+  - name: "OpenTelemetry — Semantic Conventions for Generative AI (spans, agent spans, inference; Development status)"
+    url: "https://github.com/open-telemetry/semantic-conventions-genai"
+  - name: "OpenTelemetry — GenAI spans specification (content capture, retries, request vs response model)"
+    url: "https://github.com/open-telemetry/semantic-conventions-genai/blob/main/docs/gen-ai/gen-ai-spans.md"
+  - name: "Google Cloud Well-Architected Framework — AI and ML perspective: Reliability (reviewed Aug 2025)"
+    url: "https://docs.cloud.google.com/architecture/framework/perspectives/ai-ml/reliability"
+  - name: "Microsoft Azure Well-Architected Framework — Design principles for AI workloads (updated Apr 2026)"
+    url: "https://learn.microsoft.com/en-us/azure/well-architected/ai/design-principles"
+  - name: "Anthropic — How we built our multi-agent research system (Jun 2025)"
+    url: "https://www.anthropic.com/engineering/multi-agent-research-system"
+  - name: "Husain & Shankar — AI Evals: Everything You Need to Know (FAQ, Sep 2026)"
+    url: "https://hamel.dev/blog/posts/evals-faq/"
   - name: "Chip Huyen — Designing Machine Learning Systems (2022)"
     url: "https://www.oreilly.com/library/view/designing-machine-learning/9781098107956/"
   - name: "Martin Zinkevich — Rules of Machine Learning (Google)"
     url: "https://developers.google.com/machine-learning/guides/rules-of-ml"
-  - name: "Evidently AI — ML Monitoring Guide"
-    url: "https://www.evidentlyai.com/ml-monitoring-course"
-  - name: "Shankar et al. — Operationalizing Machine Learning: An Interview Study (2022)"
-    url: "https://arxiv.org/abs/2209.09125"
 applies_when:
   scope: [new_build, epic, feature]
   scale: [solo, team, enterprise]
   stage: [discovery, refinement, build, maintain]
-  domains: [financial_services, healthcare, ecommerce, media, any_production]
-tags: [observability, ml, ai, monitoring, data-quality, drift]
+  domains: [ai_systems, financial_services, healthcare, ecommerce, media, any_production]
+tags: [observability, ml, ai, llm, agents, monitoring, tracing, data-quality, drift, evals]
 ---
 
 # ML and AI System Observability
 
 ## Principle
-ML and AI systems fail silently in ways traditional software does not. A service can be perfectly healthy from a latency and error-rate perspective while its model is producing wrong predictions — because the model is the business logic, and its correctness cannot be measured with a status code. Observability for ML systems must cover the full stack: data quality (inputs are what the model expects), model behavior (predictions are within the expected distribution), business outcomes (predictions are producing the intended user or business result), and infrastructure (serving and training pipelines are running correctly). Each layer requires different instrumentation, and the signals that matter most are domain-specific, not generic.
+ML and AI systems fail silently in ways traditional software does not. A service can be perfectly healthy by latency and error rate while its model gives wrong answers, because the model is the business logic and its correctness does not show up in a status code. Observability has to cover four layers: the data going in (is it what the model expects?), the model's behavior (are outputs within the expected range and quality?), the business outcome (did the output achieve what it was for?), and the serving infrastructure. For systems built on large language models and agents, add a fifth: the run itself. Record each agent run as one trace, with nested spans for the agent, each model call, and each tool call; record token and cache usage and the model version that actually answered; keep prompt and response content out of telemetry by default and capture it only by deliberate opt-in, stored separately under a retention policy. Feed sampled production traces back into the evaluation set, so what you observe in production becomes what you test against next.
 
 ## When This Matters
-- A trained model is deployed to serve production traffic and its predictions affect user experience or business decisions
-- A pipeline retrains models on fresh data, where silent data quality issues in training data would corrupt future models without triggering any infrastructure alert
-- A generative AI system (LLM-based chat, document generation, code completion) produces outputs that require quality monitoring beyond error rate
-- Model predictions feed downstream business processes where a wrong prediction has a material cost: loan decisions, fraud detection, supply chain ordering, clinical recommendations
-- The model was trained on historical data that may no longer represent production traffic — distribution shift is likely over months, guaranteed over years
+- A trained model serves production traffic and its predictions affect users or business decisions
+- A pipeline retrains models on fresh data, where a silent data-quality problem would corrupt the next model without tripping any infrastructure alert
+- A product feature generates text, extracts data, or answers questions with a language model, so "correct" cannot be measured with an error rate
+- An agent runs multi-step tasks, calling the model and tools many times per request, and a failure could come from any step
+- Token spend is a material cost, varies widely between requests, and nobody can say which feature or tenant drives it
+- The model provider can change or retire the model underneath you, and quality shifts need to be traced to their cause
 
 ## When This Doesn't Matter
-- A purely rule-based system without a learned model component — standard application observability applies
-- An internal data transformation pipeline that does not serve predictions to end users or downstream systems
-- A short-lived experiment or A/B test where the evaluation framework replaces production monitoring
+- A purely rule-based system with no learned or generative component; standard application observability applies
+- An internal data transformation pipeline that does not serve predictions or generated output to users or downstream systems
+- A short-lived experiment whose offline evaluation replaces production monitoring, and which will be torn down rather than promoted
 
 ## Questions the Agent Should Ask
-- What does a "wrong" prediction look like for this model, and can that wrongness be detected automatically (ground truth labels), detected with a delay (outcome tracking), or only detected by humans (qualitative review)?
-- Are input features logged alongside predictions so that you can reconstruct what the model saw when a bad prediction is discovered later?
-- What is the baseline distribution of predictions on validation data, and is production traffic drifting away from that distribution over time?
-- Which features are most influential for this model's predictions, and are those features monitored for distribution shift independently of overall prediction monitoring?
-- What is the acceptable staleness of the model — how long can it go without retraining before performance degrades to an unacceptable level, and is that measured?
-- For generative outputs: what quality signals can be measured automatically (length, format adherence, toxicity, factual consistency), and which require human or model-based evaluation?
-- Is there a rollback plan for models — can the previous version be restored within minutes if a new deployment degrades quality metrics?
-- For AI features with cost-per-inference: is inference cost tracked as a first-class metric alongside latency and quality?
+- What does a "wrong" output look like for this feature, and can it be detected automatically, detected later through outcomes, or only judged by a person?
+- Are inputs logged (or referenced) alongside outputs and the model version, so a bad result discovered later can be reconstructed?
+- For classic models: what is the baseline input and prediction distribution, and is production traffic drifting away from it?
+- For agents: does one user request produce one trace, with the agent's steps, each model call, and each tool call as child spans? Can you open a failed run and see which step went wrong?
+- Do spans record the model that was requested and the model that actually responded, plus input, output, and cached tokens?
+- Are prompts and responses captured in telemetry? If so, who opted in, where is the content stored, who can read it, and when is it deleted?
+- Which quality signals run on live traffic (format validity, refusal rate, a calibrated model grader on a sample), and how do failures found there become eval tasks?
+- What is normal behavior for this agent (steps per run, tools called, tokens per task), and what alerts when it departs from that baseline? Is there a switch that stops it quickly without a deploy?
+- Which telemetry naming convention is used, and is its version pinned?
 
 ## What Good Looks Like
-- Input data is validated against the training distribution before inference; out-of-distribution inputs are flagged and logged rather than silently passed to the model
-- Predictions are logged with their feature inputs, model version, and a timestamp — enough to reproduce the decision and evaluate it when ground truth arrives
-- Outcome labels are collected where possible and linked back to the prediction that drove the outcome, enabling delayed accuracy measurement
-- Data drift metrics (population stability index, feature distribution divergence) run on a schedule and alert when drift exceeds a defined threshold
-- Model performance metrics (precision, recall, AUC, or domain-appropriate equivalents) are computed on a rolling window of labeled outcomes and tracked over time
-- Model deployments use a canary pattern before full rollout; rollback is a one-step operation with a clear trigger condition
-- For LLM-based systems: automated quality checks run on a sample of outputs (format, toxicity, refusal rate, hallucination signals); human review samples are scheduled on a regular cadence for deeper qualitative evaluation
+- Inputs to classic models are validated against the training distribution; out-of-distribution inputs are flagged rather than silently scored
+- Predictions are logged with their inputs, model version, and timestamp; outcome labels are joined back when they arrive, so accuracy can be measured with a delay
+- Drift metrics run on a schedule and alert past a defined threshold; model performance is tracked on a rolling window of labelled outcomes
+- Every agent run is one trace: a root span for the run, child spans for each model call and each tool call, and retries recorded inside the one logical operation they belong to, so the trace reads as what the agent did, not as noise
+- Each model-call span records the requested model, the model that responded, and token counts including cache reads, so cost per run, per feature, and per tenant can be computed from telemetry alone
+- Prompt and response content is off by default; where it is needed for debugging, users or operators opt in, content goes to a separate store with access control and a retention period, and spans hold a reference to it rather than the text
+- Monitoring watches behavior as well as health: format-validation failures, refusal rate, steps and tool calls per run, cost per successful task, and a sampled quality score from a grader that has been checked against human labels
+- A scheduled review reads a sample of production traces, names new failure patterns, and adds representative cases to the eval suite
+- Agent features have a kill switch that disables the agent path or falls back to a non-agent path in seconds, and alerts on behavior that departs from the baseline (a sudden jump in tool calls or tokens per run)
+- Telemetry uses the standard GenAI attribute names, with the convention version pinned and upgrades handled as a deliberate change
 
 ## What Goes Wrong When You Skip This
-- A model degrades over months as the world changes; no alert fires because the service is healthy by infrastructure metrics; the degradation surfaces when a business stakeholder notices a drop in conversion and traces it back to model quality
-- A training pipeline ingests corrupted data from a schema change upstream; the retrained model is silently worse than its predecessor; the regression is found only after the new model has been in production for weeks
-- Input features arrive in a different unit, scale, or encoding than the model was trained on (a data pipeline bug); the model produces predictions with a systematic bias that is not caught before going live
-- A generative AI feature begins producing subtly off-brand or factually incorrect outputs after a base model upgrade; no monitoring exists for output quality, and the issue is discovered by a customer complaint days later
-- A team cannot investigate a customer complaint about an AI-driven decision because the input features and model version were not logged with the prediction
+- A model degrades over months as the world changes; no alert fires because the service is healthy by infrastructure metrics, and the drop is found when a stakeholder traces falling conversion back to model quality
+- A training pipeline ingests corrupted data after an upstream schema change; the retrained model is silently worse and stays in production for weeks
+- A customer complains about an agent's action, and the team cannot reconstruct what happened: there is a log line per model call, but nothing ties the calls and tool invocations of that run together
+- The provider starts serving a newer model under the same alias; output quality shifts, and because spans record only the requested model, nobody can see that anything changed
+- Full prompts and responses are logged by default to the general log store; customer personal data is now searchable by everyone with log access and kept for years
+- An agent loops on a failing tool, calling it hundreds of times per run; the cost shows up on the monthly invoice because nothing watched tool calls or tokens per run
+- Production monitoring finds recurring bad answers, but they never reach the eval suite, so the next prompt change reintroduces the same failure
+- The team adopts unstable GenAI attribute names without pinning a version; an instrumentation upgrade renames them and every dashboard and alert built on the old names goes blank
 
 ## Further Reading
-Huyen's *Designing Machine Learning Systems* is the most complete treatment of operationalizing ML, covering data collection, training, deployment, and monitoring as a unified systems engineering problem — the monitoring chapter is particularly practical. Zinkevich's *Rules of Machine Learning* documents patterns Google found essential for production ML reliability, with specific warnings about silent model degradation and the traps of optimizing the wrong metric. Evidently AI's monitoring guide is the most accessible introduction to statistical methods for detecting data and model drift in production. Shankar et al.'s interview study documents the most common failure modes practitioners encounter when operationalizing models, and is useful for prioritizing which monitoring capabilities to build first.
+The OpenTelemetry semantic conventions for generative AI, now maintained in a dedicated repository, define spans for model inference, agent invocation, and tool execution, and attributes for the requested and responding model and for token usage including cached tokens; they say GenAI spans represent logical operations as observed by the caller, with retries covered by one span, and that instructions, user messages, and model outputs are sensitive, should not be captured by default, should be available by opt-in, and in production are best stored externally with references on the span. Every part of these conventions is still in Development status, which is why the version should be pinned. Google Cloud's AI and ML reliability perspective recommends monitoring output characteristics such as toxicity and coherence, validating outputs against expected formats, and tracking query rate, token throughput, and first-token latency. Azure's AI design principles call for automated detection of model decay, alerting when responses start deviating from expected results, and getting user consent before keeping conversations for troubleshooting. Anthropic's account of its multi-agent research system describes full production tracing as what made agent failures diagnosable, while monitoring decision patterns and interaction structure without monitoring conversation contents. Husain and Shankar's evals FAQ makes reading real traces the starting point for building evaluations. For classic ML, Huyen's *Designing Machine Learning Systems* remains the most complete treatment of data and model monitoring, and Zinkevich's *Rules of Machine Learning* documents the silent-degradation traps Google learned from. See *Eval-Driven Development* and *Model as a Versioned Dependency* for the loop these signals feed.

@@ -11,12 +11,16 @@ sources:
     url: "https://martinfowler.com/books/continuousDelivery.html"
   - name: "AWS — Overview of deployment options on AWS"
     url: "https://docs.aws.amazon.com/whitepapers/latest/overview-deployment-options/welcome.html"
+  - name: "Google Cloud Well-Architected Framework — AI and ML perspective: Reliability (reviewed Aug 2025)"
+    url: "https://docs.cloud.google.com/architecture/framework/perspectives/ai-ml/reliability"
+  - name: "Anthropic — How we built our multi-agent research system (rainbow deployments, Jun 2025)"
+    url: "https://www.anthropic.com/engineering/multi-agent-research-system"
 applies_when:
   scope: [new_build, epic, feature]
   scale: [team, enterprise]
   stage: [refinement, build, maintain]
   domains: [ecommerce, financial_services, healthcare, any_production]
-tags: [delivery, deployment, blue-green, canary, rolling, zero-downtime]
+tags: [delivery, deployment, blue-green, canary, rolling, zero-downtime, llm, agents]
 ---
 
 # Progressive Deployment Strategies
@@ -24,12 +28,16 @@ tags: [delivery, deployment, blue-green, canary, rolling, zero-downtime]
 ## Principle
 Choose a deployment strategy — blue-green, canary, or rolling — based on how quickly you must roll back, how much risk a bad release carries, and how much extra capacity you can afford to run. The goal is not zero-downtime as a vanity metric; it is a deploy you can reverse before users notice it broke.
 
+A change to a model, prompt, or agent harness is a deploy too, and it fails by giving worse answers rather than by throwing errors. Gate it on the eval suite before any traffic sees it, judge the canary on output quality as well as error rate and latency, and roll back automatically when quality drops below the threshold. Long-running agent sessions are a stateful workload: a session may be mid-task when the new version ships, so run old and new versions side by side and let in-flight sessions finish on the version they started on.
+
 ## When This Matters
 - The service is user-facing and a failed deploy directly affects revenue, safety, or trust
 - Schema or stateful changes accompany the deploy and naive replacement risks data corruption or incompatible versions handling the same request
 - You operate at a scale where exposing 100% of traffic to a new build is materially riskier than exposing 1%
 - Rollback time is part of an SLO, an incident response objective, or a regulatory commitment
 - Multiple versions will run side by side for any period — you need to reason about API and message compatibility across them
+- The change is a new model, prompt, or agent configuration, where a bad release shows up as worse answers rather than errors
+- Agent sessions run for minutes or hours and would be broken by a version switch mid-task
 
 ## When This Doesn't Matter
 - Internal tools, batch jobs, or background workers where a few minutes of downtime during deploy is acceptable
@@ -45,6 +53,8 @@ Choose a deployment strategy — blue-green, canary, or rolling — based on how
 - What is the budget for extra capacity, and does the chosen strategy fit it (blue-green roughly doubles, canary adds a slice, rolling reuses existing capacity)?
 - How is the deployment strategy expressed in code — a platform feature (e.g., a Kubernetes deployment, a load-balancer-target shift) or bespoke scripting?
 - What does "deploy succeeded" actually mean — artifact landed on hosts, traffic shifted, health checks green, or business metrics holding?
+- For a model or prompt change: which evals must pass before the canary starts, which quality signal decides promotion, and does rollback restore the previous model id and prompt version together?
+- Can an agent session that started on the old version finish on it, or will it pick up the new version partway through?
 
 ## What Good Looks Like
 - The deploy strategy matches the risk profile: critical user-facing paths get canary or blue-green; low-risk internal services use rolling deploys without ceremony
@@ -53,6 +63,8 @@ Choose a deployment strategy — blue-green, canary, or rolling — based on how
 - Canary promotion is automated against explicit health and business metrics, not based on "looks fine" eyeballing of dashboards
 - The platform layer (Kubernetes, ECS, a managed deploy product) does the orchestration; teams do not hand-write traffic-shifting logic per service
 - Deploys, rollbacks, and traffic shifts emit events that incident responders can correlate with later anomalies
+- Model and prompt changes pass the regression evals before release, then canary on a slice of traffic judged by a sampled quality score as well as errors and latency; a missed threshold shifts traffic back to the previous version automatically
+- Long-lived agent sessions stay on the version they started on while new sessions go to the new version, and the old version is drained, not killed
 
 ## What Goes Wrong When You Skip This
 - A bad release reaches 100% of traffic before anyone notices, and rollback takes longer than the original deploy because no plan for it existed
@@ -60,6 +72,8 @@ Choose a deployment strategy — blue-green, canary, or rolling — based on how
 - Rolling deploy of a service with an incompatible message format causes old and new instances to corrupt each other's queue messages for the duration of the rollout
 - A canary serves only a tiny fraction of traffic but hits a code path that only fires for premium customers, missing the bug entirely; the team gains false confidence and rolls forward
 - Database schema changes ship with code that requires them, leaving no path back: rolling forward is unsafe, rolling back is unsafe, and the team is stuck
+- A prompt change canaries cleanly on error rate and latency and is promoted; it has made answers worse for a common question type, and the canary never measured quality
+- A deploy replaces the agent harness while hundreds of sessions are mid-task; they resume on a version with a different tool schema and fail in confusing ways long after "deploy completed"
 
 ## Further Reading
-Fowler's bliki entries on BlueGreenDeployment and CanaryRelease are the short, definitive references. Humble and Farley's *Continuous Delivery* covers the patterns in the broader pipeline context, and the AWS deployment-options whitepaper grounds them in concrete cloud primitives.
+Fowler's bliki entries on BlueGreenDeployment and CanaryRelease are the short, definitive references. Humble and Farley's *Continuous Delivery* covers the patterns in the broader pipeline context, and the AWS deployment-options whitepaper grounds them in concrete cloud primitives. Google Cloud's AI and ML reliability perspective recommends evaluation thresholds a model must pass before deployment, A/B testing of agent versions, and automated rollback to a previous stable model version. Anthropic's multi-agent research post describes rainbow deployments, shifting traffic gradually while old and new versions run together, because agents might be anywhere in their process when an update ships. See *Eval-Driven Development* for the gate.

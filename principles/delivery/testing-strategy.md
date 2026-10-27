@@ -32,6 +32,8 @@ For services that call other services over the network, contract testing verifie
 
 When AI coding agents write much of the code, the test suite becomes the specification the agent works against and the main evidence that its change is correct. That raises two requirements. The tests must state the intended behavior independently of the code, so a test written by the same agent in the same change, which tends to assert what the code happens to do, is not enough on its own. And the suite itself must be checked: mutation testing, or an equivalent that deliberately introduces faults, shows whether the tests would actually catch a regression.
 
+Where the behavior under test is itself probabilistic, such as a model's output or an agent's actions, single-run pass/fail tests are not enough; see *Eval-Driven Development* for repeated-trial evaluation suites that gate those changes.
+
 ## When This Matters
 - New services or modules are being built and no testing conventions have been established yet
 - A CI pipeline takes more than ten minutes because E2E test suites have grown without discipline
