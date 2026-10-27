@@ -8,7 +8,7 @@
     {
       "name": "groundwork",
       "source": "./",
-      "description": "Phase-based architecture skills for production-grade software: /groundwork router with 17 commands, a 46-principle library, and a deterministic anti-slop detector.",
+      "description": "Phase-based architecture skills for production-grade software: /groundwork router with 17 commands, a 50-principle library, and a deterministic anti-slop detector.",
       "version": "0.1.0",
       "author": {
         "name": "Kurt Dowswell"

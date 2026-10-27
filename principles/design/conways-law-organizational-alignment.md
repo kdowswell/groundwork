@@ -11,12 +11,16 @@ sources:
     url: "https://martinfowler.com/bliki/ConwaysLaw.html"
   - name: "DORA — Accelerate: The Science of Lean Software and DevOps (Forsgren, Humble, Kim)"
     url: "https://dora.dev/research/"
+  - name: "Thoughtworks — Themes from Technology Radar Vol. 34, incl. cognitive debt (podcast, Apr 2026)"
+    url: "https://www.thoughtworks.com/insights/podcasts/technology-podcasts/themes-technology-radar-34"
+  - name: "METR — Measuring the Impact of Early-2025 AI on Experienced Open-Source Developer Productivity (Jul 2025)"
+    url: "https://metr.org/blog/2025-07-10-early-2025-ai-experienced-os-dev-study/"
 applies_when:
   scope: [new_build, epic]
   scale: [team, enterprise]
   stage: [ideation, discovery, refinement]
   domains: [any_production]
-tags: [design, organizations, team-topologies, conways-law, service-boundaries]
+tags: [design, organizations, team-topologies, conways-law, service-boundaries, ownership, cognitive-debt]
 ---
 
 # Organizational Alignment and Conway's Law
@@ -53,12 +57,14 @@ A microservices decomposition built by a team organized into frontend, backend, 
 - When team structure changes, there is a deliberate conversation about what must change in the architecture and ownership model to stay aligned
 - Platform teams own clear interfaces; product teams consume them without needing to understand their internals or wait on the platform team for routine changes
 - "Who owns this?" has a one-sentence answer for every component in the system
+- Every module has a human owner who can explain how it works and why, even when most of its code was generated; code nobody can explain is treated as debt regardless of its test status
 
 ## What Goes Wrong When You Skip This
 - A microservices architecture is built by a team organized by technical layer (frontend, API, database); the result is three tightly coupled services where every feature requires a simultaneous release of all three — none of the autonomy, all of the distributed-systems complexity
 - Two teams share a service that neither fully owns; changes require negotiation, the codebase develops factions, and one team's test changes break the other's releases
 - A reorg moves engineers between teams but does not move service ownership; new teams inherit systems built under different constraints, producing confusion about who can authorize a change and who is accountable for an incident
 - The most skilled engineers become coordinators — their value is navigating cross-team dependencies, not building — because the architecture makes every feature a negotiation
+- A module written mostly by coding agents has a nominal owning team but nobody who understands it; an incident in it is debugged from scratch, under pressure, by people reading it for the first time
 
 ## Further Reading
-Conway's original 1968 paper is short and direct — the core observation has not aged. Skelton and Pais's *Team Topologies* is the most practical operationalization: it introduces team types (stream-aligned, platform, enabling, complicated-subsystem) and interaction modes (collaboration, X-as-a-service, facilitating) as a vocabulary for deliberately designing organizational structure to produce the system architecture you want. Fowler's bliki entry synthesizes the law and the Inverse Conway Maneuver clearly. DORA's *Accelerate* research provides empirical evidence that loosely coupled architectures with strong team autonomy are a driver of high delivery performance — the organizational and technical dimensions reinforce each other.
+Conway's original 1968 paper is short and direct — the core observation has not aged. Skelton and Pais's *Team Topologies* is the most practical operationalization: it introduces team types (stream-aligned, platform, enabling, complicated-subsystem) and interaction modes (collaboration, X-as-a-service, facilitating) as a vocabulary for deliberately designing organizational structure to produce the system architecture you want. Fowler's bliki entry synthesizes the law and the Inverse Conway Maneuver clearly. DORA's *Accelerate* research provides empirical evidence that loosely coupled architectures with strong team autonomy are a driver of high delivery performance — the organizational and technical dimensions reinforce each other. Ownership now also has to mean understanding. Thoughtworks' Technology Radar Vol. 34 discussion raises "cognitive debt", the growing detachment of teams from code they no longer write themselves; this is practitioner opinion, not measurement. METR's 2025 randomized study is a caution about relying on impressions instead: experienced developers using AI tools took 19% longer on tasks, yet believed afterwards that they had been about 20% faster.

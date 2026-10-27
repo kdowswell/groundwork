@@ -34,9 +34,11 @@ A microservices decomposition built by a team organized into frontend, backend, 
 - When team structure changes, there is a deliberate conversation about what must change in the architecture and ownership model to stay aligned
 - Platform teams own clear interfaces; product teams consume them without needing to understand their internals or wait on the platform team for routine changes
 - "Who owns this?" has a one-sentence answer for every component in the system
+- Every module has a human owner who can explain how it works and why, even when most of its code was generated; code nobody can explain is treated as debt regardless of its test status
 
 ## What Goes Wrong When You Skip This
 - A microservices architecture is built by a team organized by technical layer (frontend, API, database); the result is three tightly coupled services where every feature requires a simultaneous release of all three — none of the autonomy, all of the distributed-systems complexity
 - Two teams share a service that neither fully owns; changes require negotiation, the codebase develops factions, and one team's test changes break the other's releases
 - A reorg moves engineers between teams but does not move service ownership; new teams inherit systems built under different constraints, producing confusion about who can authorize a change and who is accountable for an incident
 - The most skilled engineers become coordinators — their value is navigating cross-team dependencies, not building — because the architecture makes every feature a negotiation
+- A module written mostly by coding agents has a nominal owning team but nobody who understands it; an incident in it is debugged from scratch, under pressure, by people reading it for the first time

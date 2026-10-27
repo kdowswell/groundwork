@@ -11,6 +11,7 @@ Store every change to the system's state as an immutable event in an append-only
 - The same underlying events drive multiple read models with different shapes (search index, analytics rollup, real-time dashboard, customer-facing screen)
 - Temporal queries matter — "what did this account look like on March 15th" must be answerable without snapshot tables and ad-hoc reconstruction
 - New consumers need to be added later that should see the full history, not just the state from the moment they came online
+- You run long-lived AI agents: a session is a sequence of model calls, tool results, and decisions, and the context the model sees is just one projection of that history
 
 ## When This Doesn't Matter
 - The domain is genuinely CRUD — current state is what matters, history is incidental, and an audit trail column would satisfy any future need
@@ -28,6 +29,7 @@ Store every change to the system's state as an immutable event in an append-only
 - What is the consistency boundary — which decisions can use stale projections, and which must read from the write side?
 - How will the team handle the case where an event was wrong — compensating events, never deletion, and how is "wrong" actually recognized in the log?
 - Does the team have operational experience running an append-only log at the volume this system will produce, or is this their first?
+- For an agent session: is the full event history kept outside the model's context, so that summarizing or trimming the context is a reversible projection rather than the loss of the only copy?
 
 ## What Good Looks Like
 - Events are named in past tense and described in domain terms; no "UpdateUser" generic events disguising what actually happened
@@ -37,6 +39,7 @@ Store every change to the system's state as an immutable event in an append-only
 - Snapshots exist where replay times would otherwise become operationally painful, and snapshot strategy is documented
 - The log itself has retention, backup, and disaster-recovery treatment proportional to its role as the single source of truth
 - The team can answer "what would happen if we replayed the log into a fresh database tomorrow" with confidence, not hope
+- Agent sessions are stored as append-only event logs; the model's context, progress summaries, and dashboards are projections rebuilt from the log, so a compaction that dropped an important detail can be redone from the source
 
 ## What Goes Wrong When You Skip This
 - The audit log is a separate table that drifts from the truth — every state-changing code path has to remember to write to both, and some don't
@@ -44,3 +47,4 @@ Store every change to the system's state as an immutable event in an append-only
 - Event sourcing is adopted because it sounded modern, but events are modeled as CRUD verbs ("UserUpdated" with a full snapshot inside) — the system has all the complexity and none of the benefits
 - A breaking schema change makes old events un-replayable; the rebuild capability that justified the architecture is now broken and nobody noticed
 - Projections drift from the log over time; nobody rebuilds because rebuilds are slow and untested, and divergence is discovered when a customer reports a mismatch
+- An agent's history exists only as its compacted context; a summary drops the constraint the user stated at the start, and no record remains from which to recover it

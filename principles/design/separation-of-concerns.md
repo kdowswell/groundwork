@@ -9,12 +9,16 @@ sources:
     url: https://www.amazon.com/Structured-Design-Fundamentals-Discipline-Computer/dp/0138544719
   - name: "Robert C. Martin — Clean Architecture (2017)"
     url: https://www.oreilly.com/library/view/clean-architecture-a/9780134494272/
+  - name: "InfoQ — OpenAI Introduces Harness Engineering: structural tests enforce layering (Feb 2026)"
+    url: "https://www.infoq.com/news/2026/02/openai-harness-engineering-codex"
+  - name: "Anthropic — Scaling Managed Agents: Decoupling the brain from the hands (Apr 2026)"
+    url: "https://www.anthropic.com/engineering/managed-agents"
 applies_when:
   scope: [new_build, epic, feature]
   scale: [solo, team, enterprise]
   stage: [ideation, discovery, refinement, build]
   domains: [any_production]
-tags: [design, architecture, modularity, coupling, cohesion]
+tags: [design, architecture, modularity, coupling, cohesion, ai-assisted-development, dependency-direction]
 ---
 
 # Separation of Concerns
@@ -28,6 +32,8 @@ A system is easier to build, test, and change when each part is responsible for 
 - Tests are hard to write because setting up one behavior requires instantiating large portions of unrelated code
 - The team cannot assign ownership of a module to one person or squad without ambiguity
 - Onboarding developers need to understand the whole system to change any one part of it
+- Coding agents make many of the changes: an agent reproduces the structure it finds, so clear boundaries are a precondition for its changes landing in the right place, and blurred ones spread
+- The system embeds a model: the model, the harness that drives it, and the environment where its actions run are separate concerns that change at different rates
 
 ## When This Doesn't Matter
 - A single-purpose script or automation with a short expected lifespan and no dependents
@@ -42,6 +48,8 @@ A system is easier to build, test, and change when each part is responsible for 
 - Can you test the business logic without spinning up the data store or the network? If not, the concerns are tangled.
 - When something breaks in production, how many layers of the system do engineers touch in a single fix? More than two layers usually means a boundary has been crossed that should be a seam.
 - Has the team named these concerns explicitly, or are they implicit conventions that new developers have to infer?
+- Is the allowed direction of dependencies between layers or modules written down, and is it enforced by a test that fails when an import crosses it the wrong way?
+- In a model-backed system, could the model, the orchestration harness, or the execution environment be replaced without rewriting the other two? What is the narrow interface between them?
 
 ## What Good Looks Like
 - Module and directory names correspond to named concerns (authorization, persistence, domain logic, delivery), and each name is understood the same way by the whole team
@@ -50,6 +58,8 @@ A system is easier to build, test, and change when each part is responsible for 
 - Unit tests for business logic run in milliseconds because they require no external infrastructure — all dependencies are interfaces substituted in tests
 - New developers can predict which directory to open when given a description of a bug, without guidance
 - When a module changes, the diff is coherent: it touches one concern, not five
+- The dependency direction between layers is declared and checked by structural tests in the pipeline, so a violation, whether written by a person or an agent, fails before review (see *Executable Architecture Guardrails*)
+- In model-backed systems, the model, the harness, and the sandbox where actions execute sit behind stable, narrow interfaces (for example, a single "run this tool with this input, return a result" call), so each can be upgraded or replaced without disturbing the others
 
 ## What Goes Wrong When You Skip This
 - A bug in the business logic requires understanding the database schema to diagnose, and a schema change requires understanding the rendering logic to safely deploy
@@ -57,6 +67,8 @@ A system is easier to build, test, and change when each part is responsible for 
 - Authorization logic is scattered across layers — some in the API handler, some in the service layer, some in SQL queries — so a new privilege escalation path is added without triggering the right review
 - Teams that own "features" (vertical slices) cannot deploy independently because their code is entangled with another team's horizontal concern
 - Technical debt accumulates in the seams: shared utilities that grew organically across concerns become the most-changed and most-feared files in the codebase
+- An agent adds a data-store query to a request handler because a nearby handler already does; with no enforced dependency rule, each such change becomes precedent for the next, and the layering erodes at the speed of generation
+- Harness logic, model-specific workarounds, and tool execution are tangled in one process; a model upgrade makes a workaround unnecessary, but removing it means touching code that also runs tools and holds credentials
 
 ## Further Reading
-Dijkstra's 1974 paper coined the phrase and explained the intellectual value of being able to concentrate on one thing at a time. It is short and worth reading as primary source. Yourdon and Constantine's *Structured Design* formalized coupling and cohesion as measurable properties of module design. Clean Architecture by Robert Martin synthesizes these ideas into layered architecture patterns that remain the most widely applied form of separation of concerns in modern service design.
+Dijkstra's 1974 paper coined the phrase and explained the intellectual value of being able to concentrate on one thing at a time. It is short and worth reading as primary source. Yourdon and Constantine's *Structured Design* formalized coupling and cohesion as measurable properties of module design. Clean Architecture by Robert Martin synthesizes these ideas into layered architecture patterns that remain the most widely applied form of separation of concerns in modern service design. InfoQ's account of OpenAI building a large codebase mostly through agents describes dependencies that flow in a fixed sequence of layers, with structural tests that prevent violations of the layering. Anthropic's Managed Agents post separates the session log, the harness, and the sandbox behind stable interfaces, exposing every tool through a single execute-by-name call, and describes being opinionated about the shape of those interfaces rather than what runs behind them, so each part can be replaced as models improve.

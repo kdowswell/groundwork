@@ -12,6 +12,7 @@ Capacity planning is the discipline of knowing — before users do — when a sy
 - You are choosing between paying for headroom and accepting the risk of saturation
 - Recent incidents have been driven by saturation rather than by code defects
 - The cost of overprovisioning is significant enough that "just add 3x" is not an answer
+- The product depends on model inference: accelerators may not be obtainable on demand, hosted models enforce token and request quotas, and the models themselves are retired on the provider's schedule
 
 ## When This Doesn't Matter
 - Early-stage products with tiny, unpredictable usage where forecasting is guesswork
@@ -26,6 +27,9 @@ Capacity planning is the discipline of knowing — before users do — when a sy
 - Which scaling axes are not elastic — database, queue partitions, vendor rate limits, IPs — and what is the plan when one is approached?
 - How will you detect a forecast miss early enough to react, rather than discovering it during an incident?
 - What does a controlled load test of the next anticipated peak look like, and when was the last one run?
+- For model-backed features: what are the token-per-minute and request quotas on each model in use, how close does peak traffic come to them, and how long does it take to get them raised?
+- At what level of concurrency does generation latency degrade, and is accelerator availability the constraint (self-hosted) or the provider's quota (hosted)?
+- When will each model in use be retired, and is the migration to its replacement, including re-running evaluations and re-checking cost and latency, in the plan before that date?
 
 ## What Good Looks Like
 - A demand forecast exists in writing, names its assumptions, and is reviewed on a cadence rather than once a year
@@ -34,9 +38,14 @@ Capacity planning is the discipline of knowing — before users do — when a sy
 - Load tests exercise the next expected peak with realistic traffic shapes, including failure modes (a dependency slowing down, not just more requests)
 - Non-elastic constraints — database limits, vendor quotas, region capacity — are inventoried and tracked alongside elastic ones
 - Capacity decisions are tied to cost: the team can articulate what extra headroom is being bought and why
+- Token quotas and accelerator capacity are inventoried as non-elastic constraints, with forecast usage against each and a lead time for raising it
+- Generative serving is load-tested at realistic concurrency and prompt lengths, since throughput depends on tokens processed, not just requests
+- Model retirement dates are tracked like certificate expiry; each migration is scheduled as planned work well inside the notice window, not started when the deprecation email arrives
 
 ## What Goes Wrong When You Skip This
 - A scheduled marketing email goes out, traffic doubles for an hour, and the database connection pool — which had no headroom because nobody measured it — saturates and takes the site down
 - The system "scales horizontally" until a hidden bottleneck (a single Redis instance, a vendor rate limit) is reached, and the only fix is a multi-week project run under incident pressure
 - Cloud spend doubles year over year because every team overprovisions in fear, with no shared forecast to push back on
 - A regional outage cannot be absorbed because every region was running at 90% utilization to save money
+- A launch doubles traffic to a model-backed feature; the account's token quota is hit within the hour, every request is throttled, and raising the quota takes days
+- A model the product depends on is deprecated; the team learns of it late, and the migration, evaluation, and prompt rework are squeezed into the final weeks before requests start failing
