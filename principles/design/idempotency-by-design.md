@@ -9,12 +9,16 @@ sources:
     url: https://queue.acm.org/detail.cfm?id=2187821
   - name: "Gregor Hohpe & Bobby Woolf — Enterprise Integration Patterns (2003)"
     url: https://www.enterpriseintegrationpatterns.com/
+  - name: "Anthropic — Scaling Managed Agents: Decoupling the brain from the hands (Apr 2026)"
+    url: "https://www.anthropic.com/engineering/managed-agents"
+  - name: "Anthropic — How we built our multi-agent research system (Jun 2025)"
+    url: "https://www.anthropic.com/engineering/multi-agent-research-system"
 applies_when:
   scope: [new_build, epic, feature]
   scale: [solo, team, enterprise]
   stage: [discovery, refinement, build]
   domains: [financial_services, ecommerce, healthcare, logistics, any_production]
-tags: [design, distributed-systems, reliability, api-design, message-processing]
+tags: [design, distributed-systems, reliability, api-design, message-processing, ai-systems, agent-tools]
 ---
 
 # Idempotency by Design
@@ -28,6 +32,7 @@ An operation is idempotent when executing it multiple times produces the same re
 - Client-to-server calls over unreliable networks where a timeout leaves the client uncertain whether the server processed the request
 - Workflows with retry logic — automated or human — where a second attempt is normal operating behavior, not an error
 - Payment, financial, or inventory operations where duplicate execution causes direct harm (double charge, double shipment, double deduction)
+- Tools exposed to an AI agent: agents retry after errors, repeat a call when they lose track of whether it succeeded, loop, and get replayed when a crashed run resumes from its log
 
 ## When This Doesn't Matter
 - Pure read operations are naturally idempotent; no additional design is needed
@@ -43,6 +48,8 @@ An operation is idempotent when executing it multiple times produces the same re
 - Who generates the idempotency key — the caller or the system? (Callers should generate it; systems that generate keys cannot guarantee the caller re-uses the same key on retry.)
 - In a message processing pipeline: is the message ID sufficient as an idempotency key, or do you need to derive a key from the business payload?
 - What is the observable difference between "this was a duplicate and was suppressed" and "this failed"? The caller needs to be able to tell the difference.
+- If an agent calls this tool, where does its idempotency key come from? A key the model invents per call does not survive a retry; a key derived by the harness from the run and step does.
+- If an agent's action turns out to be wrong, can it be undone? Is there a compensating operation (cancel, refund, revert) for each consequential action it can take?
 
 ## What Good Looks Like
 - Mutation endpoints accept a caller-supplied idempotency key and return the same response on duplicate requests within the window — including the original success response when the original succeeded
@@ -51,6 +58,8 @@ An operation is idempotent when executing it multiple times produces the same re
 - The idempotency mechanism is tested explicitly: tests deliver the same message or request twice and assert that the side effect occurs once
 - Idempotency windows are explicit in design documentation — "this operation is idempotent for 24 hours" — so clients know when a retry is no longer safe
 - Duplicate suppression is observable: a metric, log line, or response field indicates that a request was a duplicate so operators can detect misconfigured retry loops
+- Side-effecting agent tools take an idempotency key supplied by the harness (derived from the run and step identifiers), not chosen by the model, so a retried, looped, or replayed call returns the original result
+- Every consequential action an agent can take has a defined compensating action, so a mistaken or duplicated action can be reversed by a later step or by a human
 
 ## What Goes Wrong When You Skip This
 - A payment API times out after the charge succeeds; the client retries; the customer is charged twice. Recovery requires manual reconciliation and a refund, and customers lose trust
@@ -58,6 +67,8 @@ An operation is idempotent when executing it multiple times produces the same re
 - A retry loop in a client amplifies a temporary slowdown into a duplicate-write storm that corrupts a database table
 - An "upload and process" flow is retried after a partial failure; the file is processed from the beginning and duplicate records are created that are indistinguishable from originals
 - Engineers discover the idempotency gap only during a payment incident at scale, and the fix requires a migration of historical records to deduplicate
+- An agent's "send invoice" call times out; the agent, unsure whether it worked, calls it again, and then a third time after its run is resumed from a checkpoint; the customer receives three invoices
+- An agent issues a batch of refunds based on a misread policy, and there is no compensating operation, so each one has to be found and reversed by hand
 
 ## Further Reading
-Stripe's engineering post on idempotency keys is the most concrete practical guide: it covers key generation, storage, locking, and expiry with production battle-tested patterns. Pat Helland's *Idempotence is Not a Medical Condition* explains the theoretical underpinning and why exactly-once delivery is a stronger guarantee than most systems can provide. Enterprise Integration Patterns (Hohpe & Woolf) covers the Idempotent Receiver pattern in the context of messaging systems with durable semantics. Idempotency is a prerequisite for safe asynchronous processing — *Asynchronous Processing and Decoupling* covers how idempotent consumers interact with at-least-once delivery semantics, dead-letter queues, and replay scenarios.
+Stripe's engineering post on idempotency keys is the most concrete practical guide: it covers key generation, storage, locking, and expiry with production battle-tested patterns. Pat Helland's *Idempotence is Not a Medical Condition* explains the theoretical underpinning and why exactly-once delivery is a stronger guarantee than most systems can provide. Enterprise Integration Patterns (Hohpe & Woolf) covers the Idempotent Receiver pattern in the context of messaging systems with durable semantics. Idempotency is a prerequisite for safe asynchronous processing — *Asynchronous Processing and Decoupling* covers how idempotent consumers interact with at-least-once delivery semantics, dead-letter queues, and replay scenarios. AI agents make every one of these conditions routine. Anthropic's multi-agent research post describes agents as stateful systems whose errors compound and that resume from where an error occurred rather than restarting; its Managed Agents post describes a harness that, after a crash, reloads an append-only session log and continues. Both mean a tool can be asked to repeat work it already did, and *Durable Agent Execution* depends on idempotent tools for its replays to be safe.
