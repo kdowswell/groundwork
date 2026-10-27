@@ -15,6 +15,10 @@ sources:
     url: https://arxiv.org/abs/2406.10279
   - name: "OpenSSF — Security-Focused Guide for AI Code Assistant Instructions (2025)"
     url: https://best.openssf.org/Security-Focused-Guide-for-AI-Code-Assistant-Instructions
+  - name: "OWASP Top 10 for Agentic Applications 2026 (Dec 2025)"
+    url: "https://genai.owasp.org/2025/12/09/owasp-top-10-for-agentic-applications/"
+  - name: "Model Context Protocol specification 2025-11-25 — Security Best Practices"
+    url: "https://modelcontextprotocol.io/specification/2025-11-25/basic/security_best_practices"
 applies_when:
   scope: [new_build, epic, feature]
   scale: [team, enterprise]
@@ -27,6 +31,8 @@ tags: [security, dependencies, sbom, provenance, ci-cd, vulnerabilities, ai-assi
 
 ## Principle
 Treat every dependency, build tool, and CI step as code you ship to production. Pin versions, verify provenance, scan for known vulnerabilities, and keep an inventory of what is actually in your artifacts so you can answer "is this affected?" in minutes — not weeks. Treat a dependency that an AI coding assistant introduced as unverified until someone confirms it exists, is the package that was intended, and is pinned in the lockfile: models invent plausible package names, repeat the same invented names across runs, and attackers register them.
+
+Models, datasets, prompts, tools, and tool servers are components too. Allowlist them, pin them to specific versions or hashes, and review them again when their definitions change: a tool whose description changes after you approved it can quietly redirect an agent.
 
 ## When This Matters
 - You are bootstrapping a new project and choosing dependencies, package managers, and registries
@@ -51,6 +57,7 @@ Treat every dependency, build tool, and CI step as code you ship to production. 
 - How do we distinguish a maintained, trusted dependency from an abandoned or single-maintainer package before adopting it?
 - When an agent adds a dependency, what confirms that the package exists, is the one intended (not a near-miss name), and is old and maintained enough to trust — before it is installed?
 - Can a reviewer tell which changes an AI assistant helped write, and is a human still the one accountable for each merged change?
+- Which models, tool servers, and plugins does this system load, who approved them, and what happens if one of them changes its definition after approval?
 
 ## What Good Looks Like
 - Lockfiles pin exact versions and integrity hashes; updates go through review, not silent floor-version bumps
@@ -62,6 +69,7 @@ Treat every dependency, build tool, and CI step as code you ship to production. 
 - A dependency added to a manifest without a matching lockfile entry is flagged at the moment it is added, so its name is checked before anything is installed; installing it then pins it
 - New dependencies proposed by an assistant are checked for existence, age, maintainer history, and closeness to a well-known name before install, and the assistant's instructions say to propose, not silently install
 - AI involvement in a change is recorded in machine-readable commit or review metadata, and a human signs off on what merges; this is an emerging convention, not yet a standard
+- Models and tool servers are allowlisted and pinned; a changed tool definition is detected and re-reviewed before an agent uses it; locally run tool servers execute sandboxed with minimal default access
 
 ## What Goes Wrong When You Skip This
 - A Log4j-class CVE drops on a Friday and nobody can answer which services include it; the team spends a week grepping codebases instead of patching
@@ -71,4 +79,4 @@ Treat every dependency, build tool, and CI step as code you ship to production. 
 - An agent adds a package that sounds right but never existed; an attacker who registered that commonly hallucinated name ("slopsquatting") now has code running in CI with the deploy credentials
 
 ## Further Reading
-SLSA defines progressive levels for build integrity, provenance, and trust. OWASP's "Software Supply Chain Failures" entry, promoted to third place in the 2025 Top 10 and widened to cover build and deploy, covers the failure modes seen in real incidents like SolarWinds and Log4j. Sigstore documents the tooling for signing and verifying artifacts; the GitHub Advisory Database is a practical source for tracking known vulnerabilities in dependencies you actually use. Spracklen et al. measured package hallucination across 576,000 generated code samples: at least 5.2% of packages from commercial models and 21.7% from open-source models did not exist, with 205,474 unique invented names, many recurring across repeated runs, which is what makes registering them worthwhile for an attacker. The OpenSSF guide recommends short, specific security instructions for AI coding assistants, including supply-chain rules such as verifying new dependencies before installing them.
+SLSA defines progressive levels for build integrity, provenance, and trust. OWASP's "Software Supply Chain Failures" entry, promoted to third place in the 2025 Top 10 and widened to cover build and deploy, covers the failure modes seen in real incidents like SolarWinds and Log4j. Sigstore documents the tooling for signing and verifying artifacts; the GitHub Advisory Database is a practical source for tracking known vulnerabilities in dependencies you actually use. Spracklen et al. measured package hallucination across 576,000 generated code samples: at least 5.2% of packages from commercial models and 21.7% from open-source models did not exist, with 205,474 unique invented names, many recurring across repeated runs, which is what makes registering them worthwhile for an attacker. The OpenSSF guide recommends short, specific security instructions for AI coding assistants, including supply-chain rules such as verifying new dependencies before installing them. The OWASP Agentic Top 10 lists agentic supply chain vulnerabilities (ASI04), covering tools, plugins, and other agents an application loads at runtime; the Model Context Protocol's security guidance requires explicit consent and recommends sandboxing before running a locally configured tool server.

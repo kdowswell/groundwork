@@ -145,6 +145,11 @@
     "category": "delivery"
   },
   {
+    "id": "least-agency",
+    "title": "Least Agency",
+    "category": "security"
+  },
+  {
     "id": "least-privilege",
     "title": "Least Privilege",
     "category": "security"
@@ -153,6 +158,11 @@
     "id": "ml-ai-observability",
     "title": "ML and AI System Observability",
     "category": "observability"
+  },
+  {
+    "id": "prompt-injection-containment",
+    "title": "Prompt Injection Containment",
+    "category": "security"
   },
   {
     "id": "runbooks",

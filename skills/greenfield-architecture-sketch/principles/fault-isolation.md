@@ -5,11 +5,14 @@
 ## Principle
 A failure in one component should not cascade to unrelated components. Design system boundaries so that the "blast radius" of any single failure is contained and predictable.
 
+Agents add two new things to isolate. Code an agent generates or a tool server runs should execute in a sandbox with minimal default access to the filesystem, network, and credentials. And agents consume resources without a natural stopping point, so give each agent and tenant its own rate and spending limits, so one runaway loop or prompt-injected agent can't exhaust shared capacity or budget.
+
 ## When This Matters
 - You are designing service boundaries or decomposing a monolith
 - Your system has components with different availability requirements
 - You are integrating with third-party services or APIs you don't control
 - Multiple teams will own different parts of the system
+- AI agents execute generated code, run tool servers, or call paid model APIs in loops
 
 ## When This Doesn't Matter
 - Single-user tools or prototypes where downtime is acceptable and cascading failure has no consequence
@@ -24,6 +27,7 @@ A failure in one component should not cascade to unrelated components. Design sy
 - What is the acceptable blast radius for this failure mode?
 - Do you have circuit breakers or bulkheads at integration boundaries?
 - Have you identified your critical path vs. degradable functionality?
+- If one agent loops, is steered, or executes harmful code, what limits its reach: a sandbox, its own rate and spend limits, a separate failure domain?
 
 ## What Good Looks Like
 - Each service owns its data store — no shared databases across service boundaries
@@ -31,9 +35,11 @@ A failure in one component should not cascade to unrelated components. Design sy
 - Async communication (queues, events) preferred over synchronous chains for non-critical paths
 - Health checks and readiness probes are granular per component, not system-wide
 - Failure modes are documented and tested (chaos engineering, fault injection)
+- Generated code and tool servers run in sandboxes with restricted filesystem and network access by default; each agent and tenant has its own rate, token, and spend limits, with alerts before they're hit
 
 ## What Goes Wrong When You Skip This
 - A single database connection pool exhaustion takes down every service
 - A slow third-party API causes cascading timeouts across your entire request chain
 - A deployment to one service breaks unrelated functionality because of hidden coupling
 - Incident response is slow because blast radius is unknown
+- One agent stuck in a retry loop spends the month's model budget overnight and rate-limits every other tenant sharing the same account

@@ -5,6 +5,8 @@
 ## Principle
 Secrets — API keys, database passwords, signing keys, tokens — never live in source code, build artifacts, or shared developer machines. They are stored in a system designed to hold them, injected at runtime, scoped narrowly, and rotated on a schedule short enough that a leak has limited value.
 
+Never put secrets, or the logic that decides who may do what, in a model's instructions. A system prompt is not a security boundary: it can be extracted, and a model can be talked out of following it. Keep credentials in the tools and services the model calls, and enforce authorization in deterministic code.
+
 ## When This Matters
 - You are wiring up any external service: database, third-party API, message broker, cloud provider
 - You are designing CI/CD pipelines that need credentials to deploy or call APIs
@@ -25,6 +27,7 @@ Secrets — API keys, database passwords, signing keys, tokens — never live in
 - If this secret leaks into a log, error message, or error tracker, what detects that and what revokes it?
 - Are different environments using different secrets, and is access to production secrets gated more tightly than to staging?
 - How do developers run this locally without copying production secrets onto laptops?
+- Does any system prompt, tool description, or model context contain a credential, an internal URL that should be private, or a rule like "only reveal this to administrators"?
 
 ## What Good Looks Like
 - Secrets live in a managed store (cloud secret manager, Vault) and are pulled at runtime, not baked into images or repos
@@ -33,9 +36,11 @@ Secrets — API keys, database passwords, signing keys, tokens — never live in
 - Long-lived static secrets are the exception; the default is short-lived, dynamically issued credentials
 - Rotation is automated and exercised regularly, not a once-a-year manual fire drill
 - Logs, error reports, and crash dumps are scrubbed so leaked secrets do not silently land in observability systems
+- Model prompts contain no credentials or access rules; tools hold their own credentials and check authorization themselves, so leaking the prompt reveals nothing that grants access
 
 ## What Goes Wrong When You Skip This
 - An AWS access key checked into a public repo is scraped by a bot within minutes and used to spin up crypto miners on the company's account
 - A database password embedded in a Docker image lives unchanged for two years; when the image is leaked in a breach, the password still works
 - A `.env` file emailed to a new hire ends up in their personal cloud backup and surfaces years later
 - Rotating a critical credential is so painful — manual updates across services, no clear owner — that nobody does it, and "temporary" secrets become permanent
+- An assistant's system prompt includes an API key and the instruction "never share this"; a user asks it to repeat its instructions in a different language, and it does
