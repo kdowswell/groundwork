@@ -5,6 +5,8 @@
 ## Principle
 Each service owns its data exclusively — no other service reads or writes its tables, and no shared schema crosses a service boundary. Data is shared only through an explicit contract (an API, an event stream, a read model), and that contract is the only thing other services are allowed to depend on.
 
+The same holds for analytical data. A dataset published for analytics, reporting, or ML is a data product with an owner, and its contract is a data contract: the schema, what each field means, the quality rules it meets, how fresh it is, and who to contact when it breaks. Written in a machine-readable form, a data contract can be checked on every load, so a producer finds out it has broken a consumer before the consumer does.
+
 ## When This Matters
 - You are decomposing a monolith into services, or carving a new bounded context out of a shared database
 - Multiple teams need to evolve their parts of the system on independent release schedules
@@ -26,6 +28,7 @@ Each service owns its data exclusively — no other service reads or writes its 
 - How will analytics, search, and reporting consume this data without coupling to internal storage — a CDC stream, an exported product, a read replica with a stable view?
 - If two services need to update related data atomically, is that a sign the boundary is wrong, or do you need a saga or outbox to coordinate them?
 - Who owns the data product that other teams depend on, and is there a named team responsible for its quality, schema, and SLAs?
+- For a dataset published to analytics or ML consumers: is there a written data contract covering schema, field meanings, quality rules, and freshness, and is it checked automatically or only documented?
 
 ## What Good Looks Like
 - One service writes to a given table; other services that need the data go through that service's API or subscribe to its events
@@ -34,6 +37,7 @@ Each service owns its data exclusively — no other service reads or writes its 
 - Analytics and downstream consumers receive data through an explicit pipeline (CDC, event stream, exported snapshot), not by querying production tables
 - Cross-service consistency is handled with sagas, outbox patterns, or eventual consistency — not with database transactions across boundaries
 - Each owned dataset has a named owning team accountable for schema decisions, deprecations, and data quality
+- Analytical datasets shared across teams have a data contract in a machine-readable format, versioned with the producer's code, and validated on every load; changing it goes through the same review as an API change
 
 ## What Goes Wrong When You Skip This
 - A schema change in one service silently breaks three other services that were reading the same table directly, and the breakage is found in production
