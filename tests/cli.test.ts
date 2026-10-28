@@ -44,6 +44,14 @@ function runCli(args: string[], opts: { cwd?: string } = {}) {
   }
 }
 
+describe("package", () => {
+  it("ships with zero runtime dependencies (ADR-005)", () => {
+    // Anything in `dependencies` is downloaded by every `npx @kdowswell/groundwork` user.
+    const pkg = JSON.parse(readFileSync(join(ROOT, "package.json"), "utf8"));
+    expect(pkg.dependencies ?? {}).toEqual({});
+  });
+});
+
 describe("groundwork detect (CLI)", () => {
   it("exits 1 with JSON findings on the slop fixture", () => {
     const { status, stdout } = runCli(["detect", "--json", BEFORE]);

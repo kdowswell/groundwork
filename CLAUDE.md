@@ -147,7 +147,10 @@ Every feature must hold to these:
   marker. Behavior tests in `eval/behavior/` reference these markers — if you change or
   remove a rule, update the corresponding test.
 - The CLI (`cli/**`) is plain ESM with zero runtime dependencies (ADR-005). Do not add
-  imports beyond `node:` builtins. Every detector rule MUST carry a `principle` field naming
+  imports beyond `node:` builtins. `package.json` has no `dependencies` at all: packages used
+  only by `scripts/`, `eval/`, or tests go in `devDependencies`, because everything in
+  `dependencies` downloads for every `npx` user. A test and a CI step that installs the packed
+  tarball into an empty project enforce this. Every detector rule MUST carry a `principle` field naming
   an existing principle id, and must prefer silence over false positives.
 - The npm package is `@kdowswell/groundwork` (ADR-010). Write every documented or agent-facing
   command as `npx @kdowswell/groundwork <command>`, never bare `npx groundwork`: that name on
@@ -160,6 +163,13 @@ Every feature must hold to these:
   broad, a trigger in `examples/case-study/before/` plus a clean pass in `after/`.
 - `.groundwork/context.md` at the repo root is groundwork's own dogfooded context; new
   architecturally significant decisions get an ADR in `docs/decisions/`.
+
+## Releasing
+
+Bump `version` in `package.json` (a published version is immutable on npm), merge, then publish a
+GitHub release tagged `v<version>`. The `publish` workflow checks the tag matches, validates,
+tests, and publishes with npm trusted publishing (OIDC), so no npm token lives in the repo. It
+needs a one-time Trusted Publisher entry for this repository and `publish.yml` on npmjs.com.
 
 ## Validation
 

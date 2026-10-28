@@ -1,6 +1,6 @@
 {
   "name": "@kdowswell/groundwork",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "Architectural grounding for AI coding agents \u2014 distilled principle files agents reference during planning.",
   "type": "module",
   "license": "MIT",
@@ -31,15 +31,13 @@
     "eval:skill": "tsx eval/harness.ts",
     "eval:plugin": "claude plugin eval . --scaffold --trust-plugin --allow-tools Bash Write Edit --no-publish"
   },
-  "dependencies": {
+  "devDependencies": {
     "@anthropic-ai/sdk": "^0.132.1",
+    "@types/node": "^22.10.0",
     "ajv": "^8.17.1",
     "ajv-formats": "^3.0.1",
     "glob": "^11.0.0",
-    "gray-matter": "^4.0.3"
-  },
-  "devDependencies": {
-    "@types/node": "^22.10.0",
+    "gray-matter": "^4.0.3",
     "tsx": "^4.19.2",
     "typescript": "^5.7.2",
     "vitest": "^2.1.8"
