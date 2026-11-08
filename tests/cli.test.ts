@@ -161,6 +161,16 @@ describe("groundwork install", () => {
     expect(existsSync(join(dir, ".github/skills/brownfield-safe-change-plan/SKILL.md"))).toBe(true);
   });
 
+  it("update drops playbooks of renamed commands (ADR-016)", () => {
+    const dir = tempDir();
+    install({ projectRoot: dir, providers: ["claude"] });
+    const stale = join(dir, ".claude/skills/groundwork/reference/sketch.md");
+    writeFileSync(stale, "old playbook");
+    install({ projectRoot: dir, providers: ["claude"] });
+    expect(existsSync(stale)).toBe(false);
+    expect(existsSync(join(dir, ".claude/skills/groundwork/reference/architecture.md"))).toBe(true);
+  });
+
   it("auto-detects providers and rejects unknown ones", () => {
     const dir = tempDir();
     expect(install({ projectRoot: dir }).providers).toEqual(["claude"]);
@@ -184,6 +194,22 @@ describe("groundwork install", () => {
     }
     expect(settings.hooks.PostToolUse[0].matcher).toBe("Edit|Write|MultiEdit");
     expect(settings.hooks.Stop[0].matcher).toBeUndefined();
+  });
+});
+
+describe("command names (ADR-016)", () => {
+  it("every alias maps to a command, and the router lists both", async () => {
+    const { COMMAND_MAP, COMMAND_ALIASES } = await import("../scripts/router-commands.js");
+    const router = readFileSync(join(ROOT, "skills/groundwork/SKILL.md"), "utf8").replace(/\s+/g, " ");
+    for (const verb of Object.keys(COMMAND_MAP)) {
+      expect(router).toContain(`reference/${verb}.md`);
+      expect(existsSync(join(ROOT, "skills/groundwork/reference", `${verb}.md`))).toBe(true);
+    }
+    for (const [oldName, verb] of Object.entries(COMMAND_ALIASES)) {
+      expect(COMMAND_MAP[verb], `${oldName} → ${verb}`).toBeDefined();
+      expect(router).toContain(`\`${oldName}\` → \`${verb}\``);
+      expect(existsSync(join(ROOT, "skills/groundwork/reference", `${oldName}.md`))).toBe(false);
+    }
   });
 });
 

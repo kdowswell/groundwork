@@ -1,9 +1,9 @@
 <!-- generated from skills/brownfield-debt-triage/SKILL.md by scripts/sync-router-references.ts.
      Edit the source skill, then run: npm run sync:router -->
 
-# Debt Triage (`/groundwork triage`)
+# Tech Debt Triage (`/groundwork debt`)
 
-**Phase:** Evolve (brownfield) · **Time box:** 60-90 minutes
+**Phase:** Change a running system · **Time box:** 60-90 minutes
 
 **Before you start:** load project context for this session if you have not already (see the
 router's Steps); honor active principles throughout. Entry criteria below must hold — if one

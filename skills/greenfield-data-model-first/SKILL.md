@@ -1,7 +1,7 @@
 ---
 name: greenfield-data-model-first
 disable-model-invocation: true
-title: "Data Model First"
+title: "Data Model"
 description: >
   Designs the core data model before implementation so that schema decisions,
   ownership, and evolution constraints are made deliberately rather than

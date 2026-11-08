@@ -1,9 +1,9 @@
 <!-- generated from skills/brownfield-strangler-fig/SKILL.md by scripts/sync-router-references.ts.
      Edit the source skill, then run: npm run sync:router -->
 
-# Strangler Fig (`/groundwork strangle`)
+# Incremental Replacement (`/groundwork replace`)
 
-**Phase:** Evolve (brownfield) · **Time box:** 2-4 hours (planning)
+**Phase:** Change a running system · **Time box:** 2-4 hours (planning)
 
 **Before you start:** load project context for this session if you have not already (see the
 router's Steps); honor active principles throughout. Entry criteria below must hold — if one

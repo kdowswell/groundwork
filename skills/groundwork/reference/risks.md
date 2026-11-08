@@ -1,9 +1,9 @@
 <!-- generated from skills/exploration-assumption-mapping/SKILL.md by scripts/sync-router-references.ts.
      Edit the source skill, then run: npm run sync:router -->
 
-# Assumption Mapping (`/groundwork assume`)
+# Risky Assumptions (`/groundwork risks`)
 
-**Phase:** Explore (exploration) · **Time box:** 60-90 minutes
+**Phase:** Decide under uncertainty · **Time box:** 60-90 minutes
 
 **Before you start:** load project context for this session if you have not already (see the
 router's Steps); honor active principles throughout. Entry criteria below must hold — if one

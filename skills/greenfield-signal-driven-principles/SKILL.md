@@ -1,7 +1,7 @@
 ---
 name: greenfield-signal-driven-principles
 disable-model-invocation: true
-title: "Signal-Driven Principle Selection"
+title: "Principle Selection"
 description: >
   Scans project context for signals and selects the load-bearing architectural
   principles this project actually needs. Use at the start of any new project,

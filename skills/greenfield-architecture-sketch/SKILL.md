@@ -1,7 +1,7 @@
 ---
 name: greenfield-architecture-sketch
 disable-model-invocation: true
-title: "Architecture Sketch"
+title: "Architecture"
 description: >
   Defines system boundaries, key components, data flows, and critical interfaces
   before writing a line of code, so structural decisions are made deliberately.

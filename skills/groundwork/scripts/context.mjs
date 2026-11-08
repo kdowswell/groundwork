@@ -73,7 +73,7 @@ function main() {
   if (!contextPath) {
     console.log("CONTEXT_MISSING");
     console.log(
-      "No .groundwork/context.md found. For Define or Evolve commands, offer /groundwork init " +
+      "No .groundwork/context.md found. For commands that design something new or change a running system, offer /groundwork init " +
         "first (never block on it). If the user declines, proceed and state the defaults you assume.",
     );
     return;

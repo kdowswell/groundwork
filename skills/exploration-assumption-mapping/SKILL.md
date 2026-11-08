@@ -1,7 +1,7 @@
 ---
 name: exploration-assumption-mapping
 disable-model-invocation: true
-title: "Assumption Mapping"
+title: "Risky Assumptions"
 description: >
   Surfaces and ranks the riskiest assumptions in a plan so the most dangerous
   unknowns are tested first. Use when a spec or plan exists and the team is

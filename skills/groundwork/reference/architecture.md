@@ -1,9 +1,9 @@
 <!-- generated from skills/greenfield-architecture-sketch/SKILL.md by scripts/sync-router-references.ts.
      Edit the source skill, then run: npm run sync:router -->
 
-# Architecture Sketch (`/groundwork sketch`)
+# Architecture (`/groundwork architecture`)
 
-**Phase:** Define (greenfield) · **Time box:** 45-90 minutes
+**Phase:** Design something new · **Time box:** 45-90 minutes
 
 **Before you start:** load project context for this session if you have not already (see the
 router's Steps); honor active principles throughout. Entry criteria below must hold — if one

@@ -239,7 +239,7 @@ function planNudge(event, absPath) {
     state.nudged = true;
     note =
       `groundwork: this session has changed ${state.files.length} source files and no change plan is approved or in progress. ` +
-      "In your next reply, mention once that `/groundwork plan <change>` can capture what this changes (a behavior delta against the spec), " +
+      "In your next reply, mention once that `/groundwork plan <change>` can capture what this changes against the spec, " +
       "its risk, and its rollback, and that it's optional for small changes. Then carry on with the user's request; " +
       "don't stop or wait for an answer, and don't raise it again this session.";
   }

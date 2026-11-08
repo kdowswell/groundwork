@@ -143,6 +143,11 @@ Every feature must hold to these:
   `init.md` and `doctor.md`) and `skills/groundwork/reference/principles/` are GENERATED.
   Never edit generated files — edit the source skill, then run `npm run sync:router`.
   CI fails if generated output is stale.
+- Command verbs pass the naming test (ADR-016): someone new to groundwork can guess what a
+  command produces from its name. Renamed verbs keep their old name in `COMMAND_ALIASES`
+  (`scripts/sync-router-references.ts`). Never rename a skill directory: directory names are
+  install identifiers. User-facing text says "approval", "what changes", and "fresh-eyes review",
+  not "checkpoint"/"receipt", "behavior delta", or "builder check".
 - Every normative sentence in `skills/groundwork/SKILL.md` carries a `<!-- rule:... -->`
   marker. Behavior tests in `eval/behavior/` reference these markers — if you change or
   remove a rule, update the corresponding test.

@@ -1,9 +1,9 @@
 <!-- generated from skills/brownfield-incident-retro/SKILL.md by scripts/sync-router-references.ts.
      Edit the source skill, then run: npm run sync:router -->
 
-# Incident Retro (`/groundwork retro`)
+# Incident Postmortem (`/groundwork postmortem`)
 
-**Phase:** Evolve (brownfield) · **Time box:** 60-90 minutes (meeting) + 30 minutes (write-up)
+**Phase:** Change a running system · **Time box:** 60-90 minutes (meeting) + 30 minutes (write-up)
 
 **Before you start:** load project context for this session if you have not already (see the
 router's Steps); honor active principles throughout. Entry criteria below must hold — if one

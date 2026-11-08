@@ -2,7 +2,7 @@ schema_version: "1.1"
 name: handoff-stale-spec
 description: >
   rule:router-verify-handoff, rule:router-approval-is-the-users, rule:router-cli-package.
-  The spec was approved, then edited. Sketching must verify it, show what changed, and re-ask
+  The spec was approved, then edited. Designing the architecture must verify it, show what changed, and re-ask
   acceptance instead of building on it or approving it for the user.
 tags: [router, approvals]
 runs: 2
@@ -12,7 +12,7 @@ execution:
   max_turns: 20
   timeout_seconds: 420
   allowed_tools: [Read, Glob, Grep, Bash, Skill, Write, Edit]
-  prompt: /groundwork:groundwork sketch the system for docs/spec.md
+  prompt: /groundwork:groundwork architecture for docs/spec.md
 graders:
   - name: verified-spec
     type: tool_used

@@ -1,7 +1,7 @@
 ---
 name: brownfield-strangler-fig
 disable-model-invocation: true
-title: "Strangler Fig"
+title: "Incremental Replacement"
 description: >
   Incrementally replaces a legacy component by routing new traffic to the
   replacement while existing traffic continues through the original. Use when

@@ -1,7 +1,7 @@
 ---
 name: brownfield-incident-retro
 disable-model-invocation: true
-title: "Incident Retro"
+title: "Incident Postmortem"
 description: >
   Runs a blameless postmortem that produces a verified timeline, contributing
   factors, and owned action items with due dates. Use after a production

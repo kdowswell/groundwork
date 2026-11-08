@@ -61,20 +61,20 @@ Usage:
       --global                 user-level install (claude only)
       --hooks                  install Claude Code lifecycle hooks (not needed with the plugin)
   groundwork update            refresh an existing install (same as install)
-  groundwork approve <file>    record a Checkpoint decision, pinned to the file's SHA-256
+  groundwork approve <file>    record an approval decision, pinned to the file's SHA-256
       --checkpoint=<id>        required: "<skill>/<checkpoint>" or a kebab-case id
       --decision=<d>           ${DECISIONS.join(" | ")} (default: approved)
       --via=<plan>             with --decision=amended: the approved change plan whose delta
                                was applied; the checkpoint defaults to the artifact's own
       --notes=<text>           optional context for the decision
-  groundwork verify [file]     report approval receipts that are stale or missing their file;
-                               with a file, exit 0 only if it has a fresh, non-rejected receipt
+  groundwork verify [file]     report approvals that are stale or missing their file;
+                               with a file, exit 0 only if it has a fresh, non-rejected approval
       --diff                   also print what changed since each stale decision
       --json                   JSON output
-  groundwork render <file>     write a review page for a spec, sketch, or data model
+  groundwork render <file>     write a review page for a spec, architecture, or data model
                                to .groundwork/review/ (self-contained HTML)
       --serve                  serve it on 127.0.0.1 with Approve / Request changes;
-                               the decision is recorded as an approval receipt
+                               the decision is recorded as an approval
       --checkpoint=<id>        checkpoint to record (default: from the artifact's title)
       --port=<n>               port for --serve (default: any free port)
   groundwork help              this message

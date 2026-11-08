@@ -46,15 +46,19 @@ npx @kdowswell/groundwork detect .       # deterministic production-readiness + 
 
 One skill, seventeen commands. The router loads project context once per session, routes to
 exactly one playbook per request, and never runs work from a bare `/groundwork` (you get a
-menu). Choose the phase from the request, not the repo's age — a new feature spec in a
-ten-year-old codebase is still Define work.
+menu). Commands are grouped by what you're doing, chosen from the request rather than the repo's
+age: a new feature spec in a ten-year-old codebase is still design work.
 
-| Category | Commands |
+| You're… | Commands |
 |---|---|
-| **Setup** | `init` (write project context), `doctor` (report/repair context drift) |
-| **Define** | `spec`, `sketch`, `model`, `principles`, `adr` |
-| **Explore** | `spike`, `assume`, `compare`, `vet` |
-| **Evolve** | `review`, `triage`, `upgrade`, `retro`, `plan`, `strangle` |
+| **Setting up** | `init` (write project context), `doctor` (report/repair context drift) |
+| **Designing something new** | `spec`, `architecture`, `data-model`, `principles`, `adr` |
+| **Deciding under uncertainty** | `spike`, `risks`, `compare`, `prototype-review` |
+| **Changing a running system** | `review`, `debt`, `upgrade`, `postmortem`, `plan`, `replace` |
+
+Earlier names still work as aliases (`sketch`, `model`, `vet`, `assume`, `triage`, `retro`,
+`strangle`); the router runs the renamed command and tells you the new name once
+([ADR-016](docs/decisions/ADR-016-plain-language-command-names.md)).
 
 Every command is compiled from a standalone phase skill (below) by `npm run sync:router` —
 the standalone skills stay the source of truth and remain individually installable.
@@ -104,11 +108,14 @@ findings (6 errors) to zero, with each fix mapped to a principle.
 
 ## Three Phases
 
-| Phase | Skills | Use when |
-|---|---|---|
-| **Greenfield** | 5 | Creating something new: idea → spec → architecture |
-| **Exploration** | 4 | Research spikes, prototypes, assumption testing, tradeoffs |
-| **Brownfield** | 6 | Adding to, improving, or safely changing an existing system |
+The standalone skills keep a phase prefix in their names, because those names are what you
+install. Each phase is one of the router's activity groups:
+
+| Skill prefix | Router group | Skills | Use when |
+|---|---|---|---|
+| `greenfield-` | Design something new | 5 | Creating something new: idea → spec → architecture |
+| `exploration-` | Decide under uncertainty | 4 | Research spikes, prototypes, assumption testing, tradeoffs |
+| `brownfield-` | Change a running system | 6 | Adding to, improving, or safely changing an existing system |
 
 ## Skills
 
@@ -224,9 +231,9 @@ anything your repo already answers), writes `.groundwork/context.md`, and hands 
 `/groundwork principles` to select the active principles every later command honors.
 `/groundwork doctor` and `npx @kdowswell/groundwork doctor` keep the file honest as the project drifts.
 
-### Checkpoint approvals
+### Approvals
 
-When you resolve a Checkpoint, record it as a receipt pinned to the artifact's SHA-256
+When you approve an artifact, the decision is recorded pinned to the artifact's SHA-256
 ([ADR-007](docs/decisions/ADR-007-hash-pinned-checkpoint-approvals.md)):
 
 ```bash
@@ -246,7 +253,7 @@ as the agent's (`decidedBy: "agent-delegated"`), never as yours.
 
 Changes to a running system work the same way
 ([ADR-012](docs/decisions/ADR-012-brownfield-behavior-deltas.md)). `/groundwork plan` writes the
-change as a **behavior delta** against the spec: what is added, what is modified (before →
+change as **what changes** against the spec: what is added, what is modified (before →
 after), what is removed, and what must keep working. You approve the plan once, before code.
 When the change is implemented, the agent applies the delta to the spec **in the same change
 set as the code**, so your pull request carries both and code review covers the spec edit. It
@@ -260,8 +267,8 @@ An amendment is the agent's (`decidedBy: "agent-amended"`) and stands only while
 approval does. The spec's review page shows exactly what the amendment changed, so it can be
 checked against the plan.
 
-Before asking you to accept a spec, sketch, or data model, the playbook runs a **builder
-check**. A fresh reviewer reads only the artifact, as the engineer who must build it, and lists
+Before asking you to accept a spec, architecture, or data model, the playbook runs a
+**fresh-eyes review**. A fresh reviewer reads only the artifact, as the engineer who must build it, and lists
 what it would still need to ask. The agent fixes wording the reviewer misread, makes and labels
 calls that don't change what gets built, and brings you only the questions that do, in one
 round. On Claude Code the plugin's read-only `groundwork-builder` agent does the reading; other
@@ -281,19 +288,19 @@ cited principles, and detector findings for files the artifact names. With `--se
 decision is recorded as an approval receipt pinned to exactly the version you read; if the
 file changes before you click, nothing is recorded. The Markdown stays the source of truth.
 Pages are generated, git-ignored, and contain no scripts
-([ADR-008](docs/decisions/ADR-008-generated-html-review-views.md)). When a spec, sketch, or
-data model is long or still has open questions, `/groundwork` offers the page at the
-acceptance Checkpoint.
+([ADR-008](docs/decisions/ADR-008-generated-html-review-views.md)). When a spec, architecture,
+or data model is long or still has open questions, `/groundwork` offers the page when it asks
+for your approval.
 
 The page also draws what the artifact's template sections describe, so nobody has to author a
 diagram ([ADR-009](docs/decisions/ADR-009-derived-review-visuals.md)). A spec opens with its
 riskiest assumption and counts that link to their sections, shows scope beside non-goals, and
-puts open questions on a board by category with their owners. An architecture sketch gets a
+puts open questions on a board by category with their owners. An architecture gets a
 system map (components in lanes by where they run, and the components each data-flow step
 touches), its dependencies grouped by severity, and what the user waits for versus what runs
 in the background. A data model gets an entity-relationship diagram (the "one" side above the
 "many" side, colored by owner) and its consistency boundaries grouped by requirement. Every
-builder check gets a bar of how its questions were resolved, and the side panel shows which of
+fresh-eyes review gets a bar of how its questions were resolved, and the side panel shows which of
 the project's active principles the artifact addresses. A stale artifact opens with its changes
 since approval. Sections that
 are missing or don't follow the template draw nothing.
@@ -311,9 +318,9 @@ groundwork/
 │   │   ├── SKILL.md        Command table + routing rules (rule-marked)
 │   │   ├── reference/      17 playbooks (15 compiled from phase skills + init, doctor)
 │   │   └── scripts/        context.mjs session loader, hook.mjs lifecycle hook dispatcher
-│   ├── greenfield-*/       0-to-1 skills (5) — source of truth for Define playbooks
-│   ├── exploration-*/      Research and prototype skills (4) — Explore playbooks
-│   └── brownfield-*/       Existing-system skills (6) — Evolve playbooks
+│   ├── greenfield-*/       0-to-1 skills (5) — "design something new" playbooks
+│   ├── exploration-*/      Research and prototype skills (4) — "decide under uncertainty" playbooks
+│   └── brownfield-*/       Existing-system skills (6) — "change a running system" playbooks
 ├── agents/                 groundwork-builder — read-only builder-check reviewer (plugin)
 ├── hooks/                  hooks.json — Claude Code plugin lifecycle hooks (ADR-006)
 ├── cli/                    npx @kdowswell/groundwork — detect / doctor / install / update

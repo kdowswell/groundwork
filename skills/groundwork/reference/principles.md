@@ -1,9 +1,9 @@
 <!-- generated from skills/greenfield-signal-driven-principles/SKILL.md by scripts/sync-router-references.ts.
      Edit the source skill, then run: npm run sync:router -->
 
-# Signal-Driven Principle Selection (`/groundwork principles`)
+# Principle Selection (`/groundwork principles`)
 
-**Phase:** Define (greenfield) · **Time box:** 20-45 minutes
+**Phase:** Design something new · **Time box:** 20-45 minutes
 
 **Before you start:** load project context for this session if you have not already (see the
 router's Steps); honor active principles throughout. Entry criteria below must hold — if one

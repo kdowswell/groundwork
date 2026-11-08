@@ -1,9 +1,9 @@
 <!-- generated from skills/brownfield-architecture-review/SKILL.md by scripts/sync-router-references.ts.
      Edit the source skill, then run: npm run sync:router -->
 
-# Brownfield Architecture Review (`/groundwork review`)
+# Architecture Review (`/groundwork review`)
 
-**Phase:** Evolve (brownfield) · **Time box:** 2-4 hours
+**Phase:** Change a running system · **Time box:** 2-4 hours
 
 **Before you start:** load project context for this session if you have not already (see the
 router's Steps); honor active principles throughout. Entry criteria below must hold — if one

@@ -117,11 +117,11 @@ In: create, assign, and close escalations. Out: customer-facing status pages.
 Escalation — owned by the support-operations team.
 `;
 
-  it("rule:router-verify-handoff — sketch checks the spec's approval and re-asks instead of proceeding", async () => {
+  it("rule:router-verify-handoff — architecture checks the spec's approval and re-asks instead of proceeding", async () => {
     const dir = workspace({ ".groundwork/context.md": CONTEXT_MD, "docs/spec.md": SPEC_MD });
     const { trace, finalText } = await runScenario({
       workspace: dir,
-      userMessage: "/groundwork sketch the system for the spec in docs/spec.md",
+      userMessage: "/groundwork architecture for the spec in docs/spec.md",
     });
 
     const verifies = cliCalls(trace, "verify");
@@ -152,7 +152,7 @@ Escalation — owned by the support-operations team.
     });
     const { trace, finalText } = await runScenario({
       workspace: dir,
-      userMessage: "/groundwork model the data for docs/spec.md",
+      userMessage: "/groundwork data-model for docs/spec.md",
     });
 
     expect(cliCalls(trace, "verify").length, "agent must verify before modeling").toBeGreaterThan(0);
@@ -162,6 +162,24 @@ Escalation — owned by the support-operations team.
     expect(reapprovals, `agent re-approved a stale spec: ${reapprovals.join(" | ")}`).toEqual([]);
     expect(finalText.toLowerCase()).toMatch(/chang|stale|approv|confirm/);
   }, 180_000);
+
+  // ADR-016: old names keep working, run the renamed playbook, and say the new name once.
+  for (const [oldName, newName, ask] of [
+    ["sketch", "architecture", "/groundwork sketch the system for an internal escalation tracker"],
+    ["triage", "debt", "/groundwork triage our tech debt; the repo is this workspace"],
+  ] as const) {
+    it(`rule:router-command-aliases — \`${oldName}\` runs ${newName}.md and announces the new name`, async () => {
+      const dir = workspace({ ".groundwork/context.md": CONTEXT_MD });
+      const { trace, finalText } = await runScenario({ workspace: dir, userMessage: ask });
+
+      const playbooks = playbooksRead(trace);
+      expect(playbooks, `${newName}.md must be loaded`).toContain(`${newName}.md`);
+      expect(playbooks.filter((p) => p !== `${newName}.md`)).toEqual([]);
+      expect(finalText, `no rename notice in:\n${finalText}`).toMatch(
+        new RegExp(`${oldName}[\\s\\S]{0,60}\\b(now|renamed)\\b[\\s\\S]{0,40}${newName}`, "i"),
+      );
+    }, 180_000);
+  }
 
   // Shared with the plugin eval: realistic, complete, and with no user question left open, so
   // acceptance is legitimately the next step and length alone triggers the review-page offer.

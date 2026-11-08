@@ -3,7 +3,7 @@
 
 # ADR Setup (`/groundwork adr`)
 
-**Phase:** Define (greenfield) · **Time box:** 30-45 minutes
+**Phase:** Design something new · **Time box:** 30-45 minutes
 
 **Before you start:** load project context for this session if you have not already (see the
 router's Steps); honor active principles throughout. Entry criteria below must hold — if one

@@ -1,9 +1,9 @@
 <!-- generated from skills/exploration-prototype-review/SKILL.md by scripts/sync-router-references.ts.
      Edit the source skill, then run: npm run sync:router -->
 
-# Prototype Review (`/groundwork vet`)
+# Prototype Review (`/groundwork prototype-review`)
 
-**Phase:** Explore (exploration) · **Time box:** 2-4 hours
+**Phase:** Decide under uncertainty · **Time box:** 2-4 hours
 
 **Before you start:** load project context for this session if you have not already (see the
 router's Steps); honor active principles throughout. Entry criteria below must hold — if one
