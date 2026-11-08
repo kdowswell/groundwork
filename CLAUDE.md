@@ -27,7 +27,7 @@ groundwork/
 │   ├── _schema/            JSON Schema for skill frontmatter
 │   ├── groundwork/         Router skill: /groundwork <command> (single entry point)
 │   │   ├── SKILL.md        Command table + routing rules; rule-marked (<!-- rule:... -->)
-│   │   ├── reference/      21 playbooks — 17 GENERATED from phase skills + init, doctor, start, continue
+│   │   ├── reference/      22 playbooks — 17 GENERATED from phase skills + init, doctor, start, continue, learn
 │   │   │   └── principles/ GENERATED trimmed principle copies (keeps relative links working)
 │   │   └── scripts/        context.mjs (session context loader), status.mjs (artifact state + next step), hook.mjs (lifecycle hook dispatcher)
 │   ├── greenfield-*/       Phase 1: 6 skills (greenfield-spec-from-idea, etc.)
@@ -37,7 +37,7 @@ groundwork/
 ├── agents/                 Plugin subagents: groundwork-builder (read-only builder check, ADR-007)
 ├── hooks/hooks.json        Plugin lifecycle hooks → hook.mjs (SessionStart/PostToolUse/Stop, ADR-006)
 ├── cli/                    npx @kdowswell/groundwork CLI — plain ESM, ZERO runtime dependencies (ADR-005)
-│   ├── bin/groundwork.mjs  Commands: detect, doctor, install, update, approve, verify, render
+│   ├── bin/groundwork.mjs  Commands: detect, doctor, install, update, approve, verify, render, suggest, learn
 │   ├── engine/             Detector rules (each maps to a principle id), scanner, reporters
 │   ├── commands/           doctor, install, approvals (ADR-007), render (ADR-008), safe-fs
 │   ├── render/             Safe Markdown subset → self-contained review page (ADR-008)
@@ -141,7 +141,7 @@ Every feature must hold to these:
 
 - The phase skills are the source of truth; `skills/groundwork/reference/*.md` (except the
   hand-written `HAND_WRITTEN` playbooks in `scripts/router-commands.ts`: `init`, `doctor`,
-  `start`, `continue`) and `skills/groundwork/reference/principles/` are GENERATED.
+  `start`, `continue`, `learn`) and `skills/groundwork/reference/principles/` are GENERATED.
   Never edit generated files — edit the source skill, then run `npm run sync:router`.
   CI fails if generated output is stale.
 - Command verbs pass the naming test (ADR-016): someone new to groundwork can guess what a

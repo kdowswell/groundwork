@@ -181,8 +181,38 @@ function onSessionStart(event) {
       `Approved change plan ${plan}: when you implement it, apply its Behavior Delta to its baseline spec in the same change set, then record it with \`npx @kdowswell/groundwork approve <spec> --decision=amended --via=${plan}\`. Don't ask the user to approve the spec again.${high}`,
     );
   }
+  const open = openSuggestionCount(repoRoot);
+  if (open > 0) {
+    lines.push(
+      `${open} open suggestion(s) in .groundwork/suggestions.jsonl. If it fits, mention once that \`/groundwork learn\` can review them; never run it unasked.`,
+    );
+  }
   lines.push("Load the full context through the /groundwork router when doing architecture work.");
   additionalContext("SessionStart", lines.join("\n"));
+}
+
+/** Suggestions newer than the last learn report (ADR-021); mirrors cli/commands/suggest.mjs. */
+function openSuggestionCount(repoRoot) {
+  try {
+    const file = join(repoRoot, ".groundwork", "suggestions.jsonl");
+    if (!existsSync(file)) return 0;
+    const learnDir = join(repoRoot, ".groundwork", "learn");
+    const since = existsSync(learnDir)
+      ? readdirSync(learnDir).map((n) => n.match(/^(\d{4}-\d{2}-\d{2})\.md$/)?.[1]).filter(Boolean).sort().at(-1)
+      : undefined;
+    return readFileSync(file, "utf8")
+      .split("\n")
+      .filter((l) => {
+        try {
+          const d = JSON.parse(l)?.date;
+          return typeof d === "string" && (!since || d > since);
+        } catch {
+          return false;
+        }
+      }).length;
+  } catch {
+    return 0;
+  }
 }
 
 // --- Plan nudge (ADR-013) -----------------------------------------------------

@@ -77,6 +77,31 @@ export function lastLearnDate(root) {
   return dates.at(-1) ?? null;
 }
 
+/**
+ * Deterministic inputs for `/groundwork learn` (ADR-021): open suggestions and waivers that no
+ * longer suppress anything. The playbook adds the judgment (git history, check and postmortem
+ * outputs) and proposes the edits.
+ */
+export async function learnInputs(root) {
+  const { auditWaivers } = await import("../engine/waivers.mjs");
+  return { since: lastLearnDate(root), suggestions: openSuggestions(root), unusedWaivers: auditWaivers(root) };
+}
+
+export function formatLearnInputs(r) {
+  const lines = [`Last learn report: ${r.since ?? "none"}`, ""];
+  lines.push(`Open suggestions: ${r.suggestions.length}`);
+  for (const e of r.suggestions) {
+    lines.push(`  ${e.date}${e.rule ? ` [${e.rule}]` : ""}${e.file ? ` ${e.file}` : ""} — ${e.why}`);
+  }
+  const w = r.unusedWaivers;
+  const count = w.inline.length + w.ignoreRules.length + w.ignoreFiles.length;
+  lines.push("", `Waivers that suppress nothing (removal candidates): ${count}`);
+  for (const i of w.inline) lines.push(`  ${i.file}:${i.line} groundwork-disable ${i.rule} (${i.scope})`);
+  for (const id of w.ignoreRules) lines.push(`  .groundwork/config.json detector.ignoreRules: ${id}`);
+  for (const g of w.ignoreFiles) lines.push(`  .groundwork/config.json detector.ignoreFiles: ${g}`);
+  return lines.join("\n");
+}
+
 /** Suggestions logged after the last learn report: the ones nobody has reviewed yet. */
 export function openSuggestions(root) {
   const since = lastLearnDate(root);

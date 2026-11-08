@@ -266,6 +266,32 @@ describe("groundwork suggest (ADR-021)", () => {
   });
 });
 
+describe("groundwork learn inputs (ADR-021)", () => {
+  it("proposes removing waivers that no longer suppress anything, and keeps the ones in use", async () => {
+    const { auditWaivers } = await import("../cli/engine/waivers.mjs");
+    const dir = tempDir();
+    mkdirSync(join(dir, "src"));
+    mkdirSync(join(dir, ".groundwork"));
+    // In use: the empty catch is still there.
+    writeFileSync(join(dir, "src/live.js"), "try { f(); }\n// groundwork-disable-next-line swallowed-exception: caller retries\ncatch (e) {}\n");
+    // Stale: the code was fixed long ago, but the waiver stayed.
+    writeFileSync(join(dir, "src/fixed.js"), "// groundwork-disable swallowed-exception: legacy poller\ntry { f(); } catch (e) { log(e); throw e; }\n");
+    writeFileSync(
+      join(dir, ".groundwork/config.json"),
+      JSON.stringify({ detector: { ignoreRules: ["swallowed-exception", "no-lockfile"], ignoreFiles: ["vendor/**"] } }),
+    );
+    writeFileSync(join(dir, "package-lock.json"), "{}");
+    const audit = auditWaivers(dir);
+    expect(audit.inline).toEqual([{ file: "src/fixed.js", line: 1, rule: "swallowed-exception", scope: "file" }]);
+    // swallowed-exception still fires in src/live.js; no-lockfile can't fire with a lockfile present.
+    expect(audit.ignoreRules).toEqual(["no-lockfile"]);
+    expect(audit.ignoreFiles).toEqual(["vendor/**"]); // matches nothing
+    const { stdout } = runCli(["learn"], { cwd: dir });
+    expect(stdout).toContain("Waivers that suppress nothing (removal candidates): 3");
+    expect(stdout).toContain("src/fixed.js:1 groundwork-disable swallowed-exception (file)");
+  });
+});
+
 describe("command names (ADR-016)", () => {
   it("every alias maps to a command, and the router lists both", async () => {
     const { COMMAND_MAP, COMMAND_ALIASES } = await import("../scripts/router-commands.js");

@@ -9,6 +9,7 @@
  *   npx @kdowswell/groundwork approve <artifact>... [--checkpoint=<id>] [--decision=...] [--via=<plan>] [--tier=...] [--notes=...]
  *   npx @kdowswell/groundwork verify [artifact] [--json] [--diff]
  *   npx @kdowswell/groundwork render <artifact> [--serve] [--checkpoint=<id>] [--port=<n>]
+ *   npx @kdowswell/groundwork learn [--json]
  *   npx @kdowswell/groundwork suggest "<what got in the way>" [--rule=<id>] [--file=<path>] [--by=agent|user]
  */
 import { readFileSync } from "node:fs";
@@ -28,7 +29,7 @@ import {
   TIERS,
 } from "../commands/approvals.mjs";
 import { render, serve } from "../commands/render.mjs";
-import { suggest } from "../commands/suggest.mjs";
+import { formatLearnInputs, learnInputs, suggest } from "../commands/suggest.mjs";
 
 const PACKAGE_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "../..");
 
@@ -88,6 +89,9 @@ Usage:
       --rule=<id>              the rule, detector rule, or skill/step it concerns
       --file=<path>            the file where it came up
       --by=agent|user          who is logging it (default: agent)
+  groundwork learn             inputs for /groundwork learn: open suggestions and waivers that
+                               no longer suppress anything (read-only; proposes nothing itself)
+      --json                   JSON output
   groundwork help              this message
   groundwork version           print version
 
@@ -196,6 +200,11 @@ async function main() {
         by: typeof args.flags.by === "string" ? args.flags.by : undefined,
       });
       console.log(`✓ Logged to .groundwork/suggestions.jsonl${entry.rule ? ` (${entry.rule})` : ""}: ${entry.why}`);
+      break;
+    }
+    case "learn": {
+      const result = await learnInputs(process.cwd());
+      console.log(args.flags.json ? JSON.stringify({ version: 1, ...result }, null, 2) : formatLearnInputs(result));
       break;
     }
     case "version": {

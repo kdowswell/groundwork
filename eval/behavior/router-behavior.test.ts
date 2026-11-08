@@ -400,6 +400,38 @@ One-way doors: None
     expect(logged.join(" "), logged.join(" | ")).toMatch(/empty.catch|swallowed-exception/i);
   }, 300_000);
 
+  // ADR-021: learn proposes additions and removals, and runs only when asked.
+  const LEARN_FILES = {
+    ".groundwork/context.md": CONTEXT_MD,
+    ".groundwork/suggestions.jsonl":
+      '{"date":"2026-11-01","rule":"brownfield-safe-change-plan/7","why":"the canary step does not fit config-only changes; we deploy config through a flag service","by":"agent"}\n' +
+      '{"date":"2026-11-03","rule":"brownfield-safe-change-plan/7","why":"again: canary step skipped for a config-only flag flip","by":"agent"}\n',
+    "src/poller.js": "// groundwork-disable swallowed-exception: legacy poller swallowed errors\nexport async function poll(f) {\n  try { return await f(); } catch (e) { console.error(e); throw e; }\n}\n",
+  };
+
+  it("rule:router-learn-on-demand — learn writes a report with a removal proposal and applies nothing unasked", async () => {
+    const dir = workspace(LEARN_FILES);
+    const { trace, finalText } = await runScenario({ workspace: dir, maxTurns: 16, userMessage: "/groundwork learn" });
+    expect(playbooksRead(trace)).toContain("learn.md");
+    const report = filesWritten(trace).find((f) => /^\.groundwork\/learn\/\d{4}-\d{2}-\d{2}\.md$/.test(f));
+    expect(report, `no learn report; wrote: ${filesWritten(trace).join(", ")}`).toBeDefined();
+    const text = readFileSync(path.join(dir, report!), "utf8");
+    expect(text).toMatch(/^## Remove/m);
+    expect(text, text).toMatch(/src\/poller\.js/); // the stale waiver is proposed for removal
+    expect(filesWritten(trace).filter((f) => f !== report), "nothing applied before the user chooses").toEqual([]);
+    expect(finalText.toLowerCase()).toMatch(/which|accept|apply/);
+  }, 300_000);
+
+  it("rule:router-learn-on-demand — another command never starts learn, even with open suggestions", async () => {
+    const dir = workspace(LEARN_FILES);
+    const { trace } = await runScenario({
+      workspace: dir,
+      userMessage: "/groundwork plan — raise the poller's timeout from 5s to 10s in src/poller.js.",
+    });
+    expect(playbooksRead(trace)).not.toContain("learn.md");
+    expect(cliCalls(trace, "learn")).toEqual([]);
+  }, 300_000);
+
   // ADR-016: old names keep working, run the renamed playbook, and say the new name once.
   for (const [oldName, newName, ask] of [
     ["sketch", "architecture", "/groundwork sketch the system for an internal escalation tracker"],

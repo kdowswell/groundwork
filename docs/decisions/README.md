@@ -32,3 +32,4 @@ Never edit an accepted ADR's decision — write a new one that supersedes it.
 - [ADR-018: Risk-tiered change plans: scale review to blast radius, with no new default gate](ADR-018-risk-tiered-approvals.md)
 - [ADR-019: /groundwork check reviews a finished change against its approved plan](ADR-019-change-review-check.md)
 - [ADR-020: /groundwork threat: one threat-model skill for new and running systems, with a toxic-flow pass](ADR-020-threat-modeling-and-toxic-flows.md)
+- [ADR-021: A learning loop: an append-only suggestion box and an on-demand /groundwork learn](ADR-021-learning-loop.md)

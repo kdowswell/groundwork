@@ -4,8 +4,8 @@ title: "groundwork"
 description: >
   Single entry point for the groundwork architecture toolkit: start, continue,
   spec, architecture, data-model, principles, adr, threat, spike, risks, compare,
-  prototype-review, review, debt, upgrade, postmortem, plan, replace, check, plus init
-  and doctor. Invoke when the
+  prototype-review, review, debt, upgrade, postmortem, plan, replace, check, plus init,
+  doctor, and learn. Invoke when the
   user asks for architecture or planning help — specifying a new build, designing
   a system's architecture, choosing a data model, threat modeling, running a research spike or
   tradeoff analysis, reviewing an existing system, triaging tech debt, planning a
@@ -46,6 +46,7 @@ what the request needs — never preload multiple playbooks. <!-- rule:router-pr
 | **Set up** | | |
 | `init` | Interview, then write `.groundwork/context.md` with active principles | [reference/init.md](reference/init.md) |
 | `doctor` | Report drift between project context and reality; repair on request | [reference/doctor.md](reference/doctor.md) |
+| `learn` | Review recent work and suggestions; propose additions and removals to the shared rules | [reference/learn.md](reference/learn.md) |
 | **Design something new** | | |
 | `start [idea]` | The whole design in one pass: spec, architecture, data model, and ADRs, with one approval | [reference/start.md](reference/start.md) |
 | `continue` | Finish whatever design documents are missing, draft, or changed since approval, with one approval | [reference/continue.md](reference/continue.md) |
@@ -155,6 +156,9 @@ a ten-year-old codebase is still design work. <!-- rule:router-phase-from-reques
   changes" (not "behavior delta"), "fresh-eyes review" (not "builder check"), and name commands,
   not playbooks. The terms below are this skill's own vocabulary for you; artifact section
   headings keep their names. <!-- rule:router-plain-words -->
+- `learn` runs only when the user asks for it. Never start it at the end of a task or a session,
+  and never as a follow-up chore; if the session-start digest mentions open suggestions, say so
+  at most once. It proposes, and the user chooses what is applied. <!-- rule:router-learn-on-demand -->
 - When you waive a detector finding (`groundwork-disable`) or deviate from a playbook step
   because it didn't fit, also log it once, in the same turn:
   `npx @kdowswell/groundwork suggest "<why it got in the way>" --rule=<rule or skill/step> --file=<path>`.
