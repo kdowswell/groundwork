@@ -500,6 +500,20 @@ describe("changes since approval (ADR-009)", () => {
   });
 });
 
+describe("threat models (ADR-020)", () => {
+  it("recognizes a threat model and offers its acceptance checkpoint", () => {
+    const dir = tempDir();
+    mkdirSync(join(dir, "docs"));
+    writeFileSync(
+      join(dir, "docs/threats.md"),
+      "# Threat Model: Support assistant\n\n## Mitigations\n| Threat ID | Mitigation | Principle | Guardrail |\n|---|---|---|---|\n| T1 | Allowlist outbound email | least-agency | deterministic |\n",
+    );
+    const r = render(dir, "docs/threats.md", { write: false });
+    expect(r.checkpoint).toBe("greenfield-threat-model/accept");
+    expect(r.html).toContain("Threat model · <code>docs/threats.md</code>");
+  });
+});
+
 describe("risk tiers (ADR-018)", () => {
   const PLAN = readFileSync(join(__dirname, "../eval/plugin/_fixtures/plan-team-calendars.md"), "utf8");
 

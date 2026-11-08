@@ -12,6 +12,7 @@ export const COMMAND_MAP: Record<string, string> = {
   "data-model": "greenfield-data-model-first",
   principles: "greenfield-signal-driven-principles",
   adr: "greenfield-adr-setup",
+  threat: "greenfield-threat-model",
   spike: "exploration-research-spike",
   risks: "exploration-assumption-mapping",
   compare: "exploration-tradeoff-analysis",

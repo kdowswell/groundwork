@@ -7,6 +7,7 @@ export const ARTIFACT_KINDS = [
   { prefix: "Architecture:", label: "Architecture", checkpoint: "greenfield-architecture-sketch/accept" },
   { prefix: "Data Model:", label: "Data model", checkpoint: "greenfield-data-model-first/accept" },
   { prefix: "Safe Change Plan:", label: "Change plan", checkpoint: "brownfield-safe-change-plan/accept" },
+  { prefix: "Threat Model:", label: "Threat model", checkpoint: "greenfield-threat-model/accept" },
 ];
 
 /** The kind named by a Markdown document's first H1, or null. */
