@@ -33,3 +33,4 @@ Never edit an accepted ADR's decision — write a new one that supersedes it.
 - [ADR-019: /groundwork check reviews a finished change against its approved plan](ADR-019-change-review-check.md)
 - [ADR-020: /groundwork threat: one threat-model skill for new and running systems, with a toxic-flow pass](ADR-020-threat-modeling-and-toxic-flows.md)
 - [ADR-021: A learning loop: an append-only suggestion box and an on-demand /groundwork learn](ADR-021-learning-loop.md)
+- [ADR-022: An analytical data model skill, routed as analytics-model](ADR-022-analytical-data-model-skill.md)

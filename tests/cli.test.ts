@@ -188,7 +188,7 @@ describe("groundwork install", () => {
     mkdirSync(join(dir, ".github"));
     const result = install({ projectRoot: dir, allSkills: true });
     expect(result.providers).toEqual(["github"]);
-    expect(result.summary[0].count).toBe(18);
+    expect(result.summary[0].count).toBe(19);
     expect(existsSync(join(dir, ".github/skills/brownfield-safe-change-plan/SKILL.md"))).toBe(true);
   });
 
