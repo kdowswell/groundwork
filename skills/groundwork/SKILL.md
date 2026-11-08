@@ -4,10 +4,10 @@ title: "groundwork"
 description: >
   Single entry point for the groundwork architecture toolkit: start, continue,
   spec, architecture, data-model, principles, adr, threat, spike, risks, compare,
-  prototype-review, review, debt, upgrade, postmortem, plan, replace, check, analytics-model, plus init,
+  prototype-review, review, debt, upgrade, postmortem, plan, replace, check, analytics-model, evals, plus init,
   doctor, and learn. Invoke when the
   user asks for architecture or planning help — specifying a new build, designing
-  a system's architecture, choosing a data model, designing an analytical data platform, threat modeling, running a research spike or
+  a system's architecture, choosing a data model, designing an analytical data platform, threat modeling, designing evals for an AI feature, running a research spike or
   tradeoff analysis, reviewing an existing system, triaging tech debt, planning a
   safe production change, or any /groundwork command. Not for writing feature
   code directly.
@@ -57,6 +57,7 @@ what the request needs — never preload multiple playbooks. <!-- rule:router-pr
 | `principles` | Select load-bearing principles from project context | [reference/principles.md](reference/principles.md) |
 | `adr` | Establish architecture decision records | [reference/adr.md](reference/adr.md) |
 | `threat [system]` | Threat model: trust boundaries, ranked STRIDE threats, toxic flows for AI features, mitigations tied to principles (also for a running system) | [reference/threat.md](reference/threat.md) |
+| `evals [feature]` | Design the evaluation suite for an AI feature: cases, graders, thresholds, paired runs | [reference/evals.md](reference/evals.md) |
 | **Decide under uncertainty** | | |
 | `spike [question]` | Time-boxed investigation with a decision at the end | [reference/spike.md](reference/spike.md) |
 | `risks [area]` | Surface and rank the riskiest assumptions | [reference/risks.md](reference/risks.md) |

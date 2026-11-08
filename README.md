@@ -67,7 +67,7 @@ npx @kdowswell/groundwork detect .       # deterministic production-readiness + 
 
 ## The /groundwork Router
 
-One skill, twenty-three commands. The router loads project context once per session and routes to
+One skill, twenty-four commands. The router loads project context once per session and routes to
 exactly one playbook per request. A bare `/groundwork` never runs work: it shows where the project
 stands (which design documents exist and whether they're approved), suggests one next command,
 and lists the rest. Every command ends by recommending one next step. Commands are grouped by what you're doing, chosen from the request rather than the repo's
@@ -76,7 +76,7 @@ age: a new feature spec in a ten-year-old codebase is still design work.
 | You're… | Commands |
 |---|---|
 | **Setting up** | `init` (write project context), `doctor` (report/repair context drift), `learn` (propose additions and removals to the shared rules) |
-| **Designing something new** | `start`, `continue`, `spec`, `architecture`, `data-model`, `principles`, `adr`, `threat`, `analytics-model` |
+| **Designing something new** | `start`, `continue`, `spec`, `architecture`, `data-model`, `principles`, `adr`, `threat`, `analytics-model`, `evals` |
 | **Deciding under uncertainty** | `spike`, `risks`, `compare`, `prototype-review` |
 | **Changing a running system** | `review`, `debt`, `upgrade`, `postmortem`, `plan`, `replace`, `check` |
 
@@ -168,7 +168,7 @@ install. Each phase is one of the router's activity groups:
 
 | Skill prefix | Router group | Skills | Use when |
 |---|---|---|---|
-| `greenfield-` | Design something new | 7 | Creating something new: idea → spec → architecture |
+| `greenfield-` | Design something new | 8 | Creating something new: idea → spec → architecture |
 | `exploration-` | Decide under uncertainty | 4 | Research spikes, prototypes, assumption testing, tradeoffs |
 | `brownfield-` | Change a running system | 7 | Adding to, improving, or safely changing an existing system |
 
@@ -185,6 +185,7 @@ install. Each phase is one of the router's activity groups:
 | `analytical-data-model` | Layers, grain, current vs. as-of history, quality gates, and backfills for reporting and ML data (`/groundwork analytics-model`) |
 | `adr-setup` | Establish Architecture Decision Records from day one |
 | `threat-model` | Trust boundaries, ranked STRIDE threats, a toxic-flow pass for AI features, and mitigations tied to principles (`/groundwork threat`) |
+| `eval-suite` | Cases (typical, edge, adversarial, regression), deterministic graders before calibrated judges, thresholds, paired runs, re-run triggers (`/groundwork evals`) |
 
 ### Exploration
 
@@ -393,9 +394,9 @@ groundwork/
 │   ├── _schema/            Frontmatter JSON Schema
 │   ├── groundwork/         The /groundwork router skill
 │   │   ├── SKILL.md        Command table + routing rules (rule-marked)
-│   │   ├── reference/      23 playbooks (18 compiled from phase skills + init, doctor, start, continue, learn)
+│   │   ├── reference/      24 playbooks (19 compiled from phase skills + init, doctor, start, continue, learn)
 │   │   └── scripts/        context.mjs session loader, status.mjs, hook.mjs lifecycle hook dispatcher
-│   ├── greenfield-*/       0-to-1 skills (7) — "design something new" playbooks
+│   ├── greenfield-*/       0-to-1 skills (8) — "design something new" playbooks
 │   ├── exploration-*/      Research and prototype skills (4) — "decide under uncertainty" playbooks
 │   └── brownfield-*/       Existing-system skills (7) — "change a running system" playbooks
 ├── agents/                 groundwork-builder — read-only builder-check reviewer (plugin)

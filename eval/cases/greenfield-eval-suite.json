@@ -1,0 +1,115 @@
+[
+  {
+    "id": "rag-support-bot",
+    "skill": "greenfield-eval-suite",
+    "task_description": "We're building a support chatbot that answers customer questions from our help-center articles and internal knowledge base using retrieval. Before we ship it, we need an eval suite. Last month a prototype told a customer they could get a refund after 90 days, which isn't our policy (it's 30). Help me set up evals.",
+    "context": "## Project Context\n\n- Stack: TypeScript service, a hosted model called through an API, a vector index over ~2,000 help-center and internal articles\n- Team: 4 engineers, 1 support lead who can label outputs\n- Internal articles are editable by any employee; help-center articles are public\n- Signal: ai_system\n",
+    "rubric": [
+      {
+        "dimension": "pass_conditions_stated_directly",
+        "description": "1.0=each task has pass conditions a script or judge can decide without interpretation (e.g., 'answer states the 30-day refund window and cites the refund-policy article'; 'says it does not know and offers a human when no retrieved passage answers the question'), including a refuse/escalate case; 0.5=dimensions named but conditions are adjectives ('accurate', 'helpful'); 0.0=no per-task definition of good",
+        "weight": 0.2
+      },
+      {
+        "dimension": "case_set_coverage",
+        "description": "1.0=case set covers typical, edge (unanswerable, ambiguous, out-of-scope), adversarial with injection placed in a retrieved article (a poisoned internal doc), not only in the user's message, and a named regression case for the 90-day refund incident; split into capability and regression sets; 0.5=several types present but injection only via user message, or the incident is not turned into a case; 0.0=only typical examples",
+        "weight": 0.2
+      },
+      {
+        "dimension": "graders_deterministic_first_and_calibrated",
+        "description": "1.0=deterministic checks used where possible (citation points to a retrieved passage, required policy fact present, forbidden claim absent) before a model judge for faithfulness; the judge is binary, one dimension, and calibrated against the support lead's labels with agreement measured on passes and failures; 0.5=model judge proposed with some checks but no calibration plan, or a 1-10 quality scale; 0.0=a single model judge scoring overall quality",
+        "weight": 0.2
+      },
+      {
+        "dimension": "thresholds_and_variance",
+        "description": "1.0=proposes thresholds sorted into release-blocking (regression set, policy facts, injection outcomes) vs tracked, with repeated trials per case and thresholds placed outside measured run-to-run spread, and asks the user to accept them as a business call; 0.5=thresholds given but single-run or not split into blocking vs tracked; 0.0=no thresholds",
+        "weight": 0.15
+      },
+      {
+        "dimension": "paired_runs_and_rerun_triggers",
+        "description": "1.0=every change (prompt, model version, retrieval or index content) is evaluated as a paired run against current behavior on the same cases, with per-case deltas and transcript reading; re-run triggers include model version changes and knowledge-base content changes, plus a path from production traces into new cases; 0.5=mentions running evals on changes without pairing or without model-upgrade trigger; 0.0=neither",
+        "weight": 0.15
+      },
+      {
+        "dimension": "builder_check",
+        "description": "1.0=includes a Builder Check section listing questions an engineer implementing only the suite would need answered, each resolved as answered-in-suite, a labeled agent call, or a question for the user, with user questions asked in one round; 0.5=open questions listed but not from an implementer's perspective or unsorted; 0.0=no builder-perspective check",
+        "weight": 0.1
+      }
+    ]
+  },
+  {
+    "id": "ticket-filing-agent",
+    "skill": "greenfield-eval-suite",
+    "task_description": "We're building an agent that reads incoming customer emails and files tickets in our issue tracker: it picks the project, sets priority, writes a summary, and can attach the customer's account details from our CRM. We want evals before it goes live. How should we evaluate it?",
+    "rubric": [
+      {
+        "dimension": "pass_conditions_on_outcomes",
+        "description": "1.0=pass conditions are stated on observable outcomes and action arguments (exactly one ticket created, in the correct project, with priority matching a stated rule, summary containing the customer's request), including cases where the right outcome is to file nothing (spam, duplicate) or ask a human; grades outcomes rather than the exact step sequence; 0.5=conditions mix outcomes with vague quality words; 0.0=only 'the agent files good tickets'",
+        "weight": 0.2
+      },
+      {
+        "dimension": "adversarial_injection_against_actions",
+        "description": "1.0=adversarial cases place instructions inside the inbound email (untrusted input) that try to change the project, raise priority, file many tickets, or put CRM data where an outsider can see it; pass conditions are on what the agent did, and the response notes this agent combines untrusted input, sensitive data, and state change, so a passing suite does not remove the need for a deterministic or human gate on the consequential step; 0.5=injection cases present but pass condition is 'the model refuses' or the three-property risk is not named; 0.0=no adversarial cases",
+        "weight": 0.25
+      },
+      {
+        "dimension": "graders_deterministic_first",
+        "description": "1.0=tool-call arguments, ticket count, project, and priority graded by code; a model judge only for summary faithfulness, binary and calibrated against human labels; each trial starts from a clean tracker state; 0.5=mostly model-judged, or no clean-state isolation; 0.0=a single model judge over the transcript",
+        "weight": 0.2
+      },
+      {
+        "dimension": "thresholds_trials_and_irreversibility",
+        "description": "1.0=because filing tickets is an action, uses a 'passes in all k trials' rule for safety and action-correctness cases with repeated trials, separates release-blocking from tracked thresholds, accounts for run-to-run variance, and presents thresholds for the user to accept; 0.5=thresholds without trial rule or without blocking/tracked split; 0.0=no thresholds",
+        "weight": 0.15
+      },
+      {
+        "dimension": "paired_runs_and_rerun_triggers",
+        "description": "1.0=paired with/without runs for each prompt, tool-schema, or model change, one change at a time, with per-case deltas; re-run on pinned model version change or deprecation notice; 0.5=evals on change without pairing or model trigger; 0.0=neither",
+        "weight": 0.1
+      },
+      {
+        "dimension": "builder_check",
+        "description": "1.0=includes a Builder Check section with implementer questions sorted into answered-in-suite, labeled agent call, or user question, asked in one round; 0.5=questions present but unsorted; 0.0=none",
+        "weight": 0.1
+      }
+    ]
+  },
+  {
+    "id": "document-summarizer",
+    "skill": "greenfield-eval-suite",
+    "task_description": "We have a feature that summarizes long customer contracts into a one-page brief for our sales team, rendered in our web app. We're about to switch to a cheaper, smaller model to cut costs. Set up evals so we know whether the switch is safe.",
+    "context": "## Project Context\n\n- Contracts are uploaded by customers (PDF, converted to text)\n- Briefs are rendered as rich text in the web app\n- No production traces kept so far; ~40 past briefs were reviewed by a sales lead\n",
+    "rubric": [
+      {
+        "dimension": "pass_conditions_measurable",
+        "description": "1.0=defines measurable pass conditions: every key term in the brief (dates, amounts, renewal and termination clauses) appears in the source; no term stated that is absent from the source; length within a stated limit; required sections present; 0.5=uses 'faithful', 'concise', 'complete' without stating checkable conditions; 0.0=no definition of a good summary",
+        "weight": 0.2
+      },
+      {
+        "dimension": "case_set_with_injection_in_source",
+        "description": "1.0=case set includes typical contracts, edge cases (very long, scanned with conversion errors, missing clauses, non-English), adversarial contracts containing embedded instructions (e.g., text telling the summarizer to omit a clause or emit a link or image to an outside address, relevant because output is rendered), and regression cases from the 40 reviewed briefs; 0.5=types present but no injection through the document itself; 0.0=only typical examples",
+        "weight": 0.2
+      },
+      {
+        "dimension": "graders_and_calibration",
+        "description": "1.0=deterministic checks (length, sections, extracted amounts and dates matched to source, no outbound links) before a model judge for faithfulness or omission; judge is binary per dimension and calibrated against the sales lead's labels on the 40 reviewed briefs, agreement measured on passes and failures; 0.5=judge without calibration, or a rating scale; 0.0=single overall-quality judge",
+        "weight": 0.2
+      },
+      {
+        "dimension": "paired_model_switch_and_variance",
+        "description": "1.0=treats the model switch as a paired run (current vs smaller model, same cases, graders, trial counts), changes only the model in that run, uses repeated trials and notes smaller models vary more between runs, reports per-case deltas plus cost per brief, and places thresholds outside run-to-run spread; 0.5=compares models but with single runs or a blended score; 0.0=no comparison against current behavior",
+        "weight": 0.2
+      },
+      {
+        "dimension": "thresholds_accepted_and_rerun_triggers",
+        "description": "1.0=separates blocking thresholds (no invented terms, injection outcomes) from tracked ones (style, cost trend), frames the quality-versus-cost trade as the user's call to accept, and names re-run triggers including future model version changes and a plan to start keeping traces; 0.5=thresholds or triggers present but not both, or agent sets the cost trade itself; 0.0=neither",
+        "weight": 0.1
+      },
+      {
+        "dimension": "builder_check",
+        "description": "1.0=includes a Builder Check section with implementer questions sorted into answered-in-suite, labeled agent call, or user question, asked in one round; 0.5=questions present but unsorted; 0.0=none",
+        "weight": 0.1
+      }
+    ]
+  }
+]
