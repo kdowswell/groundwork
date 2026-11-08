@@ -22,6 +22,7 @@ principles:
   - field-first
   - bounded-contexts
   - conways-law-organizational-alignment
+  - testing-strategy
 time_box: "30-60 minutes"
 tags: [planning, requirements, greenfield, spec]
 ---
@@ -66,7 +67,7 @@ The human's job is to answer questions honestly, including "I don't know." Open 
    - What is explicitly NOT in scope (non-goals)
    The non-goals list is as important as the goals list. It's where scope creep enters.
 
-4. **Define success criteria.** Write 2–4 measurable outcomes that indicate the problem is solved. Prefer behavioral criteria ("a technician can submit a field report in under 60 seconds without removing gloves") over output criteria ("the form has 5 fields"). If you can't make them measurable, write them as falsifiable: "users stop using the paper workaround."
+4. **Define success criteria.** Write 2–4 measurable outcomes that indicate the problem is solved. Prefer behavioral criteria ("a technician can submit a field report in under 60 seconds without removing gloves") over output criteria ("the form has 5 fields"). If you can't make them measurable, write them as falsifiable: "users stop using the paper workaround." Where a criterion describes how the system responds, you may write it in EARS form ("WHEN <trigger>, THE SYSTEM SHALL <response>"; "WHILE <state>, …"; "IF <unwanted condition>, THEN …"); keep Given/When/Then wherever the project already uses it. Mark each criterion that must hold across a whole range of inputs, not just one example ("for every refund, the balance drops by exactly the refunded amount"), with **(property)**: those become property-based tests later.
 
 5. **Name the primary data entity and its owner.** What is the core thing the system stores, tracks, or transforms? Who owns it — which team, service, or role is the authoritative source? This single decision shapes the data model, the access control model, and the API contract. Write it explicitly.
 
@@ -178,6 +179,10 @@ What goes wrong when you skip it: field-inappropriate success criteria pass thro
 
 Full reference: [principles/field-first.md](principles/field-first.md)
 
+**testing-strategy**
+Step 4 is where the spec decides whether its criteria can be tested independently of the code that will meet them. A criterion in EARS form with a clear trigger and response, marked (property) when it holds for every input in a range, becomes a property-based test that an agent can't satisfy just by asserting what its own code happens to do. Criteria written as one example ("a $10 refund leaves $90") get tested as one example, and the edge cases go unchecked.
+Full reference: [principles/testing-strategy.md](principles/testing-strategy.md)
+
 ## Output Format
 
 A `spec.md` file (or equivalent document) with this structure:
@@ -200,7 +205,8 @@ Who. Where. What constraint they're operating under.
 
 ## Success Criteria
 1. Measurable or falsifiable outcome
-2. ...
+2. WHEN {{TRIGGER}}, THE SYSTEM SHALL {{RESPONSE}} (property)
+3. ...
 
 ## Primary Data Entity
 Name: {{ENTITY}}

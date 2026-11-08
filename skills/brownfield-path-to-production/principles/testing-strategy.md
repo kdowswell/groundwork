@@ -9,6 +9,8 @@ For services that call other services over the network, contract testing verifie
 
 When AI coding agents write much of the code, the test suite becomes the specification the agent works against and the main evidence that its change is correct. That raises two requirements. The tests must state the intended behavior independently of the code, so a test written by the same agent in the same change, which tends to assert what the code happens to do, is not enough on its own. And the suite itself must be checked: mutation testing, or an equivalent that deliberately introduces faults, shows whether the tests would actually catch a regression.
 
+Property-based testing answers the first requirement. A property states something that must hold for every input in a range, taken from a requirement rather than from the code. An EARS requirement such as "WHEN a refund is issued, THE SYSTEM SHALL reduce the order balance by the refunded amount" becomes a property checked against hundreds of generated inputs, including the edge cases nobody listed. Because the property comes from the requirement, it can't just repeat what the code happens to do. For a change to existing behavior, regression properties state what must stay the same: for every input outside the changed case, the result matches the previous behavior.
+
 Where the behavior under test is itself probabilistic, such as a model's output or an agent's actions, single-run pass/fail tests are not enough; see *Eval-Driven Development* for repeated-trial evaluation suites that gate those changes.
 
 ## When This Matters
@@ -34,6 +36,7 @@ Where the behavior under test is itself probabilistic, such as a model's output 
 - Which user journeys are covered by E2E tests, and are those the genuinely critical paths, or just the ones that were easy to automate?
 - When an agent writes both a change and its tests, what independent statement of the intended behavior do the tests check against — a spec, an acceptance criterion, an existing test?
 - Would the suite fail if the changed code were subtly wrong? Has that been checked by deliberately introducing faults?
+- Which acceptance criteria hold across a range of inputs (invariants, round trips, limits, "unchanged for every other case") and could be checked as properties instead of a few hand-picked examples?
 
 ## What Good Looks Like
 - Unit tests cover observable behavior and outcomes, not method signatures or call sequences — they do not break when internal implementation is safely refactored
@@ -44,6 +47,8 @@ Where the behavior under test is itself probabilistic, such as a model's output 
 - Flaky tests are treated as bugs: investigated, fixed, or deleted; never disabled with a comment and forgotten
 - Tests for a generated change trace to an independent statement of intended behavior (a spec item, an acceptance criterion, a behavior delta's Unchanged list), not only to the code they test
 - Mutation testing, or an equivalent fault-injection check, runs on the most critical modules, and surviving mutants are treated as missing tests
+- Requirements that hold across inputs are checked as properties derived from the requirement text, run against generated inputs; example tests remain for specific named cases
+- Each Unchanged behavior in a change has a regression property: for inputs outside the changed case, the result matches the previous implementation or a reference model
 - The fast tiers run in the author's loop, so an agent sees a failure on its own change within seconds rather than after a pull request
 
 ## What Goes Wrong When You Skip This
@@ -53,3 +58,4 @@ Where the behavior under test is itself probabilistic, such as a model's output 
 - A client upgrades its dependency on a service and discovers in production that the response schema changed; a consumer-driven contract test would have caught this during the provider's CI build
 - An E2E test suite grows to cover every permutation of every feature; it takes an hour, times out in CI, and is eventually removed — taking all signal about critical paths with it
 - An agent implements a change and writes tests that assert the new code's actual output; every test passes, coverage rises, and the behavior is still wrong because nothing checked it against what was intended
+- An agent's bug fix passes the three example tests it wrote for the reported case and quietly changes the result for inputs nobody listed; a regression property saying every other input behaves as before would have failed on an early generated case

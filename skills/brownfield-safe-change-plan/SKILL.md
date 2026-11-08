@@ -93,7 +93,8 @@ The agent structures the plan by asking probing questions about the change's sco
 
 6. **Write the test coverage plan.** List what tests must exist before this change ships:
    - Tests for each Added and Modified item (the After behavior)
-   - Tests for each Unchanged item, so the delta's promises are checked rather than assumed
+   - Tests for each Unchanged item, so the delta's promises are checked rather than assumed. Where an Unchanged item holds across a range of inputs, propose a **regression property**: for every input outside the changed case, the result matches the previous behavior (the old implementation or a reference model), checked against generated inputs
+   - Properties for Added and Modified items the baseline spec marks (property)
    - Tests for the failure modes identified in Step 3
    If any of these tests don't currently exist, write them before shipping.
 
@@ -229,6 +230,7 @@ One-way doors: {{NONE | DESCRIBE WHAT CANNOT BE REVERSED}}
 
 ## Test Coverage Plan
 - [ ] {{TEST}}
+- [ ] Regression property: for every {{INPUT OUTSIDE THE CHANGE}}, {{RESULT}} matches the previous behavior
 
 ## Deployment Sequence
 1. ...
