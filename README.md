@@ -118,6 +118,18 @@ npx @kdowswell/groundwork doctor                 # check .groundwork/context.md 
 Waive intentional findings inline (`// groundwork-disable <rule-id>: reason`, plus
 `-line` / `-next-line` variants) or via `.groundwork/config.json`.
 
+When a rule gets in the way (a finding the agent waived, a playbook step that didn't fit), the
+agent logs it rather than quietly working around it:
+
+```bash
+npx @kdowswell/groundwork suggest "the catch is intentional: the caller retries" --rule=swallowed-exception --file=src/poll.js
+```
+
+Each call appends one JSON line (`date`, `rule`, `file`, `why`, `by`) to
+`.groundwork/suggestions.jsonl`. The file is append-only and meant to be committed, so the signal
+reaches whoever curates the rules. `doctor` counts open suggestions, and `/groundwork learn`
+reviews them.
+
 On Claude Code, groundwork runs three lifecycle hooks
 ([ADR-006](docs/decisions/ADR-006-plugin-lifecycle-hooks.md)): at **session start** it
 injects a digest of `.groundwork/context.md` (Active Principles, staleness, Proposed ADRs);

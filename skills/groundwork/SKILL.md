@@ -155,6 +155,11 @@ a ten-year-old codebase is still design work. <!-- rule:router-phase-from-reques
   changes" (not "behavior delta"), "fresh-eyes review" (not "builder check"), and name commands,
   not playbooks. The terms below are this skill's own vocabulary for you; artifact section
   headings keep their names. <!-- rule:router-plain-words -->
+- When you waive a detector finding (`groundwork-disable`) or deviate from a playbook step
+  because it didn't fit, also log it once, in the same turn:
+  `npx @kdowswell/groundwork suggest "<why it got in the way>" --rule=<rule or skill/step> --file=<path>`.
+  The log is append-only and `learn` reviews it; it never replaces fixing a real finding, and you
+  never ask the user to log it for you. <!-- rule:router-suggestion-box -->
 - Report context drift when you notice it, but never repair it as a side effect of another
   command; that is `doctor`'s job, and it acts only when the user asks.
   <!-- rule:router-drift-not-a-side-quest -->

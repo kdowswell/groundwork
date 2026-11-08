@@ -9,6 +9,7 @@
  *   npx @kdowswell/groundwork approve <artifact>... [--checkpoint=<id>] [--decision=...] [--via=<plan>] [--tier=...] [--notes=...]
  *   npx @kdowswell/groundwork verify [artifact] [--json] [--diff]
  *   npx @kdowswell/groundwork render <artifact> [--serve] [--checkpoint=<id>] [--port=<n>]
+ *   npx @kdowswell/groundwork suggest "<what got in the way>" [--rule=<id>] [--file=<path>] [--by=agent|user]
  */
 import { readFileSync } from "node:fs";
 import { join, relative, resolve, dirname } from "node:path";
@@ -27,6 +28,7 @@ import {
   TIERS,
 } from "../commands/approvals.mjs";
 import { render, serve } from "../commands/render.mjs";
+import { suggest } from "../commands/suggest.mjs";
 
 const PACKAGE_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "../..");
 
@@ -81,6 +83,11 @@ Usage:
                                the decision is recorded as an approval
       --checkpoint=<id>        checkpoint to record (default: from the artifact's title)
       --port=<n>               port for --serve (default: any free port)
+  groundwork suggest "<text>"  log friction with a groundwork rule to .groundwork/suggestions.jsonl
+                               (append-only; /groundwork learn reviews it)
+      --rule=<id>              the rule, detector rule, or skill/step it concerns
+      --file=<path>            the file where it came up
+      --by=agent|user          who is logging it (default: agent)
   groundwork help              this message
   groundwork version           print version
 
@@ -178,6 +185,17 @@ async function main() {
           ? `✓ Recorded ${outcome.decision} for ${rendered.artifactPath} at ${rendered.checkpoint}`
           : "· No decision recorded (server idled out).",
       );
+      break;
+    }
+    case "suggest": {
+      const why = args._.slice(1).join(" ");
+      const { entry } = suggest(process.cwd(), {
+        why,
+        rule: typeof args.flags.rule === "string" ? args.flags.rule : undefined,
+        file: typeof args.flags.file === "string" ? args.flags.file : undefined,
+        by: typeof args.flags.by === "string" ? args.flags.by : undefined,
+      });
+      console.log(`✓ Logged to .groundwork/suggestions.jsonl${entry.rule ? ` (${entry.rule})` : ""}: ${entry.why}`);
       break;
     }
     case "version": {

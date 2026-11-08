@@ -296,7 +296,8 @@ async function onPostToolUse(event) {
       notes.push(
         `groundwork detector found ${material.length} issue(s) in the file you just edited:\n` +
           `${lines.join("\n")}\n` +
-          "Fix what is real; waive intentional cases with 'groundwork-disable <rule-id>: reason'.",
+          "Fix what is real; waive intentional cases with 'groundwork-disable <rule-id>: reason', and log the waiver once with " +
+          "`npx @kdowswell/groundwork suggest \"<why>\" --rule=<rule-id> --file=<path>`.",
       );
     }
   }

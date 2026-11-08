@@ -7,6 +7,7 @@ import { readFileSync, existsSync } from "node:fs";
 import { join, resolve, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 import { verify } from "./approvals.mjs";
+import { openSuggestions } from "./suggest.mjs";
 
 const CLI_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const STALE_AFTER_DAYS = 90;
@@ -141,7 +142,7 @@ export function doctor(root) {
       severity: "error",
       message: "no .groundwork/context.md — run /groundwork init to create it",
     });
-    return { findings };
+    return { findings, suggestions: openSuggestions(root).length };
   }
 
   const raw = readFileSync(contextPath, "utf8");
@@ -199,17 +200,21 @@ export function doctor(root) {
     }
   }
 
-  return { findings };
+  return { findings, suggestions: openSuggestions(root).length };
 }
 
 export function formatDoctorHuman(result) {
+  // Open suggestions are a count, not a finding: they don't fail doctor (ADR-021).
+  const note = result.suggestions
+    ? `\n· ${result.suggestions} open suggestion(s) in .groundwork/suggestions.jsonl — /groundwork learn reviews them.`
+    : "";
   if (result.findings.length === 0) {
-    return "✓ context is present, fresh, and consistent with what doctor can verify.";
+    return `✓ context is present, fresh, and consistent with what doctor can verify.${note}`;
   }
   const lines = [`${result.findings.length} finding(s):`, ""];
   for (const f of result.findings) {
     lines.push(`  [${f.severity}] ${f.check}: ${f.message}`);
   }
   lines.push("", "Judgment-level checks (team drift, stage drift) live in /groundwork doctor.");
-  return lines.join("\n");
+  return lines.join("\n") + note;
 }

@@ -1,5 +1,6 @@
 import { execFileSync } from "node:child_process";
 import {
+  appendFileSync,
   existsSync,
   mkdtempSync,
   mkdirSync,
@@ -12,7 +13,8 @@ import {
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { afterAll, describe, expect, it } from "vitest";
-import { doctor } from "../cli/commands/doctor.mjs";
+import { doctor, formatDoctorHuman } from "../cli/commands/doctor.mjs";
+import { openSuggestions, readSuggestions, suggest } from "../cli/commands/suggest.mjs";
 import { install } from "../cli/commands/install.mjs";
 import { amendmentDiff, approve, approveBundle, approvedDiff, snapshotPath, verify } from "../cli/commands/approvals.mjs";
 import { diffHunks, formatUnified, lineDiff } from "../cli/render/diff.mjs";
@@ -223,6 +225,44 @@ describe("groundwork install", () => {
     }
     expect(settings.hooks.PostToolUse[0].matcher).toBe("Edit|Write|MultiEdit");
     expect(settings.hooks.Stop[0].matcher).toBeUndefined();
+  });
+});
+
+describe("groundwork suggest (ADR-021)", () => {
+  it("appends one JSON line per suggestion, never rewriting earlier ones", () => {
+    const dir = tempDir();
+    writeFileSync(join(dir, "app.js"), "x\n");
+    suggest(dir, { why: "  waived  empty-catch: the catch logs and rethrows ", rule: "empty-catch", file: "app.js", now: new Date("2026-11-01") });
+    const { status } = runCli(["suggest", "the", "plan", "step", "on", "canaries", "didn't", "fit", "--rule=brownfield-safe-change-plan/7", "--by=user"], { cwd: dir });
+    expect(status).toBe(0);
+    const lines = readFileSync(join(dir, ".groundwork/suggestions.jsonl"), "utf8").trim().split("\n");
+    expect(JSON.parse(lines[0])).toEqual({ date: "2026-11-01", rule: "empty-catch", file: "app.js", why: "waived empty-catch: the catch logs and rethrows", by: "agent" });
+    expect(JSON.parse(lines[1])).toMatchObject({ rule: "brownfield-safe-change-plan/7", why: "the plan step on canaries didn't fit", by: "user" });
+  });
+
+  it("rejects empty text, odd rule ids, files outside the project, and a symlinked log", () => {
+    const dir = tempDir();
+    expect(() => suggest(dir, { why: "   " })).toThrow(/needs the friction/);
+    expect(() => suggest(dir, { why: "x", rule: "a b" })).toThrow(/--rule/);
+    expect(() => suggest(dir, { why: "x", file: "../outside.js" })).toThrow(/inside/);
+    mkdirSync(join(dir, ".groundwork"));
+    symlinkSync(join(tempDir(), "elsewhere.jsonl"), join(dir, ".groundwork/suggestions.jsonl"));
+    expect(() => suggest(dir, { why: "x" })).toThrow(/not a regular file/);
+  });
+
+  it("counts open suggestions in doctor without failing it; a learn report closes earlier ones", () => {
+    const dir = tempDir();
+    mkdirSync(join(dir, ".groundwork"), { recursive: true });
+    writeFileSync(join(dir, ".groundwork/context.md"), "# Project Context\n\n## Stage\n- Last reviewed: 2099-01-01\n\n## Active Principles\n- testing-strategy — x\n");
+    suggest(dir, { why: "first", now: new Date("2026-10-01") });
+    suggest(dir, { why: "second", now: new Date("2026-11-02") });
+    expect(doctor(dir)).toMatchObject({ findings: [], suggestions: 2 });
+    expect(formatDoctorHuman(doctor(dir))).toContain("2 open suggestion(s)");
+    mkdirSync(join(dir, ".groundwork/learn"));
+    writeFileSync(join(dir, ".groundwork/learn/2026-10-15.md"), "# Learn\n");
+    expect(openSuggestions(dir).map((e: any) => e.why)).toEqual(["second"]);
+    appendFileSync(join(dir, ".groundwork/suggestions.jsonl"), "not json\n");
+    expect(readSuggestions(dir).malformed).toBe(1);
   });
 });
 

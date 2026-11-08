@@ -384,6 +384,22 @@ One-way doors: None
     expect(finalText.toLowerCase(), finalText).toMatch(/delegat|my call|i decided|on your behalf|you asked me to decide/);
   }, 180_000);
 
+  it("rule:router-suggestion-box — waiving a detector finding is logged to the suggestion box", async () => {
+    const dir = workspace({
+      ".groundwork/context.md": CONTEXT_MD,
+      "src/poll.js": "export async function poll(fetchStatus) {\n  try {\n    return await fetchStatus();\n  } catch (e) {}\n}\n",
+    });
+    const { trace } = await runScenario({
+      workspace: dir,
+      maxTurns: 16,
+      userMessage:
+        "/groundwork the detector flags the empty catch in src/poll.js. That empty catch is intentional: the poller is retried by its caller and a failed poll should be silent. Waive it with a groundwork-disable comment rather than changing the logic.",
+    });
+    const logged = cliCalls(trace, "suggest");
+    expect(logged.length, "the waiver must be logged with groundwork suggest").toBeGreaterThanOrEqual(1);
+    expect(logged.join(" "), logged.join(" | ")).toMatch(/empty.catch|swallowed-exception/i);
+  }, 300_000);
+
   // ADR-016: old names keep working, run the renamed playbook, and say the new name once.
   for (const [oldName, newName, ask] of [
     ["sketch", "architecture", "/groundwork sketch the system for an internal escalation tracker"],
