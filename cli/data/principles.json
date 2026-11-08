@@ -85,6 +85,11 @@
     "category": "scalability"
   },
   {
+    "id": "data-quality-gates",
+    "title": "Data Quality Gates at Pipeline Boundaries",
+    "category": "data"
+  },
+  {
     "id": "deterministic-core-probabilistic-edge",
     "title": "Deterministic Core, Probabilistic Edge",
     "category": "design"
@@ -150,6 +155,11 @@
     "category": "reliability"
   },
   {
+    "id": "historical-data-modeling",
+    "title": "Historical Data Modeling",
+    "category": "data"
+  },
+  {
     "id": "horizontal-scaling",
     "title": "Horizontal Scaling and Stateless Services",
     "category": "scalability"
@@ -193,6 +203,11 @@
     "id": "prompt-injection-containment",
     "title": "Prompt Injection Containment",
     "category": "security"
+  },
+  {
+    "id": "rebuildable-derived-data",
+    "title": "Immutable Raw Data, Rebuildable Derived Data",
+    "category": "data"
   },
   {
     "id": "runbooks",

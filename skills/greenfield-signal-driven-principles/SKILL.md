@@ -55,6 +55,7 @@ The agent reads the signals in the project context and matches them against each
    | `ai_system` | The product itself embeds LLM or agent features: model calls over user or company data, retrieval, tool-using agents | `prompt-injection-containment`, `least-agency`, `eval-driven-development`, `deterministic-core-probabilistic-edge`, `model-as-versioned-dependency`, `ml-ai-observability` |
    | `autonomous_agents` | The product runs agents that choose their own steps or tools, run for minutes or longer, or hand work to other agents | `simplest-agent-architecture-first`, `durable-agent-execution`, `context-engineering` |
    | `agent_authored_code` | AI coding agents write or change a meaningful share of the code, and the code outlives a prototype | `executable-architecture-guardrails`, `supply-chain-security`, `agent-legible-codebase` |
+   | `analytical_data_platform` | The product includes batch or streaming pipelines, an analytical store (warehouse or lakehouse), or datasets published for reporting, BI, or ML | `rebuildable-derived-data`, `data-quality-gates`, `historical-data-modeling`, `data-ownership`, `schema-evolution` |
 
 3. **Pull mandatory principles.** For each PRESENT signal, add the listed principles to the active set. These are non-negotiable — do not drop them based on count caps or team preference.
 
@@ -75,7 +76,7 @@ If more than three signals are UNKNOWN after reading all available artifacts, ru
 If the mandatory principles list is longer than 8 and the project is a prototype, surface this to the developer. The likely explanation is that the scope was stated too broadly — the signals may be firing on aspirational features, not the actual v1. Ask: "Which of these signals reflects v1 specifically, not the eventual product?"
 
 **Are any principles in tension?**
-Some principle pairs create real architectural tension (e.g., `consistency-models` with strict latency SLOs, or `data-classification` with rapid prototyping). If you find a pair like this, flag it explicitly rather than silently picking one. The developer needs to make a conscious tradeoff, not inherit an invisible one.
+Some principle pairs create real architectural tension (e.g., `consistency-models` with strict latency SLOs, `data-classification` with rapid prototyping, or `rebuildable-derived-data`'s long raw retention with a duty to erase personal data). If you find a pair like this, flag it explicitly rather than silently picking one. The developer needs to make a conscious tradeoff, not inherit an invisible one.
 
 ## Principle Application
 

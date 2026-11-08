@@ -81,7 +81,7 @@
           "items": {
             "type": "string",
             "minLength": 1,
-            "description": "Open vocabulary; common values include any_production, ai_systems (the product embeds LLM or agent features), financial_services, healthcare, defense, ecommerce, government, media, education."
+            "description": "Open vocabulary; common values include any_production, ai_systems (the product embeds LLM or agent features), data_platforms (the product includes analytical pipelines, a warehouse or lakehouse, or datasets published for BI or ML), financial_services, healthcare, defense, ecommerce, government, media, education."
           }
         }
       }

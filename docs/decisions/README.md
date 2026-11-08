@@ -26,3 +26,4 @@ Never edit an accepted ADR's decision — write a new one that supersedes it.
 - [ADR-012: Brownfield changes carry a behavior delta, and the spec update rides with the code](ADR-012-brownfield-behavior-deltas.md)
 - [ADR-013: Nudge toward a plan when unplanned code grows, with an opt-in strict gate](ADR-013-plan-nudge.md)
 - [ADR-014: Extend the principle library for the agent era inside the existing eight categories](ADR-014-agent-era-principle-library.md)
+- [ADR-015: Add analytical data platform principles, and the test for adding a practice area](ADR-015-data-platform-principles.md)

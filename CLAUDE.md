@@ -13,13 +13,13 @@ Skills reference principles. Principles know nothing about skills. The principle
 
 ```
 groundwork/
-├── principles/             Distilled architectural principle library (8 categories, 50 files)
+├── principles/             Distilled architectural principle library (8 categories, 53 files)
 │   ├── _schema/            JSON Schema for principle frontmatter
 │   ├── reliability/        Circuit breakers, fault isolation, health checks, degradation, chaos
 │   ├── security/           Secrets, zero trust, least privilege, classification, supply chain
 │   ├── scalability/        Horizontal scaling, caching, partitioning, async processing
 │   ├── observability/      Structured logging, tracing, SLOs, alerting, ML/AI observability
-│   ├── data/               Ownership, consistency models, event sourcing, schema evolution
+│   ├── data/               Ownership, consistency, event sourcing, schema evolution, pipelines, history, quality
 │   ├── design/             Contract-first, bounded contexts, Conway, idempotency, field-first…
 │   ├── delivery/           CI/CD, blue-green/canary, feature flags, IaC, testing strategy
 │   └── operations/         Incident response, runbooks, capacity, FinOps, tech debt

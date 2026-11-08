@@ -11,18 +11,22 @@ sources:
     url: "https://martinfowler.com/articles/data-mesh-principles.html"
   - name: "Designing Data-Intensive Applications (Martin Kleppmann)"
     url: "https://dataintensive.net/"
-tags: [data, architecture, microservices, ddd, contracts, ownership]
+  - name: "Open Data Contract Standard (Bitol)"
+    url: "https://bitol-io.github.io/open-data-contract-standard/"
+tags: [data, architecture, microservices, ddd, contracts, ownership, data-contracts, data-products, data-platforms]
 applies_when:
   scope: [new_build, epic, feature]
   scale: [team, enterprise]
   stage: [discovery, refinement, build]
-  domains: [financial_services, healthcare, ecommerce, any_production]
+  domains: [financial_services, healthcare, ecommerce, data_platforms, any_production]
 ---
 
 # Data Ownership and Service Boundaries
 
 ## Principle
 Each service owns its data exclusively — no other service reads or writes its tables, and no shared schema crosses a service boundary. Data is shared only through an explicit contract (an API, an event stream, a read model), and that contract is the only thing other services are allowed to depend on.
+
+The same holds for analytical data. A dataset published for analytics, reporting, or ML is a data product with an owner, and its contract is a data contract: the schema, what each field means, the quality rules it meets, how fresh it is, and who to contact when it breaks. Written in a machine-readable form, a data contract can be checked on every load, so a producer finds out it has broken a consumer before the consumer does.
 
 ## When This Matters
 - You are decomposing a monolith into services, or carving a new bounded context out of a shared database
@@ -45,6 +49,7 @@ Each service owns its data exclusively — no other service reads or writes its 
 - How will analytics, search, and reporting consume this data without coupling to internal storage — a CDC stream, an exported product, a read replica with a stable view?
 - If two services need to update related data atomically, is that a sign the boundary is wrong, or do you need a saga or outbox to coordinate them?
 - Who owns the data product that other teams depend on, and is there a named team responsible for its quality, schema, and SLAs?
+- For a dataset published to analytics or ML consumers: is there a written data contract covering schema, field meanings, quality rules, and freshness, and is it checked automatically or only documented?
 
 ## What Good Looks Like
 - One service writes to a given table; other services that need the data go through that service's API or subscribe to its events
@@ -53,6 +58,7 @@ Each service owns its data exclusively — no other service reads or writes its 
 - Analytics and downstream consumers receive data through an explicit pipeline (CDC, event stream, exported snapshot), not by querying production tables
 - Cross-service consistency is handled with sagas, outbox patterns, or eventual consistency — not with database transactions across boundaries
 - Each owned dataset has a named owning team accountable for schema decisions, deprecations, and data quality
+- Analytical datasets shared across teams have a data contract in a machine-readable format, versioned with the producer's code, and validated on every load; changing it goes through the same review as an API change
 
 ## What Goes Wrong When You Skip This
 - A schema change in one service silently breaks three other services that were reading the same table directly, and the breakage is found in production
@@ -62,4 +68,4 @@ Each service owns its data exclusively — no other service reads or writes its 
 - Data quality issues have no owner: every team blames upstream, no one fixes the source, and the same bad records keep being patched in five different places
 
 ## Further Reading
-Richardson's *Database per Service* pattern is the operational form of this principle for microservice architectures, with concrete trade-offs around transactions and joins. Dehghani's *Data Mesh Principles* extends the same ownership idea to analytical data, treating each domain's data as a product with a named owner, a contract, and a consumer-facing SLA — useful when the operational/analytical split is itself the source of pain. The domain modeling side of this question — how to draw service boundaries based on business language, team ownership, and subdomain structure — is covered in *Bounded Contexts*. When schema changes inside an owned data store ripple out as contract changes to consumers, *Schema Evolution and Compatibility* describes the patterns for managing that transition safely.
+Richardson's *Database per Service* pattern is the operational form of this principle for microservice architectures, with concrete trade-offs around transactions and joins. Dehghani's *Data Mesh Principles* extends the same ownership idea to analytical data, treating each domain's data as a product with a named owner, a contract, and a consumer-facing SLA — useful when the operational/analytical split is itself the source of pain. The Open Data Contract Standard is a vendor-neutral format for writing that contract down so it can be validated; *Data Quality Gates at Pipeline Boundaries* covers enforcing it. The domain modeling side of this question — how to draw service boundaries based on business language, team ownership, and subdomain structure — is covered in *Bounded Contexts*. When schema changes inside an owned data store ripple out as contract changes to consumers, *Schema Evolution and Compatibility* describes the patterns for managing that transition safely.
