@@ -85,6 +85,16 @@ If every finding requires a major refactoring, the review has been calibrated to
 **Does the sequence make sense given the team's capacity?**
 A review that produces 15 high-priority improvements and doesn't account for the team's sprint capacity produces a guilt list, not a plan. Pick the 3 improvements that have the highest leverage and fit in the available time. Schedule the rest.
 
+## Red Flags
+
+Observable signs this playbook is being skipped or gamed. Check your own work against them before you ask for approval; each one you find is something to fix, not to explain away.
+
+- A principle is marked Compliant with no file, configuration, or artifact cited as evidence.
+- A Non-compliant finding has no concrete improvement.
+- Every assessed principle is Compliant on a system with incidents in the last six months.
+- Findings are listed without an impact ranking.
+- The review never read deployment configuration or monitoring, only code.
+
 ## Principle Application
 
 **structured-logging**

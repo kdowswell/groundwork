@@ -103,6 +103,16 @@ Migration-managed evolution requires coordinated deploys and rollback capability
 **Does the user accept this data model as the basis for implementation?**
 Ask once the data model is complete. If the data model is long or still has open questions for the user, offer once to show it as a review page (`npx @kdowswell/groundwork render <data model path> --serve`), where the user can read it beside its open questions and findings and decide there. **Accepted:** record the approval; implementation may start from it, and any later edit to the data model makes the approval stale, so the next step re-asks. **Changes requested:** record that, revise, and ask again; nothing downstream starts from this version. **Delegated ("you decide"):** record it as delegated, state the calls you made in your next reply, and proceed. The agent never answers this Checkpoint on the user's behalf.
 
+## Red Flags
+
+Observable signs this playbook is being skipped or gamed. Check your own work against them before you ask for approval; each one you find is something to fix, not to explain away.
+
+- An entity has two owners, or none.
+- A relationship that crosses a service or storage boundary has no consistency decision.
+- The Glossary uses a different name for an entity than the Entities table does.
+- The schema evolution strategy is blank or reads "TBD".
+- Entities owned by another team are embedded as full records instead of referenced by identifier.
+
 ## Principle Application
 
 **data-ownership**

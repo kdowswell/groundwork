@@ -140,6 +140,17 @@ Check the tier against the rules in Step 9 before asking for acceptance, because
 **Does the user accept this plan as the basis for the change?**
 Ask once the plan is complete. If the plan is long or still has open questions for the user, offer once to show it as a review page (`npx @kdowswell/groundwork render <plan path> --serve`), where the user can read the delta beside its open questions and findings and decide there. **Accepted:** record the approval; implementation may start from it, applying the delta to the spec in the same change set (Step 12), and any later edit to the plan makes the approval stale, so implementation re-asks. **Changes requested:** record that, revise, and ask again; nothing is implemented from this version. **Delegated ("you decide"):** record it as delegated, state the calls you made in your next reply, and proceed. The agent never answers this Checkpoint on the user's behalf.
 
+## Red Flags
+
+Observable signs this playbook is being skipped or gamed. Check your own work against them before you ask for approval; each one you find is something to fix, not to explain away.
+
+- The Unchanged group is empty.
+- The rollback strategy is a single line such as "revert the deploy" with no data, cache, or flag steps.
+- The risk tier is low while the severity is Catastrophic or Silent, the Removed group has items, or a one-way door is named.
+- Code for the change was written before the plan had a recorded decision.
+- A Modified row has no spec section or evidence path for its Before.
+- An approval is recorded with no answer from the user anywhere in the conversation.
+
 ## Principle Application
 
 **graceful-degradation**

@@ -101,7 +101,7 @@ groundwork/
 4. `description` carries both what the skill does and when to invoke it — phrase it as: "Does X. Invoke when Y."
 5. Add groundwork extensions as needed: `phase`, `entry_criteria`, `exit_criteria`, `principles`, `time_box`, `tags`
 6. Set `disable-model-invocation: true`: the model reaches phases only through the router, and users can still invoke the skill by name (ADR-011; `validate:skills` enforces it)
-7. Write all five required body sections in order: When to Use This Skill, Steps, Checkpoints, Principle Application, Output Format
+7. Write all five required body sections in order: When to Use This Skill, Steps, Checkpoints, Principle Application, Output Format. Output Format ends with a `**Next step:**` line. An optional `## Red Flags` section (3–7 observable signs the playbook is being skipped, no exhortations) goes between Checkpoints and Principle Application
 8. Run `npm run validate:skills` to confirm frontmatter validates against the schema before committing
 
 ## Content Standards

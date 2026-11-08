@@ -133,6 +133,32 @@ function checkNextStep(body: string): string | null {
   return null;
 }
 
+const VAGUE_FLAG = /\b(be careful|make sure|consider|remember to|try to|ensure that|be mindful)\b/i;
+
+/**
+ * The optional "## Red Flags" section (#31): placed after Checkpoints and before Principle
+ * Application, 3-7 bullets, each an observable sign rather than an exhortation.
+ */
+function checkRedFlags(body: string): string[] {
+  const flags = sectionBody(body, "Red Flags");
+  if (flags === null) return [];
+  const errors: string[] = [];
+  const at = (name: string) => body.search(new RegExp(`^## ${name}\\b`, "m"));
+  const pos = at("Red Flags");
+  if (at("Checkpoints") === -1 || pos < at("Checkpoints") || (at("Principle Application") !== -1 && pos > at("Principle Application"))) {
+    errors.push('"## Red Flags" must sit between "## Checkpoints" and "## Principle Application"');
+  }
+  const items = flags.split("\n").filter((l) => /^- \S/.test(l));
+  if (items.length < 3 || items.length > 7) {
+    errors.push(`"## Red Flags" needs 3-7 bullet items (has ${items.length})`);
+  }
+  for (const item of items) {
+    const m = item.match(VAGUE_FLAG);
+    if (m) errors.push(`red flag is an exhortation, not an observable sign ("${m[0]}"): ${item.slice(0, 80)}`);
+  }
+  return errors;
+}
+
 function validateFile(
   filePath: string,
   validate: (data: unknown) => boolean,
@@ -204,6 +230,7 @@ function validateFile(
   if (data.phase) {
     const nextErr = checkNextStep(parsed.content);
     if (nextErr) messages.push(nextErr);
+    messages.push(...checkRedFlags(parsed.content));
   }
 
   return messages.length ? { file: filePath, messages } : null;

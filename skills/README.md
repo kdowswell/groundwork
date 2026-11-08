@@ -71,7 +71,15 @@ Required body sections (in order):
 2. **Steps** — numbered, action-verb steps with explicit human/agent decision points
 3. **Checkpoints** — genuine forks requiring human judgment (question → what changes)
 4. **Principle Application** — per referenced principle: how this skill uses it specifically
-5. **Output Format** — structure of the artifact produced
+5. **Output Format** — structure of the artifact produced, ending with a `**Next step:**` line
+
+Optional, between Checkpoints and Principle Application:
+
+- **Red Flags** — 3–7 *observable* signs that the playbook is being skipped or gamed, each one
+  something a reviewer could point to in the conversation or the artifact ("the Unchanged group is
+  empty", "an approval is recorded with no user answer in the conversation"). The agent checks its
+  own work against them before asking for approval, and `/groundwork check` can reuse them. Never
+  an exhortation: no "be careful", "make sure", "consider", or "remember to".
 
 ## Authoring Rules
 

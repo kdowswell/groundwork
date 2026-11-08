@@ -91,6 +91,16 @@ If the user expects an immediate response to an action but the action crosses a 
 **Does the user accept this sketch as the basis for data modeling and implementation?**
 Ask once the sketch is complete. If the sketch is long or still has open questions for the user, offer once to show it as a review page (`npx @kdowswell/groundwork render <sketch path> --serve`), where the user can read it beside its open questions and findings and decide there. **Accepted:** record the approval; data modeling and implementation may start from it, and any later edit to the sketch makes the approval stale, so the next step re-asks. **Changes requested:** record that, revise, and ask again; nothing downstream starts from this version. **Delegated ("you decide"):** record it as delegated, state the calls you made in your next reply, and proceed. The agent never answers this Checkpoint on the user's behalf.
 
+## Red Flags
+
+Observable signs this playbook is being skipped or gamed. Check your own work against them before you ask for approval; each one you find is something to fix, not to explain away.
+
+- A spec file exists in the project and no `verify` ran on it before the architecture was drafted.
+- A component has no stated place it runs, or no owner.
+- An external dependency has no written behavior for when it fails or slows down.
+- Every data flow is synchronous and the architecture gives no reason.
+- The Builder Check section is missing, or reads "No open questions" on an architecture longer than about 100 lines.
+
 ## Principle Application
 
 **fault-isolation**

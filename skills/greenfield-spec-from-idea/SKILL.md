@@ -106,6 +106,17 @@ If the spec contains blocking questions after the draft is written, Phase 2 must
 **Does the user accept this spec as the basis for architecture and data modeling?**
 Ask once the spec is complete. If the spec is long or still has open questions for the user, offer once to show it as a review page (`npx @kdowswell/groundwork render <spec path> --serve`), where the user can read it beside its open questions and findings and decide there. **Accepted:** record the approval; architecture and data modeling may start from it, and any later edit to the spec makes the approval stale, so the next step re-asks. **Changes requested:** record that, revise, and ask again; nothing downstream starts from this version. **Delegated ("you decide"):** record it as delegated, state the calls you made in your next reply, and proceed. The agent never answers this Checkpoint on the user's behalf.
 
+## Red Flags
+
+Observable signs this playbook is being skipped or gamed. Check your own work against them before you ask for approval; each one you find is something to fix, not to explain away.
+
+- The first reply is a list of questions rather than a full draft, and the user did not ask to be grilled.
+- The Builder Check section is missing, or reads "No open questions" on a spec longer than about 150 lines.
+- A success criterion has no number or observable condition ("fast", "easy to use", "scalable").
+- The Non-goals list is empty.
+- The spec names a specific product, framework, or vendor the user never chose.
+- An acceptance decision is recorded with no answer from the user anywhere in the conversation.
+
 ## Principle Application
 
 **data-ownership**
