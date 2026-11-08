@@ -30,6 +30,7 @@ principles:
   - durable-agent-execution
   - simplest-agent-architecture-first
   - context-engineering
+  - tenant-isolation
 time_box: "45-90 minutes"
 tags: [architecture, design, greenfield]
 ---
@@ -174,6 +175,10 @@ Full reference: [principles/simplest-agent-architecture-first.md](principles/sim
 **context-engineering**
 Step 8's Budgets section is where this principle becomes a number. A per-step token budget forces decisions about what each step sees: retrieved documents, tool results, earlier turns. A step with no budget tends to receive everything, which costs money, adds latency, and dilutes what the model attends to.
 Full reference: [principles/context-engineering.md](principles/context-engineering.md)
+
+**tenant-isolation**
+When the system serves several tenants, Step 2 is where each component gets its isolation model: dedicated per tenant (silo), shared (pool), or mixed (bridge), with the reason. Step 3 shows where tenant identity enters, bound to the authenticated caller, and how it travels through queues and background jobs. Moving a component from pooled to siloed after launch is a migration, so record the choice now; a component with no stated model is a gap.
+Full reference: [principles/tenant-isolation.md](principles/tenant-isolation.md)
 
 ## Output Format
 

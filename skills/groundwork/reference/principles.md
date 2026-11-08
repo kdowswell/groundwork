@@ -49,6 +49,7 @@ The agent reads the signals in the project context and matches them against each
    | `audit_regulated` | HIPAA, FedRAMP, or PCI explicitly named | `data-ownership` |
    | `offline_first` | Field deployment, mobile with intermittent connectivity, or "works offline" stated | `consistency-models` |
    | `field_users` | Workers using product during physical tasks (field, factory, clinic, vehicle) | `field-first` |
+   | `multi_tenant` | One deployment serves several customer organizations (SaaS tenants, workspaces, accounts with their own users) from shared infrastructure | `tenant-isolation`, `data-classification` |
    | `per_customer_integrations` | Product integrates with each customer's external systems | `fault-isolation` |
    | `async_processing` | Background jobs, queues, event pipelines, or "eventual consistency" mentioned | `async-processing` |
    | `greenfield_ideation` | Stage is ideation or discovery with no working system yet | `data-ownership`, `field-first` (if applicable) |

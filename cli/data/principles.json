@@ -255,6 +255,11 @@
     "category": "operations"
   },
   {
+    "id": "tenant-isolation",
+    "title": "Tenant Isolation",
+    "category": "security"
+  },
+  {
     "id": "testing-strategy",
     "title": "Testing Strategy and the Test Pyramid",
     "category": "delivery"
