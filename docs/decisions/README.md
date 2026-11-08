@@ -35,3 +35,4 @@ Never edit an accepted ADR's decision — write a new one that supersedes it.
 - [ADR-021: A learning loop: an append-only suggestion box and an on-demand /groundwork learn](ADR-021-learning-loop.md)
 - [ADR-022: An analytical data model skill, routed as analytics-model](ADR-022-analytical-data-model-skill.md)
 - [ADR-023: Principle overlays: project and organization principles layered on the library](ADR-023-principle-overlays.md)
+- [ADR-024 (Proposed): Client-side architecture: cover the expensive-to-reverse decisions, not frontend technique](ADR-024-client-side-architecture-scope.md)
