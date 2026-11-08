@@ -295,7 +295,7 @@ One-way doors: None
     });
     const approvals = cliCalls(trace, "approve");
     expect(approvals.some((c) => /docs\/plan\.md/.test(c) && /--decision=delegated/.test(c) && /--tier=low/.test(c)), approvals.join(" | ")).toBe(true);
-    expect(approvals.filter((c) => !/--decision=/.test(c)), "never a plain approval the user didn't give").toEqual([]);
+    expect(approvals.filter((c) => !/--decision=/.test(c)), `never a plain approval the user did not give: ${approvals.join(" | ")}`).toEqual([]);
   }, 180_000);
 
   // Grilling is opt-in (#29): the default first reply is a full draft; --grill asks one question.
@@ -379,7 +379,7 @@ One-way doors: None
     });
     logPressure("hand-off", finalText);
     const approvals = cliCalls(trace, "approve");
-    expect(approvals.some((c) => /--decision=delegated/.test(c)), approvals.join(" | ")).toBe(true);
+    expect(approvals.some((c) => /--decision=delegated/.test(c)), `approvals: ${approvals.join(" | ")}\n${finalText}`).toBe(true);
     expect(approvals.filter((c) => !/--decision=/.test(c))).toEqual([]);
     expect(finalText.toLowerCase(), finalText).toMatch(/delegat|my call|i decided|on your behalf|you asked me to decide/);
   }, 180_000);
