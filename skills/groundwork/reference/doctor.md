@@ -4,7 +4,8 @@
 
 Report drift between `.groundwork/context.md` and observable reality, then repair only what
 the user approves. Doctor is the only command allowed to modify the context file outside of
-`init` — other commands report drift but never act on it.
+`init`. Other commands report drift but never act on it; the one exception is the Glossary
+section, which `data-model` writes and updates as part of its own output.
 
 ## Steps
 
@@ -27,6 +28,11 @@ the user approves. Doctor is the only command allowed to modify the context file
      ideation/discovery; or "maintain" with no deployment evidence.
    - **Quality bar** — recorded coverage or review policy vs. test directories and branch
      protection evidence available locally.
+   - **Glossary** — the CLI reports `glossary-missing` when the context lists more than one
+     bounded context but has no Glossary, and `glossary-drift` when a glossary row names a context
+     that isn't listed or a term appears twice without being qualified. Also sample the code's main
+     module and type names for glossary terms used under another name. Advisory: propose
+     `/groundwork data-model` to create or fix the glossary rather than writing it here.
 
 3. **Assess active principles for fit, not just existence.** Flag principles whose
    `applies_when` no longer matches the recorded scale/stage (e.g., enterprise-only principles

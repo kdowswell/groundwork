@@ -38,6 +38,19 @@
 - Current stage: {{IDEATION | DISCOVERY | REFINEMENT | BUILD | MAINTAIN}}
 - Last reviewed: {{YYYY-MM-DD}}
 
+## Bounded Contexts (optional)
+
+<!-- One line per context: its name and what it owns. Leave out for a single-context project. -->
+- {{CONTEXT_NAME}} — {{WHAT IT OWNS}}
+
+## Glossary (optional)
+
+<!-- The domain's own words, one row per term. /groundwork data-model writes and updates this table;
+     /groundwork review flags code and docs that drift from it. -->
+| Term | Meaning | Owning context | Not to be confused with |
+|---|---|---|---|
+| {{TERM}} | {{ONE-LINE MEANING}} | {{CONTEXT}} | {{OTHER TERM OR MEANING}} |
+
 ## Active Principles
 
 <!-- List the principle ids most relevant to this project, and why each was selected. -->
