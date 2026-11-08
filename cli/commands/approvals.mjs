@@ -13,6 +13,7 @@ import { createHash } from "node:crypto";
 import { existsSync, lstatSync, readFileSync, readdirSync, realpathSync } from "node:fs";
 import { join, relative, resolve, sep } from "node:path";
 import { diffStats, formatUnified, lineDiff } from "../render/diff.mjs";
+import { kindOf } from "../render/kinds.mjs";
 import {
   ensureProjectDir,
   isInside,
@@ -143,6 +144,7 @@ export function approve(root, artifact, opts) {
   };
   if (via) receipt.via = via;
   if (opts.notes) receipt.notes = String(opts.notes);
+  if (Array.isArray(opts.bundle) && opts.bundle.length > 1) receipt.bundle = opts.bundle;
 
   const dir = ensureProjectDir(root, APPROVALS_DIR);
   const replaced = priorFile;
@@ -176,6 +178,46 @@ export function approve(root, artifact, opts) {
   writeFileSafe(dir, snapshot, text);
   writeFileSafe(dir, path, `${JSON.stringify(receipt, null, 2)}\n`);
   return { receipt, path, replaced };
+}
+
+/**
+ * Record one user decision across several artifacts (ADR-017): one receipt per artifact, the same
+ * decision and date, and a `bundle` field listing every artifact the decision covered, so
+ * `verify`, staleness, and later plan deltas keep working per file. Each artifact's checkpoint
+ * is `opts.checkpoint` when given, otherwise its kind's acceptance checkpoint (from its H1).
+ * Everything is checked before anything is written.
+ * @param {string} root
+ * @param {string[]} artifacts
+ * @param {{checkpoint?: string, decision?: string, notes?: string, now?: Date}} opts
+ * @returns {Array<{receipt: object, path: string, replaced: boolean}>}
+ */
+export function approveBundle(root, artifacts, opts = {}) {
+  if (artifacts.length === 1) return [approve(root, artifacts[0], opts)];
+  if (opts.decision === "amended" || opts.via !== undefined) {
+    throw new Error("an amendment applies one plan to one artifact; approve it on its own");
+  }
+  const paths = artifacts.map((a) => toArtifactPath(root, a));
+  if (new Set(paths).size !== paths.length) throw new Error("the same artifact is listed twice");
+  const planned = paths.map((artifactPath) => {
+    const abs = join(root, artifactPath);
+    if (!existsSync(abs)) throw new Error(`artifact does not exist: ${artifactPath}`);
+    const checkpoint = opts.checkpoint ?? kindOf(readFileSync(abs, "utf8"))?.checkpoint;
+    if (!checkpoint) {
+      throw new Error(`${artifactPath} is not a groundwork spec, architecture, data model, or plan — pass --checkpoint=<id>`);
+    }
+    return { artifactPath, checkpoint };
+  });
+  const decision = opts.decision ?? "approved";
+  if (!DECISIONS.includes(decision)) throw new Error(`--decision must be one of: ${DECISIONS.join(", ")}`);
+  for (const { checkpoint } of planned) {
+    if (!CHECKPOINT_ID.test(checkpoint)) {
+      throw new Error('approve needs --checkpoint=<id>, kebab-case, optionally "<skill>/<checkpoint>"');
+    }
+  }
+  const now = opts.now ?? new Date();
+  return planned.map(({ artifactPath, checkpoint }) =>
+    approve(root, artifactPath, { ...opts, checkpoint, decision, now, bundle: paths }),
+  );
 }
 
 function readReceipt(file) {
@@ -335,6 +377,17 @@ const STATUS_NOTE = {
   missing: "artifact no longer exists — remove the receipt or restore the artifact",
   unapproved: "no receipt — the Checkpoint has not been resolved",
 };
+
+export function formatApproveBundleHuman(results) {
+  if (results.length === 1) return formatApproveHuman(results[0]);
+  const { decision, decidedBy } = results[0].receipt;
+  const who = decidedBy === "user" ? "by the user" : "delegated to the agent";
+  const lines = [`✓ Recorded ${decision} for ${results.length} artifacts in one decision (${who})`];
+  for (const r of results) {
+    lines.push(`  ${r.receipt.artifact} at ${r.receipt.checkpoint} · sha256 ${r.receipt.sha256.slice(0, 12)}…`);
+  }
+  return lines.join("\n");
+}
 
 export function formatApproveHuman(result) {
   const { receipt } = result;

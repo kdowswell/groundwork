@@ -36,4 +36,4 @@ export const COMMAND_ALIASES: Record<string, string> = {
 };
 
 /** Router-level playbooks written by hand; sync never writes or removes them. */
-export const HAND_WRITTEN = ["init", "doctor"];
+export const HAND_WRITTEN = ["init", "doctor", "start", "continue"];

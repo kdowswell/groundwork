@@ -3,7 +3,7 @@
 
 # Incident Postmortem (`/groundwork postmortem`)
 
-**Phase:** Change a running system · **Time box:** 60-90 minutes (meeting) + 30 minutes (write-up)
+**Activity:** Change a running system · **Time box:** 60-90 minutes (meeting) + 30 minutes (write-up)
 
 **Before you start:** load project context for this session if you have not already (see the
 router's Steps); honor active principles throughout. Entry criteria below are what this playbook

@@ -2,9 +2,10 @@
 name: groundwork
 title: "groundwork"
 description: >
-  Single entry point for the groundwork architecture toolkit: spec, architecture,
-  data-model, principles, adr, spike, risks, compare, prototype-review, review,
-  debt, upgrade, postmortem, plan, replace, plus init and doctor. Invoke when the
+  Single entry point for the groundwork architecture toolkit: start, continue,
+  spec, architecture, data-model, principles, adr, spike, risks, compare,
+  prototype-review, review, debt, upgrade, postmortem, plan, replace, plus init
+  and doctor. Invoke when the
   user asks for architecture or planning help — specifying a new build, designing
   a system's architecture, choosing a data model, running a research spike or
   tradeoff analysis, reviewing an existing system, triaging tech debt, planning a
@@ -29,7 +30,8 @@ what the request needs — never preload multiple playbooks. <!-- rule:router-pr
    session. If the runtime cannot run scripts, read `.groundwork/context.md` directly if it
    exists. <!-- rule:router-context-first -->
 2. **Route the request** using the Commands table and Routing rules below. Load exactly one
-   playbook from `reference/` and follow it. <!-- rule:router-one-playbook -->
+   playbook from `reference/` and follow it. The one exception is `start` and `continue`, which
+   chain playbooks as their own rules say. <!-- rule:router-one-playbook -->
 3. **Verify artifacts you will build on.** If the playbook starts from an existing spec,
    architecture, data model, or change plan file (named in the request or present in the project), run
    `npx @kdowswell/groundwork verify <file>` from the project root before following the playbook, and act on
@@ -45,6 +47,8 @@ what the request needs — never preload multiple playbooks. <!-- rule:router-pr
 | `init` | Interview, then write `.groundwork/context.md` with active principles | [reference/init.md](reference/init.md) |
 | `doctor` | Report drift between project context and reality; repair on request | [reference/doctor.md](reference/doctor.md) |
 | **Design something new** | | |
+| `start [idea]` | The whole design in one pass: spec, architecture, data model, and ADRs, with one approval | [reference/start.md](reference/start.md) |
+| `continue` | Finish whatever design documents are missing, draft, or changed since approval, with one approval | [reference/continue.md](reference/continue.md) |
 | `spec [idea]` | Turn an idea into a spec with scope and success criteria | [reference/spec.md](reference/spec.md) |
 | `architecture [system]` | Define system boundaries, components, and data flows before coding | [reference/architecture.md](reference/architecture.md) |
 | `data-model [domain]` | Design the core data model before implementation | [reference/data-model.md](reference/data-model.md) |
@@ -62,6 +66,19 @@ what the request needs — never preload multiple playbooks. <!-- rule:router-pr
 | `postmortem [incident]` | Blameless incident postmortem with owned action items | [reference/postmortem.md](reference/postmortem.md) |
 | `plan [change]` | Safe change plan: what changes against the spec, blast radius, rollback, test coverage | [reference/plan.md](reference/plan.md) |
 | `replace [component]` | Incrementally replace a legacy component | [reference/replace.md](reference/replace.md) |
+
+`start` and `continue` chain the design playbooks strictly in sequence: read the spec playbook
+and write the spec file, and only then read the architecture playbook and write its file, and only
+then the data model's. Never read a later playbook before the earlier document is on disk: the
+files carry the work forward, not the conversation. Documents this run wrote have no approval yet, so
+don't `verify` them mid-chain. Defer each playbook's approval and fresh-eyes review,
+turn missing inputs into labeled assumptions rather than stopping, and end with one fresh-eyes
+review across every document and one approval, recorded per file with a single
+`npx @kdowswell/groundwork approve <file> <file> …`. <!-- rule:router-start-chain -->
+
+`continue` reads each design document's state first: a missing one is drafted, a draft is
+finished, an approved one is built on without loading its playbook or asking about it again, and one changed since
+approval has its diff shown and joins the single approval round. <!-- rule:router-continue-resume -->
 
 **Old names still work.** `sketch` → `architecture`, `model` → `data-model`, `vet` →
 `prototype-review`, `assume` → `risks`, `triage` → `debt`, `retro` → `postmortem`, `strangle` →

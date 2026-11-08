@@ -6,7 +6,7 @@
  *   npx @kdowswell/groundwork doctor [path] [--json]
  *   npx @kdowswell/groundwork install [--providers=claude,github,cursor,agents] [--all-skills] [--global] [--hooks]
  *   npx @kdowswell/groundwork update  (same as install; idempotent)
- *   npx @kdowswell/groundwork approve <artifact> --checkpoint=<id> [--decision=...] [--via=<plan>] [--notes=...]
+ *   npx @kdowswell/groundwork approve <artifact>... [--checkpoint=<id>] [--decision=...] [--via=<plan>] [--notes=...]
  *   npx @kdowswell/groundwork verify [artifact] [--json] [--diff]
  *   npx @kdowswell/groundwork render <artifact> [--serve] [--checkpoint=<id>] [--port=<n>]
  */
@@ -18,9 +18,9 @@ import { formatHuman, formatJson } from "../engine/report.mjs";
 import { doctor, formatDoctorHuman } from "../commands/doctor.mjs";
 import { install, formatInstallHuman, PROVIDERS } from "../commands/install.mjs";
 import {
-  approve,
+  approveBundle,
   verify,
-  formatApproveHuman,
+  formatApproveBundleHuman,
   formatVerifyHuman,
   formatVerifyDiff,
   DECISIONS,
@@ -61,8 +61,10 @@ Usage:
       --global                 user-level install (claude only)
       --hooks                  install Claude Code lifecycle hooks (not needed with the plugin)
   groundwork update            refresh an existing install (same as install)
-  groundwork approve <file>    record an approval decision, pinned to the file's SHA-256
-      --checkpoint=<id>        required: "<skill>/<checkpoint>" or a kebab-case id
+  groundwork approve <file>... record an approval decision, pinned to each file's SHA-256;
+                               several files record one decision with a receipt per file
+      --checkpoint=<id>        "<skill>/<checkpoint>" or a kebab-case id; required for one
+                               file, defaults to each file's acceptance checkpoint for several
       --decision=<d>           ${DECISIONS.join(" | ")} (default: approved)
       --via=<plan>             with --decision=amended: the approved change plan whose delta
                                was applied; the checkpoint defaults to the artifact's own
@@ -130,15 +132,15 @@ async function main() {
       break;
     }
     case "approve": {
-      const artifact = args._[1];
-      if (!artifact) throw new Error("approve needs an artifact path");
-      const result = approve(process.cwd(), artifact, {
-        checkpoint: args.flags.checkpoint,
+      const artifacts = args._.slice(1);
+      if (artifacts.length === 0) throw new Error("approve needs an artifact path");
+      const results = approveBundle(process.cwd(), artifacts, {
+        checkpoint: typeof args.flags.checkpoint === "string" ? args.flags.checkpoint : undefined,
         decision: args.flags.decision,
         via: typeof args.flags.via === "string" ? args.flags.via : undefined,
         notes: typeof args.flags.notes === "string" ? args.flags.notes : undefined,
       });
-      console.log(formatApproveHuman(result));
+      console.log(formatApproveBundleHuman(results));
       break;
     }
     case "verify": {

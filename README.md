@@ -31,10 +31,14 @@ unrelated, so always use the scoped name with `npx`. Installed as a dev dependen
 Then, inside your AI coding tool:
 
 ```
-/groundwork init              # one-time: capture project context + active principles
-/groundwork                   # menu of all commands
-/groundwork plan <change>     # e.g. plan a safe production change
+/groundwork start <idea>      # spec, architecture, data model, and ADRs in one pass, one approval
+/groundwork                   # where the project stands, the next step, and every command
+/groundwork continue          # finish whatever design documents are missing or unapproved
+/groundwork plan <change>     # plan a safe change to a running system
 ```
+
+`/groundwork init` captures project context and active principles up front; `start` works without
+it and records what it assumed.
 
 And in CI or locally, no LLM required:
 
@@ -44,15 +48,16 @@ npx @kdowswell/groundwork detect .       # deterministic production-readiness + 
 
 ## The /groundwork Router
 
-One skill, seventeen commands. The router loads project context once per session, routes to
-exactly one playbook per request, and never runs work from a bare `/groundwork` (you get a
-menu). Commands are grouped by what you're doing, chosen from the request rather than the repo's
+One skill, nineteen commands. The router loads project context once per session and routes to
+exactly one playbook per request. A bare `/groundwork` never runs work: it shows where the project
+stands (which design documents exist and whether they're approved), suggests one next command,
+and lists the rest. Every command ends by recommending one next step. Commands are grouped by what you're doing, chosen from the request rather than the repo's
 age: a new feature spec in a ten-year-old codebase is still design work.
 
 | You're… | Commands |
 |---|---|
 | **Setting up** | `init` (write project context), `doctor` (report/repair context drift) |
-| **Designing something new** | `spec`, `architecture`, `data-model`, `principles`, `adr` |
+| **Designing something new** | `start`, `continue`, `spec`, `architecture`, `data-model`, `principles`, `adr` |
 | **Deciding under uncertainty** | `spike`, `risks`, `compare`, `prototype-review` |
 | **Changing a running system** | `review`, `debt`, `upgrade`, `postmortem`, `plan`, `replace` |
 
@@ -60,8 +65,16 @@ Earlier names still work as aliases (`sketch`, `model`, `vet`, `assume`, `triage
 `strangle`); the router runs the renamed command and tells you the new name once
 ([ADR-016](docs/decisions/ADR-016-plain-language-command-names.md)).
 
-Every command is compiled from a standalone phase skill (below) by `npm run sync:router` —
-the standalone skills stay the source of truth and remain individually installable.
+`start` and `continue` are the default design path
+([ADR-017](docs/decisions/ADR-017-outcome-commands-start-continue.md)). They run the spec,
+architecture, and data model playbooks in order, one at a time, writing each document before
+starting the next. They end with one fresh-eyes review across all of them and **one** approval,
+recorded per file (`npx @kdowswell/groundwork approve docs/spec.md docs/architecture.md
+docs/data-model.md`). `continue` builds on what you've already approved and asks only about what
+changed.
+
+The other commands are compiled from standalone phase skills (below) by `npm run sync:router`.
+The standalone skills stay the source of truth and remain individually installable.
 
 ## The Detector
 
@@ -239,6 +252,7 @@ When you approve an artifact, the decision is recorded pinned to the artifact's 
 ```bash
 npx @kdowswell/groundwork approve docs/specs/orders.md --checkpoint=greenfield-spec-from-idea/scope
 npx @kdowswell/groundwork approve docs/specs/orders.md --checkpoint=scope --decision=delegated   # "you pick"
+npx @kdowswell/groundwork approve docs/spec.md docs/architecture.md docs/data-model.md       # one decision, a receipt per file
 npx @kdowswell/groundwork verify                        # exit 1 if any approved artifact changed or vanished
 npx @kdowswell/groundwork verify docs/specs/orders.md   # exit 0 only if this artifact may proceed
 npx @kdowswell/groundwork verify --diff                 # also print what changed since each stale decision
@@ -316,8 +330,8 @@ groundwork/
 │   ├── _schema/            Frontmatter JSON Schema
 │   ├── groundwork/         The /groundwork router skill
 │   │   ├── SKILL.md        Command table + routing rules (rule-marked)
-│   │   ├── reference/      17 playbooks (15 compiled from phase skills + init, doctor)
-│   │   └── scripts/        context.mjs session loader, hook.mjs lifecycle hook dispatcher
+│   │   ├── reference/      19 playbooks (15 compiled from phase skills + init, doctor, start, continue)
+│   │   └── scripts/        context.mjs session loader, status.mjs, hook.mjs lifecycle hook dispatcher
 │   ├── greenfield-*/       0-to-1 skills (5) — "design something new" playbooks
 │   ├── exploration-*/      Research and prototype skills (4) — "decide under uncertainty" playbooks
 │   └── brownfield-*/       Existing-system skills (6) — "change a running system" playbooks

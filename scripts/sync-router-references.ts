@@ -52,7 +52,7 @@ function buildPlaybook(verb: string, skillName: string, raw: string): string {
 
 # ${data.title ?? skillName} (\`/groundwork ${verb}\`)
 
-**Phase:** ${phaseLabel} · **Time box:** ${data.time_box ?? "not set"}
+**Activity:** ${phaseLabel} · **Time box:** ${data.time_box ?? "not set"}
 
 **Before you start:** load project context for this session if you have not already (see the
 router's Steps); honor active principles throughout. Entry criteria below are what this playbook

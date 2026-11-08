@@ -1,6 +1,6 @@
 # Initialize Project Context (`/groundwork init`)
 
-**Phase:** Setup · **Time box:** 10-20 minutes
+**Activity:** Set up · **Time box:** 10-20 minutes
 
 Write `.groundwork/context.md` — the durable project context that every other groundwork
 command reads. Later commands use it to pick applicable principles, calibrate rigor to team

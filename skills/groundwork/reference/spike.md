@@ -3,7 +3,7 @@
 
 # Research Spike (`/groundwork spike`)
 
-**Phase:** Decide under uncertainty · **Time box:** 1-3 days
+**Activity:** Decide under uncertainty · **Time box:** 1-3 days
 
 **Before you start:** load project context for this session if you have not already (see the
 router's Steps); honor active principles throughout. Entry criteria below are what this playbook

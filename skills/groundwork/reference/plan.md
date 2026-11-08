@@ -3,7 +3,7 @@
 
 # Safe Change Plan (`/groundwork plan`)
 
-**Phase:** Change a running system · **Time box:** 60-120 minutes
+**Activity:** Change a running system · **Time box:** 60-120 minutes
 
 **Before you start:** load project context for this session if you have not already (see the
 router's Steps); honor active principles throughout. Entry criteria below are what this playbook

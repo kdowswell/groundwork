@@ -8,15 +8,10 @@
  */
 import { diffHunks, diffStats } from "./diff.mjs";
 import { escapeHtml, renderInline, renderMarkdown, slugify } from "./markdown.mjs";
+import { kindOf } from "./kinds.mjs";
 import { column, deriveVisuals, sectionTable, TOP, VISUAL_CSS } from "./visuals.mjs";
 
-/** Artifact kinds groundwork produces, keyed by their H1 prefix. */
-export const ARTIFACT_KINDS = [
-  { prefix: "Spec:", label: "Spec", checkpoint: "greenfield-spec-from-idea/accept" },
-  { prefix: "Architecture:", label: "Architecture", checkpoint: "greenfield-architecture-sketch/accept" },
-  { prefix: "Data Model:", label: "Data model", checkpoint: "greenfield-data-model-first/accept" },
-  { prefix: "Safe Change Plan:", label: "Change plan", checkpoint: "brownfield-safe-change-plan/accept" },
-];
+export { ARTIFACT_KINDS } from "./kinds.mjs";
 
 const PRINCIPLE_URL = "https://github.com/kdowswell/groundwork/blob/main/principles";
 
@@ -29,7 +24,7 @@ export function analyzeArtifact(source, principles = []) {
   const text = source.replace(/\r\n/g, "\n");
   const lines = text.split("\n");
   const h1 = (lines.find((l) => /^#\s+/.test(l)) ?? "").replace(/^#\s+/, "").trim();
-  const kind = ARTIFACT_KINDS.find((k) => h1.startsWith(k.prefix)) ?? null;
+  const kind = kindOf(text);
 
   const questions = [];
   const builder = sectionTable(lines, "Builder Check");

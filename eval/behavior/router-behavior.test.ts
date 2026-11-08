@@ -10,10 +10,14 @@
 import { readFileSync } from "node:fs";
 import path from "node:path";
 import { afterAll, describe, expect, it } from "vitest";
+// eslint-disable-next-line @typescript-eslint/ban-ts-comment
+// @ts-ignore — dependency-free ESM CLI, no declarations (ADR-005)
+import { approve } from "../../cli/commands/approvals.mjs";
 import {
   cliCalls,
   createWorkspace,
   destroyWorkspace,
+  filesWritten,
   firstIndex,
   isContextAccess,
   playbooksRead,
@@ -186,6 +190,54 @@ Escalation — owned by the support-operations team.
     expect(reapprovals, `agent re-approved a stale spec: ${reapprovals.join(" | ")}`).toEqual([]);
     expect(finalText.toLowerCase()).toMatch(/chang|stale|approv|confirm/);
   }, 180_000);
+
+  // ADR-017: outcome commands chain the design playbooks and ask once.
+  const kindOfFile = (dir: string, rel: string) =>
+    (readFileSync(path.join(dir, rel), "utf8").match(/^#\s+(Spec|Architecture|Data Model):/m) ?? [])[1];
+
+  it("rule:router-start-chain — start with no context writes spec, architecture, and data model, then asks once", async () => {
+    const dir = workspace(); // no context: start must not stop for init
+    const { trace, finalText } = await runScenario({
+      workspace: dir,
+      maxTurns: 30,
+      userMessage:
+        "/groundwork start an internal tool for our support leads to see which escalations are stuck and reassign them",
+    });
+
+    const kinds = filesWritten(trace).map((f) => kindOfFile(dir, f)).filter(Boolean);
+    for (const k of ["Spec", "Architecture", "Data Model"]) {
+      expect(kinds, `no ${k} file written; wrote: ${filesWritten(trace).join(", ")}`).toContain(k);
+    }
+    // One playbook at a time, and each document on disk before the next playbook loads.
+    const order = trace.flatMap((c) =>
+      c.tool === "read_file" && /reference\/(spec|architecture|data-model)\.md$/.test(String(c.input.path))
+        ? [`read:${String(c.input.path).replace(/^.*reference\//, "")}`]
+        : c.tool === "write_file" && kindOfFile(dir, String(c.input.path))
+          ? [`write:${kindOfFile(dir, String(c.input.path))}`]
+          : [],
+    );
+    expect(order.indexOf("write:Spec"), order.join(" ")).toBeLessThan(order.indexOf("read:architecture.md"));
+    expect(order.indexOf("write:Architecture"), order.join(" ")).toBeLessThan(order.indexOf("read:data-model.md"));
+    // Nothing recorded for the user, and the single reply asks for one approval.
+    expect(cliCalls(trace, "approve")).toEqual([]);
+    expect(finalText.toLowerCase()).toMatch(/approv|accept/);
+  }, 600_000);
+
+  it("rule:router-continue-resume — continue builds on an approved spec without re-asking it, and drafts the architecture", async () => {
+    const dir = workspace({ ".groundwork/context.md": CONTEXT_MD, "docs/spec.md": SPEC_MD });
+    approve(dir, "docs/spec.md", { checkpoint: "greenfield-spec-from-idea/accept" });
+    const specBefore = readFileSync(path.join(dir, "docs/spec.md"), "utf8");
+    const { trace, finalText } = await runScenario({ workspace: dir, maxTurns: 30, userMessage: "/groundwork continue" });
+
+    const written = filesWritten(trace);
+    expect(written.map((f) => kindOfFile(dir, f)), `wrote: ${written.join(", ")}`).toContain("Architecture");
+    expect(readFileSync(path.join(dir, "docs/spec.md"), "utf8"), "an approved spec must not be edited").toBe(specBefore);
+    expect(playbooksRead(trace), "the spec playbook must not be re-run").not.toContain("spec.md");
+    expect(cliCalls(trace, "approve")).toEqual([]);
+    // The approval round covers what changed: the approved spec isn't in it.
+    expect(finalText, finalText).not.toMatch(/groundwork approve[^\n`]*docs\/spec\.md/);
+    expect(finalText.toLowerCase()).toMatch(/approv|accept/);
+  }, 600_000);
 
   // ADR-016: old names keep working, run the renamed playbook, and say the new name once.
   for (const [oldName, newName, ask] of [

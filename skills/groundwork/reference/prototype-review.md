@@ -3,7 +3,7 @@
 
 # Prototype Review (`/groundwork prototype-review`)
 
-**Phase:** Decide under uncertainty · **Time box:** 2-4 hours
+**Activity:** Decide under uncertainty · **Time box:** 2-4 hours
 
 **Before you start:** load project context for this session if you have not already (see the
 router's Steps); honor active principles throughout. Entry criteria below are what this playbook

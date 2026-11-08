@@ -14,7 +14,7 @@ import { join, resolve } from "node:path";
 import { afterAll, describe, expect, it } from "vitest";
 import { doctor } from "../cli/commands/doctor.mjs";
 import { install } from "../cli/commands/install.mjs";
-import { amendmentDiff, approve, approvedDiff, snapshotPath, verify } from "../cli/commands/approvals.mjs";
+import { amendmentDiff, approve, approveBundle, approvedDiff, snapshotPath, verify } from "../cli/commands/approvals.mjs";
 import { diffHunks, formatUnified, lineDiff } from "../cli/render/diff.mjs";
 
 const ROOT = resolve(__dirname, "..");
@@ -498,6 +498,56 @@ describe("groundwork approve / verify", () => {
     writeFileSync(join(dir, "docs/specs/orders.md"), "# Orders\n\nScope: v1.\n");
     return dir;
   }
+
+  describe("one decision across several artifacts (ADR-017)", () => {
+    function designBundle() {
+      const dir = tempDir();
+      mkdirSync(join(dir, "docs"));
+      writeFileSync(join(dir, "docs/spec.md"), "# Spec: Orders\n");
+      writeFileSync(join(dir, "docs/architecture.md"), "# Architecture: Orders\n");
+      writeFileSync(join(dir, "docs/data-model.md"), "# Data Model: Orders\n");
+      return dir;
+    }
+    const FILES = ["docs/spec.md", "docs/architecture.md", "docs/data-model.md"];
+
+    it("writes one receipt per artifact with its own checkpoint, the same date, and the bundle", () => {
+      const dir = designBundle();
+      const results = approveBundle(dir, FILES, { now: NOW });
+      expect(results.map((r: any) => r.receipt.checkpoint)).toEqual([
+        "greenfield-spec-from-idea/accept",
+        "greenfield-architecture-sketch/accept",
+        "greenfield-data-model-first/accept",
+      ]);
+      for (const r of results) {
+        expect(r.receipt.date).toBe("2026-10-22");
+        expect(r.receipt.bundle).toEqual(FILES);
+      }
+      expect(verify(dir).ok).toBe(true);
+      // Staleness stays per file.
+      writeFileSync(join(dir, "docs/architecture.md"), "# Architecture: Orders\nchanged\n");
+      expect(verify(dir, "docs/spec.md").ok).toBe(true);
+      expect(verify(dir, "docs/architecture.md").ok).toBe(false);
+    });
+
+    it("checks everything before writing anything", () => {
+      const dir = designBundle();
+      writeFileSync(join(dir, "docs/notes.md"), "# Notes\n");
+      expect(() => approveBundle(dir, [...FILES, "docs/notes.md"], { now: NOW })).toThrow(/--checkpoint/);
+      expect(() => approveBundle(dir, [...FILES, "docs/missing.md"], { now: NOW })).toThrow(/does not exist/);
+      expect(existsSync(join(dir, ".groundwork/approvals"))).toBe(false);
+      expect(() => approveBundle(dir, FILES, { decision: "amended", via: "docs/spec.md" })).toThrow(/one artifact/);
+    });
+
+    it("takes several files on the command line, and an explicit checkpoint for all of them", () => {
+      const dir = designBundle();
+      const { status, stdout } = runCli(["approve", ...FILES, "--checkpoint=start/accept", "--decision=delegated"], { cwd: dir });
+      expect(status).toBe(0);
+      expect(stdout).toContain("3 artifacts in one decision (delegated to the agent)");
+      const receipt = JSON.parse(readFileSync(join(dir, ".groundwork/approvals/docs__data-model.md.json"), "utf8"));
+      expect(receipt.checkpoint).toBe("start/accept");
+      expect(receipt.decidedBy).toBe("agent-delegated");
+    });
+  });
 
   it("records a hash-pinned receipt and verifies it fresh", () => {
     const dir = projectWithSpec();

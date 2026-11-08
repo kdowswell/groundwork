@@ -103,6 +103,16 @@ const TOOLS: Anthropic.Tool[] = [
     },
   },
   {
+    name: "write_file",
+    description: "Write a file in the workspace (relative path), creating directories as needed. Overwrites an existing file.",
+    input_schema: {
+      type: "object",
+      properties: { path: { type: "string" }, content: { type: "string" } },
+      required: ["path", "content"],
+      additionalProperties: false,
+    },
+  },
+  {
     name: "bash",
     description:
       "Run a shell command in the workspace. This sandbox only permits the groundwork context loader (node .../context.mjs) and the groundwork CLI's `groundwork approve`, `groundwork verify`, and `groundwork render` commands.",
@@ -140,6 +150,15 @@ function executeTool(workspace: string, call: ToolCall): string {
       if (!existsSync(abs)) return `error: no such file: ${rel}`;
       if (!statSync(abs).isFile()) return `error: not a file: ${rel}`;
       return readFileSync(abs, "utf8");
+    }
+    case "write_file": {
+      const rel = String(call.input.path ?? "");
+      const abs = path.resolve(workspace, rel);
+      if (!abs.startsWith(workspace + path.sep)) return "error: path escapes the workspace";
+      if (abs.startsWith(path.join(workspace, ".claude") + path.sep)) return "error: the skill directory is read-only";
+      mkdirSync(path.dirname(abs), { recursive: true });
+      writeFileSync(abs, String(call.input.content ?? ""), "utf8");
+      return `wrote ${rel}`;
     }
     case "bash": {
       const command = String(call.input.command ?? "");
@@ -190,6 +209,8 @@ function executeTool(workspace: string, call: ToolCall): string {
 export async function runScenario(opts: {
   workspace: string;
   userMessage: string;
+  /** Tool-loop turns before giving up; chained commands (start, continue) need more. */
+  maxTurns?: number;
 }): Promise<ScenarioResult> {
   const client = new Anthropic({ apiKey: resolveApiKey() });
   const skillContent = readFileSync(path.join(opts.workspace, SKILL_REL, "SKILL.md"), "utf8");
@@ -197,7 +218,7 @@ export async function runScenario(opts: {
   const system = [
     "You are an AI coding agent operating inside a user's project workspace.",
     `The user invoked the "groundwork" skill. Its SKILL.md is loaded below; the skill's base directory is ${SKILL_REL}/ inside the workspace, so its reference files are at ${SKILL_REL}/reference/ and its scripts at ${SKILL_REL}/scripts/.`,
-    "Follow the skill exactly. Use the tools to read files and run the permitted script. When you have finished, reply with plain text (no tool call).",
+    "Follow the skill exactly. Use the tools to read and write files and run the permitted script. When you have finished, reply with plain text (no tool call).",
     "",
     "--- SKILL.md ---",
     skillContent,
@@ -207,7 +228,7 @@ export async function runScenario(opts: {
   const trace: ToolCall[] = [];
   let finalText = "";
 
-  for (let turn = 0; turn < MAX_TURNS; turn++) {
+  for (let turn = 0; turn < (opts.maxTurns ?? MAX_TURNS); turn++) {
     const response = await client.messages.create({
       model: BEHAVIOR_MODEL,
       max_tokens: 16000, // thinking is on by default and counts toward this
@@ -254,6 +275,11 @@ export function isContextAccess(call: ToolCall): boolean {
   if (call.tool === "bash") return String(call.input.command ?? "").includes("context.mjs");
   if (call.tool === "read_file") return String(call.input.path ?? "").includes(".groundwork/context.md");
   return false;
+}
+
+/** Workspace paths the agent wrote with write_file, in order. */
+export function filesWritten(trace: ToolCall[]): string[] {
+  return trace.filter((c) => c.tool === "write_file").map((c) => String(c.input.path ?? "").replace(/^\.\//, ""));
 }
 
 /** Bash commands that invoked `groundwork <sub>`. */
