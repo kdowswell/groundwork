@@ -66,6 +66,7 @@ The human's job is to answer questions honestly, including "I don't know." Open 
    - What IS in scope for the first deliverable
    - What is explicitly NOT in scope (non-goals)
    The non-goals list is as important as the goals list. It's where scope creep enters.
+   Then state the **scope stance** in one line: is this spec deliberately **expanding** the scope the request implied (and why), **holding** it, or **reducing** it (and what was cut)? It makes a scope change visible at the approval the user already gives, without asking a separate question.
 
 4. **Define success criteria.** Write 2–4 measurable outcomes that indicate the problem is solved. Prefer behavioral criteria ("a technician can submit a field report in under 60 seconds without removing gloves") over output criteria ("the form has 5 fields"). If you can't make them measurable, write them as falsifiable: "users stop using the paper workaround." Where a criterion describes how the system responds, you may write it in EARS form ("WHEN <trigger>, THE SYSTEM SHALL <response>"; "WHILE <state>, …"; "IF <unwanted condition>, THEN …"); keep Given/When/Then wherever the project already uses it. Mark each criterion that must hold across a whole range of inputs, not just one example ("for every refund, the balance drops by exactly the refunded amount"), with **(property)**: those become property-based tests later.
 
@@ -105,7 +106,7 @@ If the spec contains blocking questions after the draft is written, Phase 2 must
 **Yes:** put them to the user before the acceptance Checkpoint, and fold each answer into the spec. Acceptance cannot be asked while any of them is open, because the user would be approving a spec that two builders would read differently. **No:** go straight to acceptance, and list the "Agent call:" decisions you made so the user can overturn any of them when they answer.
 
 **Does the user accept this spec as the basis for architecture and data modeling?**
-Ask once the spec is complete. If the spec is long or still has open questions for the user, offer once to show it as a review page (`npx @kdowswell/groundwork render <spec path> --serve`), where the user can read it beside its open questions and findings and decide there. **Accepted:** record the approval; architecture and data modeling may start from it, and any later edit to the spec makes the approval stale, so the next step re-asks. **Changes requested:** record that, revise, and ask again; nothing downstream starts from this version. **Delegated ("you decide"):** record it as delegated, state the calls you made in your next reply, and proceed. The agent never answers this Checkpoint on the user's behalf.
+Ask once the spec is complete, and name the scope stance in the question when it is Expand or Reduce, so accepting the spec also accepts the scope change. If the spec is long or still has open questions for the user, offer once to show it as a review page (`npx @kdowswell/groundwork render <spec path> --serve`), where the user can read it beside its open questions and findings and decide there. **Accepted:** record the approval; architecture and data modeling may start from it, and any later edit to the spec makes the approval stale, so the next step re-asks. **Changes requested:** record that, revise, and ask again; nothing downstream starts from this version. **Delegated ("you decide"):** record it as delegated, state the calls you made in your next reply, and proceed. The agent never answers this Checkpoint on the user's behalf.
 
 ## Red Flags
 
@@ -197,6 +198,8 @@ One sentence. What the user cannot do or does badly today.
 Who. Where. What constraint they're operating under.
 
 ## Scope
+**Scope stance:** Expand / Hold / Reduce — {{ONE LINE: WHAT CHANGED AGAINST THE REQUEST, AND WHY}}
+
 ### In scope
 - ...
 

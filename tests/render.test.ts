@@ -318,6 +318,21 @@ describe("agent lens (#36)", () => {
   });
 });
 
+describe("scope stance (#48)", () => {
+  const withStance = (stance: string) =>
+    SPEC.replace("## Primary Data Entity", `## Scope\n${stance}\n\n### In scope\n- Track escalations\n\n### Non-goals (explicitly out of scope)\n- Customer portal\n\n## Primary Data Entity`);
+
+  it("shows a reduce or expand stance above the scope columns", () => {
+    const { html } = render(project(withStance("**Scope stance:** Reduce — cut the customer-facing status page from v1")), "docs/spec.md", { write: false });
+    expect(html).toContain('<span class="badge warn">Scope: Reduce</span> cut the customer-facing status page from v1');
+  });
+
+  it("draws nothing for the template placeholder", () => {
+    const { html } = render(project(withStance("**Scope stance:** Expand / Hold / Reduce — {{ONE LINE}}")), "docs/spec.md", { write: false });
+    expect(html).not.toContain("Scope: ");
+  });
+});
+
 describe("spec visuals (ADR-009)", () => {
   const page = (source: string) => render(project(source), "docs/spec.md", { write: false }).html;
 
