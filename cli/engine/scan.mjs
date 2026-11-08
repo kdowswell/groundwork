@@ -111,7 +111,7 @@ export function globToRegex(glob) {
   return new RegExp(`^${re}$`);
 }
 
-const WAIVER_RE = /groundwork-disable(-line|-next-line)?[ \t]+([a-z0-9, \t-]+?)(?::|$|-->|\*\/)/;
+export const WAIVER_RE = /groundwork-disable(-line|-next-line)?[ \t]+([a-z0-9, \t-]+?)(?::|$|-->|\*\/)/;
 
 /**
  * Parse inline waivers from file content.

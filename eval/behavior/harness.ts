@@ -36,7 +36,7 @@ const CLI_BIN = path.resolve(__dirname, "../../cli/bin/groundwork.mjs");
  * (rule:router-cli-package); a real install would fetch an unrelated package.
  */
 const GROUNDWORK_CLI =
-  /^\s*(?:npx\s+(?:(?:-y|--yes)\s+)?)?(?:@kdowswell\/)?groundwork\s+(approve|verify|render)((?:\s+[\w./=:@,"'<>-]+)*)\s*$/;
+  /^\s*(?:npx\s+(?:(?:-y|--yes)\s+)?)?(?:@kdowswell\/)?groundwork\s+(approve|verify|render|suggest|learn)((?:\s+[\w./=:@,"'<>()-]+)*)\s*$/;
 /** A test agent must never start the review server: it would block, and only humans decide there. */
 const SERVE_REFUSAL = "error: this sandbox cannot start servers; give the user the command to run instead\n(exit 1)";
 
@@ -115,7 +115,7 @@ const TOOLS: Anthropic.Tool[] = [
   {
     name: "bash",
     description:
-      "Run a shell command in the workspace. This sandbox only permits the groundwork context loader (node .../context.mjs) and the groundwork CLI's `groundwork approve`, `groundwork verify`, and `groundwork render` commands.",
+      "Run a shell command in the workspace. This sandbox only permits the groundwork context loader (node .../context.mjs) and the groundwork CLI's `groundwork approve`, `groundwork verify`, `groundwork render`, `groundwork suggest`, and `groundwork learn` commands.",
     input_schema: {
       type: "object",
       properties: { command: { type: "string" } },
@@ -283,7 +283,7 @@ export function filesWritten(trace: ToolCall[]): string[] {
 }
 
 /** Bash commands that invoked `groundwork <sub>`. */
-export function cliCalls(trace: ToolCall[], sub: "approve" | "verify" | "render"): string[] {
+export function cliCalls(trace: ToolCall[], sub: "approve" | "verify" | "render" | "suggest" | "learn"): string[] {
   return trace
     .filter((c) => c.tool === "bash")
     .map((c) => String(c.input.command ?? ""))

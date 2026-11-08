@@ -67,7 +67,7 @@ npx @kdowswell/groundwork detect .       # deterministic production-readiness + 
 
 ## The /groundwork Router
 
-One skill, twenty-one commands. The router loads project context once per session and routes to
+One skill, twenty-two commands. The router loads project context once per session and routes to
 exactly one playbook per request. A bare `/groundwork` never runs work: it shows where the project
 stands (which design documents exist and whether they're approved), suggests one next command,
 and lists the rest. Every command ends by recommending one next step. Commands are grouped by what you're doing, chosen from the request rather than the repo's
@@ -75,7 +75,7 @@ age: a new feature spec in a ten-year-old codebase is still design work.
 
 | You're… | Commands |
 |---|---|
-| **Setting up** | `init` (write project context), `doctor` (report/repair context drift) |
+| **Setting up** | `init` (write project context), `doctor` (report/repair context drift), `learn` (propose additions and removals to the shared rules) |
 | **Designing something new** | `start`, `continue`, `spec`, `architecture`, `data-model`, `principles`, `adr`, `threat` |
 | **Deciding under uncertainty** | `spike`, `risks`, `compare`, `prototype-review` |
 | **Changing a running system** | `review`, `debt`, `upgrade`, `postmortem`, `plan`, `replace`, `check` |
@@ -117,6 +117,24 @@ npx @kdowswell/groundwork doctor                 # check .groundwork/context.md 
 
 Waive intentional findings inline (`// groundwork-disable <rule-id>: reason`, plus
 `-line` / `-next-line` variants) or via `.groundwork/config.json`.
+
+When a rule gets in the way (a finding the agent waived, a playbook step that didn't fit), the
+agent logs it rather than quietly working around it:
+
+```bash
+npx @kdowswell/groundwork suggest "the catch is intentional: the caller retries" --rule=swallowed-exception --file=src/poll.js
+```
+
+Each call appends one JSON line (`date`, `rule`, `file`, `why`, `by`) to
+`.groundwork/suggestions.jsonl`. The file is append-only and meant to be committed, so the signal
+reaches whoever curates the rules. `doctor` counts open suggestions, and `/groundwork learn`
+reviews them.
+
+`/groundwork learn` runs only when you ask
+([ADR-021](docs/decisions/ADR-021-learning-loop.md)). It reads recent history, reviews, and open
+suggestions, plus `npx @kdowswell/groundwork learn`'s audit of waivers that no longer suppress
+anything, and writes `.groundwork/learn/<date>.md` with **Add / Change / Remove** proposals, each
+with its evidence and exact edit. Nothing is applied until you choose.
 
 On Claude Code, groundwork runs three lifecycle hooks
 ([ADR-006](docs/decisions/ADR-006-plugin-lifecycle-hooks.md)): at **session start** it
@@ -374,7 +392,7 @@ groundwork/
 │   ├── _schema/            Frontmatter JSON Schema
 │   ├── groundwork/         The /groundwork router skill
 │   │   ├── SKILL.md        Command table + routing rules (rule-marked)
-│   │   ├── reference/      21 playbooks (17 compiled from phase skills + init, doctor, start, continue)
+│   │   ├── reference/      22 playbooks (17 compiled from phase skills + init, doctor, start, continue, learn)
 │   │   └── scripts/        context.mjs session loader, status.mjs, hook.mjs lifecycle hook dispatcher
 │   ├── greenfield-*/       0-to-1 skills (6) — "design something new" playbooks
 │   ├── exploration-*/      Research and prototype skills (4) — "decide under uncertainty" playbooks
