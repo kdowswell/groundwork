@@ -31,6 +31,7 @@ principles:
   - conways-law-organizational-alignment
   - tenant-isolation
   - deep-modules
+  - backpressure-and-load-shedding
 time_box: "2-4 hours"
 tags: [brownfield, architecture, audit, review]
 ---
@@ -159,6 +160,10 @@ Full reference: [principles/tenant-isolation.md](principles/tenant-isolation.md)
 **deep-modules**
 In Step 3, ask of each major module which design decision it hides. Shallow modules (pass-through wrappers, interfaces as complicated as what they implement) and knowledge leaked across modules (one data format or vendor shape known in several places) are At Risk findings: they spread every change across files and make an agent load more of the codebase than the change needs.
 Full reference: [principles/deep-modules.md](principles/deep-modules.md)
+
+**backpressure-and-load-shedding**
+In Step 2, look for unbounded in-memory queues, retries at more than one layer, retries without caps or jitter, and requests that keep running after their caller has given up. An unbounded queue on a user-facing path, or retries that multiply load more than about threefold across layers, is At Risk even if it has never failed.
+Full reference: [principles/backpressure-and-load-shedding.md](principles/backpressure-and-load-shedding.md)
 
 ## Output Format
 

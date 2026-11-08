@@ -211,11 +211,11 @@ install. Each phase is one of the router's activity groups:
 
 ## Principle Library
 
-55 principles across 8 categories:
+56 principles across 8 categories:
 
 | Category | Principles |
 |---|---|
-| **Reliability** | Circuit Breakers, Fault Isolation, Graceful Degradation, Health Checks, Chaos Engineering, Durable Agent Execution |
+| **Reliability** | Circuit Breakers, Fault Isolation, Graceful Degradation, Health Checks, Chaos Engineering, Durable Agent Execution, Backpressure and Load Shedding |
 | **Security** | Secrets Management, Zero Trust, Least Privilege, Data Classification, Supply Chain Security, Prompt Injection Containment, Least Agency, Tenant Isolation |
 | **Scalability** | Horizontal Scaling, Caching Strategy, Data Partitioning, Async Processing |
 | **Observability** | Structured Logging, Distributed Tracing, SLO / Error Budgets, Alerting Strategy, ML/AI Observability |
@@ -388,7 +388,7 @@ are missing or don't follow the template draw nothing.
 
 ```
 groundwork/
-├── principles/             Architectural principle library (55 across 8 categories)
+├── principles/             Architectural principle library (56 across 8 categories)
 │   ├── _schema/            Frontmatter JSON Schema
 │   └── {category}/         One .md file per principle
 ├── skills/                 Agent Skills (flat)

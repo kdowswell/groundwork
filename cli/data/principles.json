@@ -20,6 +20,11 @@
     "category": "scalability"
   },
   {
+    "id": "backpressure-and-load-shedding",
+    "title": "Backpressure and Load Shedding",
+    "category": "reliability"
+  },
+  {
     "id": "blue-green-canary",
     "title": "Progressive Deployment Strategies",
     "category": "delivery"

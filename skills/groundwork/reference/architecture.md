@@ -166,6 +166,10 @@ Full reference: [principles/context-engineering.md](principles/context-engineeri
 When the system serves several tenants, Step 2 is where each component gets its isolation model: dedicated per tenant (silo), shared (pool), or mixed (bridge), with the reason. Step 3 shows where tenant identity enters, bound to the authenticated caller, and how it travels through queues and background jobs. Moving a component from pooled to siloed after launch is a migration, so record the choice now; a component with no stated model is a gap.
 Full reference: [principles/tenant-isolation.md](principles/tenant-isolation.md)
 
+**backpressure-and-load-shedding**
+Steps 4 and 5 are where overload behavior gets decided. For each queue, pool, and fan-out point, state its bound, what happens when it is full (reject, push back to the caller, or degrade), and which traffic is shed first. For agent components, also state their concurrency, fan-out, and retry budgets: an agent that retries every failed tool call turns a slow dependency into an outage.
+Full reference: [principles/backpressure-and-load-shedding.md](principles/backpressure-and-load-shedding.md)
+
 ## Output Format
 
 An `architecture.md` file (or equivalent diagram + notes) with:

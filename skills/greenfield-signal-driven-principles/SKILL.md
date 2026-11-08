@@ -44,7 +44,7 @@ The agent reads the signals in the project context and matches them against each
    |---|---|---|
    | `solo_or_prototype` | ≤1 developer or explicitly "prototype / throwaway" | Suppress enterprise-only principles |
    | `small_team_no_sre` | 2–5 engineers, no dedicated SRE or on-call rotation | `structured-logging`, `alerting-strategy` |
-   | `large_scale` | >100K DAU or >100 RPS stated | All `scalability/` + all `observability/` |
+   | `large_scale` | >100K DAU or >100 RPS stated | All `scalability/` + all `observability/` + `backpressure-and-load-shedding` |
    | `compliance_posture` | Any named compliance regime (SOC 2, HIPAA, PCI, FedRAMP, GDPR) | `secrets-management`, `data-classification` |
    | `audit_regulated` | HIPAA, FedRAMP, or PCI explicitly named | `data-ownership` |
    | `offline_first` | Field deployment, mobile with intermittent connectivity, or "works offline" stated | `consistency-models` |
