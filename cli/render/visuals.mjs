@@ -372,7 +372,20 @@ function scopeColumns(lines) {
     }<${tag}>${items.map((i) => `<li title="${escapeHtml(plain(i))}">${escapeHtml(itemTitle(i))}</li>`).join("")}</${tag}></section>`;
   };
   if (listItems(inScope.lines).length === 0 && listItems(out.lines).length === 0) return "";
-  return `<figure class="viz scope"><figcaption>What this builds, and what it deliberately doesn't</figcaption><div class="two">${col(inScope, "in", "In scope")}${col(out, "out", "Not doing")}</div></figure>`;
+  return `<figure class="viz scope"><figcaption>What this builds, and what it deliberately doesn't</figcaption>${scopeStance(body)}<div class="two">${col(inScope, "in", "In scope")}${col(out, "out", "Not doing")}</div></figure>`;
+}
+
+/** "**Scope stance:** Reduce — cut offline mode" as a badge above the scope columns (#48). */
+function scopeStance(body) {
+  const line = body.find((l) => /scope stance:/i.test(l));
+  if (!line) return "";
+  const text = plain(line.replace(/^.*scope stance:\s*/i, ""));
+  const m = text.match(/^(expand|hold|reduce)\b[\s—–:-]*(.*)$/i);
+  // The template's own "Expand / Hold / Reduce" placeholder names all three: draw nothing.
+  if (!m || /^expand\s*\/\s*hold/i.test(text)) return "";
+  const stance = m[1][0].toUpperCase() + m[1].slice(1).toLowerCase();
+  const cls = stance === "Hold" ? "ok" : "warn";
+  return `<p class="stance"><span class="badge ${cls}">Scope: ${escapeHtml(stance)}</span> ${escapeHtml(clip(m[2], 220))}</p>`;
 }
 
 /** "Blocking: owner action, needed…" → {key: "Blocking", note: "owner action, needed…"}. */
@@ -889,6 +902,7 @@ export function deriveVisuals(kind, source) {
 }
 
 export const VISUAL_CSS = `
+.scope .stance{margin:0 0 10px}
 figure.viz{margin:14px 0 18px;padding:14px;border:1px solid var(--line);border-radius:10px;background:var(--bg)}
 figure.viz figcaption{font-size:12px;letter-spacing:.04em;text-transform:uppercase;color:var(--muted);margin-bottom:10px}
 .sysmap .scroll{overflow-x:auto}

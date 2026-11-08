@@ -7,6 +7,8 @@ export const ARTIFACT_KINDS = [
   { prefix: "Architecture:", label: "Architecture", checkpoint: "greenfield-architecture-sketch/accept" },
   { prefix: "Data Model:", label: "Data model", checkpoint: "greenfield-data-model-first/accept" },
   { prefix: "Safe Change Plan:", label: "Change plan", checkpoint: "brownfield-safe-change-plan/accept" },
+  { prefix: "Analytical Data Model:", label: "Analytical data model", checkpoint: "greenfield-analytical-data-model/accept" },
+  { prefix: "Eval Suite:", label: "Eval suite", checkpoint: "greenfield-eval-suite/accept" },
   { prefix: "Threat Model:", label: "Threat model", checkpoint: "greenfield-threat-model/accept" },
 ];
 

@@ -3,15 +3,17 @@ name: groundwork
 title: "groundwork"
 description: >
   Single entry point for the groundwork architecture toolkit: start, continue,
-  spec, architecture, data-model, principles, adr, threat, spike, risks, compare,
-  prototype-review, review, debt, upgrade, postmortem, plan, replace, check, plus init,
-  doctor, and learn. Invoke when the
-  user asks for architecture or planning help — specifying a new build, designing
-  a system's architecture, choosing a data model, threat modeling, running a research spike or
-  tradeoff analysis, reviewing an existing system, triaging tech debt, planning a
-  safe production change, or any /groundwork command. Not for writing feature
-  code directly.
-argument-hint: "[command] [--grill] [target]"
+  spec, architecture, data-model, principles, adr, threat, analytics-model,
+  evals, spike, risks, compare, prototype-review, review, debt, upgrade,
+  postmortem, plan, replace, check, path-to-prod, plus init, doctor, and learn.
+  Invoke when the user asks for architecture or planning help: specifying a new
+  build, designing a system's architecture or data model, an analytical data
+  platform, a threat model, or evals for an AI feature, running a research spike
+  or tradeoff analysis, reviewing an existing system, triaging tech debt,
+  planning or reviewing a safe production change, mapping the path to
+  production, or any /groundwork command. Not for writing feature code,
+  debugging, or running tests directly.
+argument-hint: "[command] [--grill] [--tasks] [target]"
 user-invocable: true
 tags: [router, architecture, phases, toolkit]
 ---
@@ -53,9 +55,11 @@ what the request needs — never preload multiple playbooks. <!-- rule:router-pr
 | `spec [--grill] [idea]` | Turn an idea into a spec with scope and success criteria | [reference/spec.md](reference/spec.md) |
 | `architecture [--grill] [system]` | Define system boundaries, components, and data flows before coding | [reference/architecture.md](reference/architecture.md) |
 | `data-model [--grill] [domain]` | Design the core data model before implementation | [reference/data-model.md](reference/data-model.md) |
+| `analytics-model [platform]` | Design an analytical data platform: layers, grain, history, quality gates, backfills | [reference/analytics-model.md](reference/analytics-model.md) |
 | `principles` | Select load-bearing principles from project context | [reference/principles.md](reference/principles.md) |
 | `adr` | Establish architecture decision records | [reference/adr.md](reference/adr.md) |
 | `threat [system]` | Threat model: trust boundaries, ranked STRIDE threats, toxic flows for AI features, mitigations tied to principles (also for a running system) | [reference/threat.md](reference/threat.md) |
+| `evals [feature]` | Design the evaluation suite for an AI feature: cases, graders, thresholds, paired runs | [reference/evals.md](reference/evals.md) |
 | **Decide under uncertainty** | | |
 | `spike [question]` | Time-boxed investigation with a decision at the end | [reference/spike.md](reference/spike.md) |
 | `risks [area]` | Surface and rank the riskiest assumptions | [reference/risks.md](reference/risks.md) |
@@ -66,9 +70,10 @@ what the request needs — never preload multiple playbooks. <!-- rule:router-pr
 | `debt` | Categorize and prioritize technical debt | [reference/debt.md](reference/debt.md) |
 | `upgrade [dep]` | Plan a safe dependency upgrade | [reference/upgrade.md](reference/upgrade.md) |
 | `postmortem [incident]` | Blameless incident postmortem with owned action items | [reference/postmortem.md](reference/postmortem.md) |
-| `plan [change]` | Safe change plan: what changes against the spec, blast radius, rollback, test coverage | [reference/plan.md](reference/plan.md) |
+| `plan [--tasks] [change]` | Safe change plan: what changes against the spec, blast radius, rollback, test coverage | [reference/plan.md](reference/plan.md) |
 | `replace [component]` | Incrementally replace a legacy component | [reference/replace.md](reference/replace.md) |
 | `check [branch or PR]` | Review a finished change against its approved plan and the active principles: GO or FIX, advisory | [reference/check.md](reference/check.md) |
+| `path-to-prod [system]` | Map every stage from commit to production, find the constraint, separate real gates from theater, rank fixes | [reference/path-to-prod.md](reference/path-to-prod.md) |
 
 `start` and `continue` chain the design playbooks strictly in sequence: read the spec playbook
 and write the spec file, and only then read the architecture playbook and write its file, and only
@@ -209,6 +214,10 @@ a ten-year-old codebase is still design work. <!-- rule:router-phase-from-reques
   are the gate from there. For a **high** tier, point to the review path the plan names (a named
   reviewer, and `/groundwork check` in the pull request). The tier adds no stop beyond the one
   approval, and you never lower it to make approval easier. <!-- rule:router-risk-tier -->
+- When you implement from a task list (`.groundwork/tasks/<slug>.json`), work one task at a time
+  and set its `passes` to `true` only after its acceptance check has run and passed. Never delete,
+  reorder, reword, or add tasks, and never weaken an acceptance check: a task that can't pass as
+  written goes back to the user or the plan. <!-- rule:router-tasks-flip-only -->
 - When you implement an approved change plan, apply its Behavior Delta to the baseline spec in
   the same change set as the code, then record it with
   `npx @kdowswell/groundwork approve <spec> --decision=amended --via=<plan>`. The user approved the

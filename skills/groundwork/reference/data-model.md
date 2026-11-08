@@ -135,6 +135,10 @@ Full reference: [principles/bounded-contexts.md](principles/bounded-contexts.md)
 Step 3 (assign ownership to each entity) operationalizes this principle at the data layer. "No entity should have two owners" is simultaneously a data architecture rule and an organizational alignment rule: an entity with two owners has two teams that must coordinate on every schema change, which means its schema change rate is bounded by the coordination cost between those teams. When ownership is contested in Step 3, that is not a data modeling problem — it is a signal that team boundaries and service boundaries haven't been drawn in the right place, and the data model is inheriting that misalignment. Surface contested ownership as a Blocking open question and resolve it through the organizational conversation before proceeding. The resolution is often splitting the entity into two distinct domain entities each owned by one team, rather than forcing shared write access.
 Full reference: [principles/conways-law-organizational-alignment.md](principles/conways-law-organizational-alignment.md)
 
+**tenant-isolation**
+In a multi-tenant system, Steps 1 and 3 decide whether every tenant-owned entity carries the tenant identifier in its key and indexes, and Step 6 decides whether the tenant boundary is enforced below application code (a row-level policy or tenant-scoped credentials) rather than by a filter in each query. Flag tenants with their own-key, residency, or separate-restore needs now: the model has to allow them from the first table.
+Full reference: [principles/tenant-isolation.md](principles/tenant-isolation.md)
+
 ## Output Format
 
 A `data-model.md` file (or equivalent) with:

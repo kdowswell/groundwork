@@ -1,0 +1,27 @@
+{
+  "note": "Competitor descriptions are short paraphrases of commonly co-installed packs' skill descriptions, written for this eval; they approximate each pack's trigger wording, not its exact text. Refresh them when those packs change.",
+  "skills": [
+    { "name": "superpowers:brainstorming", "description": "Refines a rough idea into a design through questions before any code is written. Use when starting a new feature or project and the requirements are fuzzy." },
+    { "name": "superpowers:writing-plans", "description": "Writes a detailed, bite-sized implementation plan with exact file paths and test steps for an engineer to follow. Use when a design is agreed and implementation is about to start." },
+    { "name": "superpowers:test-driven-development", "description": "Implements features and fixes with red-green-refactor: write a failing test, make it pass, refactor. Use when writing or changing code." },
+    { "name": "superpowers:systematic-debugging", "description": "Finds the root cause of a bug through hypotheses and evidence before fixing it. Use when something is broken or a test fails." },
+    { "name": "pocock:grill-me", "description": "Interviews the user relentlessly about a plan or design, one question at a time, until every branch is resolved. Use when the user says grill me or wants their thinking challenged." },
+    { "name": "pocock:improve-codebase-architecture", "description": "Finds shallow modules and proposes deepening refactors so the codebase is easier to navigate and test. Use when the user wants to improve an existing codebase's structure." },
+    { "name": "addy:code-review", "description": "Reviews a code change for correctness, readability, security, and performance before it merges. Use when a pull request or diff needs review." },
+    { "name": "addy:ship", "description": "Runs a pre-launch checklist and gives a go/no-go decision for shipping a release. Use before deploying to production." }
+  ],
+  "cases": [
+    { "prompt": "Before we write any code, help me turn this idea into a spec: a board for support leads to see stuck escalations.", "expect": "groundwork" },
+    { "prompt": "Sketch the system boundaries and data flows for our new invoicing service.", "expect": "groundwork" },
+    { "prompt": "We're about to raise the payment timeout in production. Plan the change with a rollback and blast radius.", "expect": "groundwork" },
+    { "prompt": "Threat model our support agent that reads customer emails and can issue refunds.", "expect": "groundwork" },
+    { "prompt": "Design the warehouse layers and history rules for our finance reporting.", "expect": "groundwork" },
+    { "prompt": "Should we use a relational store or a document store for this? Compare them and recommend one.", "expect": "groundwork" },
+    { "prompt": "Write the eval suite for our RAG support bot before we ship it.", "expect": "groundwork" },
+    { "prompt": "Triage our tech debt for next quarter; we only have one team for it.", "expect": "groundwork" },
+    { "prompt": "The checkout test is failing with a null pointer; figure out why.", "expect": "superpowers:systematic-debugging" },
+    { "prompt": "Implement the approved plan for per-team calendars, test first.", "expect": "superpowers:test-driven-development" },
+    { "prompt": "Review this pull request for readability and bugs.", "expect": "addy:code-review" },
+    { "prompt": "Grill me about my plan to add offline mode.", "expect": "pocock:grill-me" }
+  ]
+}

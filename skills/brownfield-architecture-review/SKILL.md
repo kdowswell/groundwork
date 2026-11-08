@@ -29,6 +29,9 @@ principles:
   - idempotency-by-design
   - api-contract-first
   - conways-law-organizational-alignment
+  - tenant-isolation
+  - deep-modules
+  - backpressure-and-load-shedding
 time_box: "2-4 hours"
 tags: [brownfield, architecture, audit, review]
 ---
@@ -149,6 +152,18 @@ Full reference: [principles/api-contract-first.md](principles/api-contract-first
 **conways-law-organizational-alignment**
 Step 2 (gather system artifacts) should include mapping team ownership alongside the technical artifacts: which team owns which service, and does that ownership map match what the architecture diagram implies? Step 3 (assess each active principle) should explicitly evaluate whether service boundaries align with team boundaries. The most common finding is a service that multiple teams contribute to on a regular cadence — which produces coupling in the code that mirrors the coupling in the org. A system that routinely requires cross-team coordination for routine feature delivery is non-compliant with this principle regardless of how clean the code looks internally. Proposed improvements in Step 5 should address both the technical structure and the ownership model; fixing the code without clarifying ownership recreates the problem.
 Full reference: [principles/conways-law-organizational-alignment.md](principles/conways-law-organizational-alignment.md)
+
+**tenant-isolation**
+In Step 2, look for tenant identifiers taken from request parameters instead of the authenticated identity, caches and search indexes without tenant scope, background jobs that lose tenant context, and shared resources with no per-tenant quota or telemetry. Any path where one missing filter would expose another tenant's data is Non-compliant, whatever the test coverage.
+Full reference: [principles/tenant-isolation.md](principles/tenant-isolation.md)
+
+**deep-modules**
+In Step 3, ask of each major module which design decision it hides. Shallow modules (pass-through wrappers, interfaces as complicated as what they implement) and knowledge leaked across modules (one data format or vendor shape known in several places) are At Risk findings: they spread every change across files and make an agent load more of the codebase than the change needs.
+Full reference: [principles/deep-modules.md](principles/deep-modules.md)
+
+**backpressure-and-load-shedding**
+In Step 2, look for unbounded in-memory queues, retries at more than one layer, retries without caps or jitter, and requests that keep running after their caller has given up. An unbounded queue on a user-facing path, or retries that multiply load more than about threefold across layers, is At Risk even if it has never failed.
+Full reference: [principles/backpressure-and-load-shedding.md](principles/backpressure-and-load-shedding.md)
 
 ## Output Format
 

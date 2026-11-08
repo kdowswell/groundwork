@@ -15,12 +15,22 @@ sources:
     url: "https://dora.dev/research/2025/dora-report/"
   - name: "Meta — Mutation-Guided LLM-based Test Generation (ACH, 2025)"
     url: "https://www.arxiv.org/abs/2501.12862"
+  - name: "Claessen & Hughes — QuickCheck: A Lightweight Tool for Random Testing of Haskell Programs (ICFP 2000)"
+    url: "https://doi.org/10.1145/351240.351266"
+  - name: "Hypothesis — property-based testing library documentation"
+    url: "https://hypothesis.readthedocs.io/en/latest/"
+  - name: "Mavin, Wilkinson, Harwood, Novak — Easy Approach to Requirements Syntax (EARS) (IEEE RE 2009)"
+    url: "https://doi.org/10.1109/RE.2009.9"
+  - name: "Kiro — Specs: Correctness with property-based tests"
+    url: "https://kiro.dev/docs/specs/correctness/"
+  - name: "Kiro — Bugfix specs"
+    url: "https://kiro.dev/docs/specs/bugfix-specs/"
 applies_when:
   scope: [new_build, epic, feature, story]
   scale: [solo, team, enterprise]
   stage: [discovery, refinement, build, maintain]
   domains: [any_production]
-tags: [delivery, testing, quality, contract-testing, ci-cd, mutation-testing, ai-assisted-development]
+tags: [delivery, testing, quality, contract-testing, ci-cd, mutation-testing, property-based-testing, ai-assisted-development]
 ---
 
 # Testing Strategy and the Test Pyramid
@@ -31,6 +41,8 @@ Test at the lowest level that can catch the failure. Most bugs are unit-level co
 For services that call other services over the network, contract testing verifies that the two sides agree on the API shape without requiring both to be running simultaneously. A consumer defines what it expects; the provider verifies it satisfies that expectation in its own CI pipeline. This shifts integration feedback from a shared environment to each team's development loop.
 
 When AI coding agents write much of the code, the test suite becomes the specification the agent works against and the main evidence that its change is correct. That raises two requirements. The tests must state the intended behavior independently of the code, so a test written by the same agent in the same change, which tends to assert what the code happens to do, is not enough on its own. And the suite itself must be checked: mutation testing, or an equivalent that deliberately introduces faults, shows whether the tests would actually catch a regression.
+
+Property-based testing answers the first requirement. A property states something that must hold for every input in a range, taken from a requirement rather than from the code. An EARS requirement such as "WHEN a refund is issued, THE SYSTEM SHALL reduce the order balance by the refunded amount" becomes a property checked against hundreds of generated inputs, including the edge cases nobody listed. Because the property comes from the requirement, it can't just repeat what the code happens to do. For a change to existing behavior, regression properties state what must stay the same: for every input outside the changed case, the result matches the previous behavior.
 
 Where the behavior under test is itself probabilistic, such as a model's output or an agent's actions, single-run pass/fail tests are not enough; see *Eval-Driven Development* for repeated-trial evaluation suites that gate those changes.
 
@@ -57,6 +69,7 @@ Where the behavior under test is itself probabilistic, such as a model's output 
 - Which user journeys are covered by E2E tests, and are those the genuinely critical paths, or just the ones that were easy to automate?
 - When an agent writes both a change and its tests, what independent statement of the intended behavior do the tests check against — a spec, an acceptance criterion, an existing test?
 - Would the suite fail if the changed code were subtly wrong? Has that been checked by deliberately introducing faults?
+- Which acceptance criteria hold across a range of inputs (invariants, round trips, limits, "unchanged for every other case") and could be checked as properties instead of a few hand-picked examples?
 
 ## What Good Looks Like
 - Unit tests cover observable behavior and outcomes, not method signatures or call sequences — they do not break when internal implementation is safely refactored
@@ -67,6 +80,8 @@ Where the behavior under test is itself probabilistic, such as a model's output 
 - Flaky tests are treated as bugs: investigated, fixed, or deleted; never disabled with a comment and forgotten
 - Tests for a generated change trace to an independent statement of intended behavior (a spec item, an acceptance criterion, a behavior delta's Unchanged list), not only to the code they test
 - Mutation testing, or an equivalent fault-injection check, runs on the most critical modules, and surviving mutants are treated as missing tests
+- Requirements that hold across inputs are checked as properties derived from the requirement text, run against generated inputs; example tests remain for specific named cases
+- Each Unchanged behavior in a change has a regression property: for inputs outside the changed case, the result matches the previous implementation or a reference model
 - The fast tiers run in the author's loop, so an agent sees a failure on its own change within seconds rather than after a pull request
 
 ## What Goes Wrong When You Skip This
@@ -76,6 +91,7 @@ Where the behavior under test is itself probabilistic, such as a model's output 
 - A client upgrades its dependency on a service and discovers in production that the response schema changed; a consumer-driven contract test would have caught this during the provider's CI build
 - An E2E test suite grows to cover every permutation of every feature; it takes an hour, times out in CI, and is eventually removed — taking all signal about critical paths with it
 - An agent implements a change and writes tests that assert the new code's actual output; every test passes, coverage rises, and the behavior is still wrong because nothing checked it against what was intended
+- An agent's bug fix passes the three example tests it wrote for the reported case and quietly changes the result for inputs nobody listed; a regression property saying every other input behaves as before would have failed on an early generated case
 
 ## Further Reading
-Fowler's *Practical Test Pyramid* is the foundational treatment of the economics argument — why the shape matters and what each tier should and should not test. Pact's documentation is the most practical introduction to consumer-driven contract testing: it describes the workflow where consumers publish their expectations and providers run those as tests, shifting integration verification out of shared environments. Google's "Just Say No to More End-to-End Tests" makes the operational case for why large E2E suites produce diminishing returns and increasing fragility as the codebase grows. DORA's *Accelerate* research identifies test automation — specifically teams that trust their suite enough to use it as a release gate — as one of the strongest predictors of software delivery performance. DORA's 2025 report on AI-assisted development finds AI adoption now raises delivery throughput but still raises instability, and describes AI as an amplifier of an organization's existing practices, which makes fast, trusted automated verification the thing that turns faster output into reliable delivery. Meta's ACH work generates tests guided by mutation analysis and checks that each one catches a real fault; engineers accepted most of the generated tests in deployment.
+Fowler's *Practical Test Pyramid* is the foundational treatment of the economics argument — why the shape matters and what each tier should and should not test. Pact's documentation is the most practical introduction to consumer-driven contract testing: it describes the workflow where consumers publish their expectations and providers run those as tests, shifting integration verification out of shared environments. Google's "Just Say No to More End-to-End Tests" makes the operational case for why large E2E suites produce diminishing returns and increasing fragility as the codebase grows. DORA's *Accelerate* research identifies test automation — specifically teams that trust their suite enough to use it as a release gate — as one of the strongest predictors of software delivery performance. DORA's 2025 report on AI-assisted development finds AI adoption now raises delivery throughput but still raises instability, and describes AI as an amplifier of an organization's existing practices, which makes fast, trusted automated verification the thing that turns faster output into reliable delivery. Meta's ACH work generates tests guided by mutation analysis and checks that each one catches a real fault; engineers accepted most of the generated tests in deployment. Claessen and Hughes's QuickCheck paper introduced writing a program's specification as properties and testing them against many randomly generated inputs; Hypothesis brings the technique to Python, where a test should pass for every input in a declared range. EARS, developed at Rolls-Royce by Mavin and colleagues, gives requirements a few sentence templates (for example, event-driven "When <trigger>, the <system> shall <response>"), which makes each requirement easier to turn into a checkable property. Kiro's spec workflow applies this to agent-written code: it extracts properties from EARS-formatted requirements and generates randomized test cases, and its bugfix specs record unchanged behavior ("SHALL CONTINUE TO") and check it with property-based tests to prevent regressions.

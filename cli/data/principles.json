@@ -20,6 +20,11 @@
     "category": "scalability"
   },
   {
+    "id": "backpressure-and-load-shedding",
+    "title": "Backpressure and Load Shedding",
+    "category": "reliability"
+  },
+  {
     "id": "blue-green-canary",
     "title": "Progressive Deployment Strategies",
     "category": "delivery"
@@ -88,6 +93,11 @@
     "id": "data-quality-gates",
     "title": "Data Quality Gates at Pipeline Boundaries",
     "category": "data"
+  },
+  {
+    "id": "deep-modules",
+    "title": "Deep Modules and Information Hiding",
+    "category": "design"
   },
   {
     "id": "deterministic-core-probabilistic-edge",
@@ -253,6 +263,11 @@
     "id": "tech-debt-management",
     "title": "Tech Debt Management",
     "category": "operations"
+  },
+  {
+    "id": "tenant-isolation",
+    "title": "Tenant Isolation",
+    "category": "security"
   },
   {
     "id": "testing-strategy",

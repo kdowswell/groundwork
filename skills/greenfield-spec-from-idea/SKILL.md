@@ -22,6 +22,7 @@ principles:
   - field-first
   - bounded-contexts
   - conways-law-organizational-alignment
+  - testing-strategy
 time_box: "30-60 minutes"
 tags: [planning, requirements, greenfield, spec]
 ---
@@ -65,8 +66,9 @@ The human's job is to answer questions honestly, including "I don't know." Open 
    - What IS in scope for the first deliverable
    - What is explicitly NOT in scope (non-goals)
    The non-goals list is as important as the goals list. It's where scope creep enters.
+   Then state the **scope stance** in one line: is this spec deliberately **expanding** the scope the request implied (and why), **holding** it, or **reducing** it (and what was cut)? It makes a scope change visible at the approval the user already gives, without asking a separate question.
 
-4. **Define success criteria.** Write 2–4 measurable outcomes that indicate the problem is solved. Prefer behavioral criteria ("a technician can submit a field report in under 60 seconds without removing gloves") over output criteria ("the form has 5 fields"). If you can't make them measurable, write them as falsifiable: "users stop using the paper workaround."
+4. **Define success criteria.** Write 2–4 measurable outcomes that indicate the problem is solved. Prefer behavioral criteria ("a technician can submit a field report in under 60 seconds without removing gloves") over output criteria ("the form has 5 fields"). If you can't make them measurable, write them as falsifiable: "users stop using the paper workaround." Where a criterion describes how the system responds, you may write it in EARS form ("WHEN <trigger>, THE SYSTEM SHALL <response>"; "WHILE <state>, …"; "IF <unwanted condition>, THEN …"); keep Given/When/Then wherever the project already uses it. Mark each criterion that must hold across a whole range of inputs, not just one example ("for every refund, the balance drops by exactly the refunded amount"), with **(property)**: those become property-based tests later.
 
 5. **Name the primary data entity and its owner.** What is the core thing the system stores, tracks, or transforms? Who owns it — which team, service, or role is the authoritative source? This single decision shapes the data model, the access control model, and the API contract. Write it explicitly.
 
@@ -86,6 +88,8 @@ The human's job is to answer questions honestly, including "I don't know." Open 
 
 10. **Record the user's decision.** When the user answers the acceptance Checkpoint, run `npx @kdowswell/groundwork approve <spec path> --checkpoint=greenfield-spec-from-idea/accept`, adding `--decision=changes-requested` if they asked for changes or `--decision=delegated` if they told you to decide. Record only an answer the user gave in this conversation. If they decided in the review page, it is already recorded: confirm with `npx @kdowswell/groundwork verify` instead of recording it again, and never submit the page yourself. With no one available to answer, record nothing and leave the artifact marked as a draft. If the CLI is unavailable, write the decision and date at the top of the artifact instead and say it is unverified.
 
+11. **Task list for a build-phase tool (opt-in).** Only when the user asks for one (`--tasks`, or "hand this to <build tool>"), after the spec is written, also write `.groundwork/tasks/<slug>.json`: a JSON array where each task is `{"id": "T1", "title": "...", "acceptance": "<the check that proves it done>", "criterion_ref": "<the spec line it implements>", "passes": false}`. Derive tasks from the success criteria and in-scope items (criteria marked (property) say so in their acceptance check), one per independently verifiable outcome, each acceptance check runnable without reading this conversation. The approval pins the spec, not the task list; regenerate the list if the spec changes.
+
 ## Checkpoints
 
 **Is the problem statement about a user, or about the system?**
@@ -104,7 +108,7 @@ If the spec contains blocking questions after the draft is written, Phase 2 must
 **Yes:** put them to the user before the acceptance Checkpoint, and fold each answer into the spec. Acceptance cannot be asked while any of them is open, because the user would be approving a spec that two builders would read differently. **No:** go straight to acceptance, and list the "Agent call:" decisions you made so the user can overturn any of them when they answer.
 
 **Does the user accept this spec as the basis for architecture and data modeling?**
-Ask once the spec is complete. If the spec is long or still has open questions for the user, offer once to show it as a review page (`npx @kdowswell/groundwork render <spec path> --serve`), where the user can read it beside its open questions and findings and decide there. **Accepted:** record the approval; architecture and data modeling may start from it, and any later edit to the spec makes the approval stale, so the next step re-asks. **Changes requested:** record that, revise, and ask again; nothing downstream starts from this version. **Delegated ("you decide"):** record it as delegated, state the calls you made in your next reply, and proceed. The agent never answers this Checkpoint on the user's behalf.
+Ask once the spec is complete, and name the scope stance in the question when it is Expand or Reduce, so accepting the spec also accepts the scope change. If the spec is long or still has open questions for the user, offer once to show it as a review page (`npx @kdowswell/groundwork render <spec path> --serve`), where the user can read it beside its open questions and findings and decide there. **Accepted:** record the approval; architecture and data modeling may start from it, and any later edit to the spec makes the approval stale, so the next step re-asks. **Changes requested:** record that, revise, and ask again; nothing downstream starts from this version. **Delegated ("you decide"):** record it as delegated, state the calls you made in your next reply, and proceed. The agent never answers this Checkpoint on the user's behalf.
 
 ## Red Flags
 
@@ -178,6 +182,10 @@ What goes wrong when you skip it: field-inappropriate success criteria pass thro
 
 Full reference: [principles/field-first.md](principles/field-first.md)
 
+**testing-strategy**
+Step 4 is where the spec decides whether its criteria can be tested independently of the code that will meet them. A criterion in EARS form with a clear trigger and response, marked (property) when it holds for every input in a range, becomes a property-based test that an agent can't satisfy just by asserting what its own code happens to do. Criteria written as one example ("a $10 refund leaves $90") get tested as one example, and the edge cases go unchecked.
+Full reference: [principles/testing-strategy.md](principles/testing-strategy.md)
+
 ## Output Format
 
 A `spec.md` file (or equivalent document) with this structure:
@@ -192,6 +200,8 @@ One sentence. What the user cannot do or does badly today.
 Who. Where. What constraint they're operating under.
 
 ## Scope
+**Scope stance:** Expand / Hold / Reduce — {{ONE LINE: WHAT CHANGED AGAINST THE REQUEST, AND WHY}}
+
 ### In scope
 - ...
 
@@ -200,7 +210,8 @@ Who. Where. What constraint they're operating under.
 
 ## Success Criteria
 1. Measurable or falsifiable outcome
-2. ...
+2. WHEN {{TRIGGER}}, THE SYSTEM SHALL {{RESPONSE}} (property)
+3. ...
 
 ## Primary Data Entity
 Name: {{ENTITY}}

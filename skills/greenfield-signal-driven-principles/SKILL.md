@@ -44,17 +44,18 @@ The agent reads the signals in the project context and matches them against each
    |---|---|---|
    | `solo_or_prototype` | ≤1 developer or explicitly "prototype / throwaway" | Suppress enterprise-only principles |
    | `small_team_no_sre` | 2–5 engineers, no dedicated SRE or on-call rotation | `structured-logging`, `alerting-strategy` |
-   | `large_scale` | >100K DAU or >100 RPS stated | All `scalability/` + all `observability/` |
+   | `large_scale` | >100K DAU or >100 RPS stated | All `scalability/` + all `observability/` + `backpressure-and-load-shedding` |
    | `compliance_posture` | Any named compliance regime (SOC 2, HIPAA, PCI, FedRAMP, GDPR) | `secrets-management`, `data-classification` |
    | `audit_regulated` | HIPAA, FedRAMP, or PCI explicitly named | `data-ownership` |
    | `offline_first` | Field deployment, mobile with intermittent connectivity, or "works offline" stated | `consistency-models` |
    | `field_users` | Workers using product during physical tasks (field, factory, clinic, vehicle) | `field-first` |
+   | `multi_tenant` | One deployment serves several customer organizations (SaaS tenants, workspaces, accounts with their own users) from shared infrastructure | `tenant-isolation`, `data-classification` |
    | `per_customer_integrations` | Product integrates with each customer's external systems | `fault-isolation` |
    | `async_processing` | Background jobs, queues, event pipelines, or "eventual consistency" mentioned | `async-processing` |
    | `greenfield_ideation` | Stage is ideation or discovery with no working system yet | `data-ownership`, `field-first` (if applicable) |
    | `ai_system` | The product itself embeds LLM or agent features: model calls over user or company data, retrieval, tool-using agents | `prompt-injection-containment`, `least-agency`, `eval-driven-development`, `deterministic-core-probabilistic-edge`, `model-as-versioned-dependency`, `ml-ai-observability` |
    | `autonomous_agents` | The product runs agents that choose their own steps or tools, run for minutes or longer, or hand work to other agents | `simplest-agent-architecture-first`, `durable-agent-execution`, `context-engineering` |
-   | `agent_authored_code` | AI coding agents write or change a meaningful share of the code, and the code outlives a prototype | `executable-architecture-guardrails`, `supply-chain-security`, `agent-legible-codebase` |
+   | `agent_authored_code` | AI coding agents write or change a meaningful share of the code, and the code outlives a prototype | `executable-architecture-guardrails`, `supply-chain-security`, `agent-legible-codebase`, `deep-modules` |
    | `analytical_data_platform` | The product includes batch or streaming pipelines, an analytical store (warehouse or lakehouse), or datasets published for reporting, BI, or ML | `rebuildable-derived-data`, `data-quality-gates`, `historical-data-modeling`, `data-ownership`, `schema-evolution` |
 
 3. **Pull mandatory principles.** For each PRESENT signal, add the listed principles to the active set. These are non-negotiable — do not drop them based on count caps or team preference.

@@ -34,7 +34,9 @@ behind it:
 | Paired with/without evals (`eval/`) | [SkillsBench](https://arxiv.org/abs/2602.12670) paired evaluation |
 
 They compose: use groundwork for judgment and approvals, then a build-phase pack for TDD,
-debugging, and shipping. [docs/HARNESSES.md](docs/HARNESSES.md) covers installing them side by side.
+debugging, and shipping. `plan --tasks` hands the build pack a task list with acceptance checks and
+pass flags, and `check` reviews the result. [docs/HARNESSES.md](docs/HARNESSES.md#composing-with-other-packs)
+covers the task-list contract and installing the packs side by side.
 
 ## Quick Start
 
@@ -67,7 +69,7 @@ npx @kdowswell/groundwork detect .       # deterministic production-readiness + 
 
 ## The /groundwork Router
 
-One skill, twenty-two commands. The router loads project context once per session and routes to
+One skill, twenty-five commands. The router loads project context once per session and routes to
 exactly one playbook per request. A bare `/groundwork` never runs work: it shows where the project
 stands (which design documents exist and whether they're approved), suggests one next command,
 and lists the rest. Every command ends by recommending one next step. Commands are grouped by what you're doing, chosen from the request rather than the repo's
@@ -76,9 +78,9 @@ age: a new feature spec in a ten-year-old codebase is still design work.
 | You're… | Commands |
 |---|---|
 | **Setting up** | `init` (write project context), `doctor` (report/repair context drift), `learn` (propose additions and removals to the shared rules) |
-| **Designing something new** | `start`, `continue`, `spec`, `architecture`, `data-model`, `principles`, `adr`, `threat` |
+| **Designing something new** | `start`, `continue`, `spec`, `architecture`, `data-model`, `principles`, `adr`, `threat`, `analytics-model`, `evals` |
 | **Deciding under uncertainty** | `spike`, `risks`, `compare`, `prototype-review` |
-| **Changing a running system** | `review`, `debt`, `upgrade`, `postmortem`, `plan`, `replace`, `check` |
+| **Changing a running system** | `review`, `debt`, `upgrade`, `postmortem`, `plan`, `replace`, `check`, `path-to-prod` |
 
 Earlier names still work as aliases (`sketch`, `model`, `vet`, `assume`, `triage`, `retro`,
 `strangle`); the router runs the renamed command and tells you the new name once
@@ -168,9 +170,9 @@ install. Each phase is one of the router's activity groups:
 
 | Skill prefix | Router group | Skills | Use when |
 |---|---|---|---|
-| `greenfield-` | Design something new | 6 | Creating something new: idea → spec → architecture |
+| `greenfield-` | Design something new | 8 | Creating something new: idea → spec → architecture |
 | `exploration-` | Decide under uncertainty | 4 | Research spikes, prototypes, assumption testing, tradeoffs |
-| `brownfield-` | Change a running system | 7 | Adding to, improving, or safely changing an existing system |
+| `brownfield-` | Change a running system | 8 | Adding to, improving, or safely changing an existing system |
 
 ## Skills
 
@@ -182,8 +184,10 @@ install. Each phase is one of the router's activity groups:
 | `spec-from-idea` | Translate a raw idea into a structured spec with scope, success criteria, and identified risks |
 | `architecture-sketch` | Define system boundaries, components, data flows, and interfaces before coding |
 | `data-model-first` | Design the core data model to surface coupling and schema decisions early |
+| `analytical-data-model` | Layers, grain, current vs. as-of history, quality gates, and backfills for reporting and ML data (`/groundwork analytics-model`) |
 | `adr-setup` | Establish Architecture Decision Records from day one |
 | `threat-model` | Trust boundaries, ranked STRIDE threats, a toxic-flow pass for AI features, and mitigations tied to principles (`/groundwork threat`) |
+| `eval-suite` | Cases (typical, edge, adversarial, regression), deterministic graders before calibrated judges, thresholds, paired runs, re-run triggers (`/groundwork evals`) |
 
 ### Exploration
 
@@ -205,19 +209,20 @@ install. Each phase is one of the router's activity groups:
 | `dependency-upgrade` | Safely upgrade a critical dependency with compatibility checks and staged rollout |
 | `brownfield-architecture-review` | Assess an existing system against the principle library before significant new work |
 | `change-review` | Review a finished change against its approved plan's delta and the active principles: GO or FIX, advisory (`/groundwork check`) |
+| `path-to-production` | Map commit-to-production stages, find the constraint, separate real review gates from theater, and rank fixes by flow gained (`/groundwork path-to-prod`) |
 
 ## Principle Library
 
-53 principles across 8 categories:
+56 principles across 8 categories:
 
 | Category | Principles |
 |---|---|
-| **Reliability** | Circuit Breakers, Fault Isolation, Graceful Degradation, Health Checks, Chaos Engineering, Durable Agent Execution |
-| **Security** | Secrets Management, Zero Trust, Least Privilege, Data Classification, Supply Chain Security, Prompt Injection Containment, Least Agency |
+| **Reliability** | Circuit Breakers, Fault Isolation, Graceful Degradation, Health Checks, Chaos Engineering, Durable Agent Execution, Backpressure and Load Shedding |
+| **Security** | Secrets Management, Zero Trust, Least Privilege, Data Classification, Supply Chain Security, Prompt Injection Containment, Least Agency, Tenant Isolation |
 | **Scalability** | Horizontal Scaling, Caching Strategy, Data Partitioning, Async Processing |
 | **Observability** | Structured Logging, Distributed Tracing, SLO / Error Budgets, Alerting Strategy, ML/AI Observability |
 | **Data** | Data Ownership, Consistency Models, Event Sourcing, Schema Evolution, Rebuildable Derived Data, Historical Data Modeling, Data Quality Gates |
-| **Design** | API Contract First, Bounded Contexts, Conway's Law Alignment, Fallacies of Distributed Computing, Field-First, Idempotency by Design, Separation of Concerns, Deterministic Core, Probabilistic Edge, Context Engineering, Agent-Legible Codebase, Simplest Agent Architecture First |
+| **Design** | API Contract First, Bounded Contexts, Conway's Law Alignment, Fallacies of Distributed Computing, Field-First, Idempotency by Design, Separation of Concerns, Deterministic Core, Probabilistic Edge, Context Engineering, Agent-Legible Codebase, Simplest Agent Architecture First, Deep Modules |
 | **Delivery** | CI/CD Pipeline, Blue-Green / Canary, Feature Flags, Infrastructure as Code, Testing Strategy, Executable Architecture Guardrails, Eval-Driven Development, Model as a Versioned Dependency |
 | **Operations** | Incident Response, Runbooks, Capacity Planning, FinOps Cost Visibility, Tech Debt Management |
 
@@ -385,18 +390,18 @@ are missing or don't follow the template draw nothing.
 
 ```
 groundwork/
-├── principles/             Architectural principle library (53 across 8 categories)
+├── principles/             Architectural principle library (56 across 8 categories)
 │   ├── _schema/            Frontmatter JSON Schema
 │   └── {category}/         One .md file per principle
 ├── skills/                 Agent Skills (flat)
 │   ├── _schema/            Frontmatter JSON Schema
 │   ├── groundwork/         The /groundwork router skill
 │   │   ├── SKILL.md        Command table + routing rules (rule-marked)
-│   │   ├── reference/      22 playbooks (17 compiled from phase skills + init, doctor, start, continue, learn)
+│   │   ├── reference/      25 playbooks (20 compiled from phase skills + init, doctor, start, continue, learn)
 │   │   └── scripts/        context.mjs session loader, status.mjs, hook.mjs lifecycle hook dispatcher
-│   ├── greenfield-*/       0-to-1 skills (6) — "design something new" playbooks
+│   ├── greenfield-*/       0-to-1 skills (8) — "design something new" playbooks
 │   ├── exploration-*/      Research and prototype skills (4) — "decide under uncertainty" playbooks
-│   └── brownfield-*/       Existing-system skills (7) — "change a running system" playbooks
+│   └── brownfield-*/       Existing-system skills (8) — "change a running system" playbooks
 ├── agents/                 groundwork-builder — read-only builder-check reviewer (plugin)
 ├── hooks/                  hooks.json — Claude Code plugin lifecycle hooks (ADR-006)
 ├── cli/                    npx @kdowswell/groundwork — detect / doctor / install / update
@@ -418,6 +423,7 @@ npm run typecheck         # TypeScript
 npm test                  # detector, CLI, and behavior suites (behavior skips without ANTHROPIC_API_KEY)
 npm run eval              # LLM-judged skill-vs-baseline eval (45+ cases, costs tokens)
 npm run eval:plugin       # end-to-end plugin cases in real Claude Code, with vs. without (eval/plugin/)
+npm run eval:routing      # router description vs. co-installed packs' descriptions, 12 routing prompts
 ```
 
 ## Source Frameworks

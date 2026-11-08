@@ -1,0 +1,114 @@
+[
+  {
+    "id": "marketing-attribution-pipeline",
+    "skill": "greenfield-analytical-data-model",
+    "task_description": "We're a four-person growth analytics team building a marketing attribution pipeline. Inputs are ad-platform spend exports (three platforms, daily files that get revised for up to a week), web session events from our tracking service, and orders from the commerce database. Leadership wants daily dashboards of spend, conversions, and ROAS by channel and campaign, and the attribution rule (last-touch today, probably position-based next quarter) will change. Before we write any pipeline code I want the design settled so a rule change or a bad file doesn't mean rebuilding everything by hand.",
+    "rubric": [
+      {
+        "dimension": "raw_immutable_derived_rebuildable",
+        "description": "1.0=defines an append-only raw layer that keeps every ad-platform file and event batch as received (including revised re-deliveries, stamped with arrival time) and makes attribution a derived, deterministic transformation, so switching from last-touch to position-based is a code change plus a re-run over history rather than a migration; 0.5=layers named (e.g., bronze/silver/gold) but raw is allowed to be overwritten by revised files, or attribution results are stored as the record; 0.0=no layering, attribution computed once and stored in place",
+        "weight": 0.2
+      },
+      {
+        "dimension": "grain_and_keys",
+        "description": "1.0=states a one-sentence grain and enforcing key for each dataset (e.g., one row per platform-campaign-day for spend, one row per session touch, one row per order per attributed touch with a weight) and names how identity is resolved across sources (session-to-order matching, deduplication of events) as the double-counting risk; 0.5=datasets listed but grain implied or keys missing for some; 0.0=no grain stated, tables described only by columns",
+        "weight": 0.2
+      },
+      {
+        "dimension": "late_revisions_and_replay",
+        "description": "1.0=treats the seven-day ad-platform revision window as the late-data policy: each run replaces whole day partitions and re-processes the last 7+ days, the date range is a parameter, a re-run of the same day produces the same table, and a full attribution backfill is a documented, costed procedure; 0.5=mentions idempotency or backfills generically without tying the replay window to the revision behavior; 0.0=append-only daily loads, so revised files double-count spend",
+        "weight": 0.2
+      },
+      {
+        "dimension": "quality_gates_with_actions",
+        "description": "1.0=declares checks at each boundary with a failure action and owner: freshness for each platform's daily file, volume bands, uniqueness at the spend grain, key resolution from orders to sessions, and a gate before dashboards publish so a missing or unit-changed file holds back the last good data; 0.5=lists checks but without failure actions, owners, or the publish-blocking placement; 0.0=no quality checks beyond 'the job succeeded'",
+        "weight": 0.15
+      },
+      {
+        "dimension": "source_ownership_and_contracts",
+        "description": "1.0=names one owner per source (ad platforms as external vendors with no contract, tracking service and commerce database owned by named internal teams), writes what the platform relies on at each boundary, and marks unconfirmed contracts as assumed; also defines the published dashboard dataset's contract including that history restates when the attribution rule changes; 0.5=ownership for some sources only, or no published contract; 0.0=no ownership or contracts",
+        "weight": 0.15
+      },
+      {
+        "dimension": "builder_check",
+        "description": "1.0=includes a Builder Check section listing questions a builder reading only the model would need answered, each resolved as answered-in-model, a labeled agent call, or a question for the user, with only build-changing questions (e.g., whether dashboards must preserve last-touch numbers after the rule switch) put to the user; 0.5=open questions listed but not sorted by resolution; 0.0=no builder-perspective check",
+        "weight": 0.1
+      }
+    ]
+  },
+  {
+    "id": "finance-as-of-reporting",
+    "skill": "greenfield-analytical-data-model",
+    "task_description": "I'm the data lead at a mid-size lender. We're building the reporting platform for monthly regulatory filings and the board pack. Loans get backdated corrections all the time (a rate change effective last month that we only learn about this week), borrowers move between risk grades, and branch-to-region mappings get reorganized. Auditors regularly ask us to reproduce a filing exactly as we submitted it, and also to show what the corrected numbers would be today. Our core banking system overwrites loan records in place. I need the analytical model designed before the engineers start.",
+    "context": "## Sources\n\n- Core banking system (Lending Ops team) — loans, balances, rates; overwrites records, nightly extract\n- Risk engine (Credit Risk team) — monthly risk grade per borrower; occasionally re-issues a month\n- Org hierarchy spreadsheet (Finance) — branch-to-region mapping, edited by hand a few times a year\n\n## Constraints\n\n- Filings are due on the 10th business day of each month\n- Seven-year retention requirement; borrower personal data subject to erasure requests after loan closure",
+    "rubric": [
+      {
+        "dimension": "valid_time_vs_record_time",
+        "description": "1.0=explicitly separates valid time (when a rate, grade, or mapping was true in the world) from record time (when the platform learned it), models both for every dataset the filings read, and shows that 'as originally filed' (record time as of the submission date) and 'as currently known' (latest records for the same valid period) are both answerable queries — with backdated rate corrections added as new records rather than overwrites; 0.5=keeps effective-dated history (valid time only, e.g., SCD Type 2) and claims reproducibility without a record-time dimension, so a backdated correction would still change a past filing; 0.0=current-value model or a single 'as of' notion with no distinction between the two clocks",
+        "weight": 0.25
+      },
+      {
+        "dimension": "history_policy_per_attribute",
+        "description": "1.0=decides history per attribute rather than per table (loan rate and risk grade versioned, branch-to-region mapping versioned so past filings keep the old region, a misspelled borrower name overwritten as a correction), distinguishes corrections from real changes, fixes date conventions (inclusive/exclusive end, current sentinel, time zone), and states how facts attach to the right version and how late or out-of-order changes split version ranges; 0.5=history policy stated at the table level or SCD types named without per-attribute reasoning; 0.0=no history policy",
+        "weight": 0.2
+      },
+      {
+        "dimension": "immutable_raw_from_overwriting_source",
+        "description": "1.0=recognizes that core banking overwrites records, so the append-only raw layer of nightly extracts is the only record of what the source said and must be retained for at least the seven-year window, with erasure of personal data designed as a logged step that removes personal fields across versions without destroying non-personal history; 0.5=raw layer present but retention or the erasure tension not addressed; 0.0=loads only current state from the source",
+        "weight": 0.2
+      },
+      {
+        "dimension": "quality_gates_block_filing",
+        "description": "1.0=gates before the filing datasets publish with failure actions and owners: freshness of the nightly extract and the monthly risk run against the 10th-business-day deadline, reconciliation of balances to the source control totals, uniqueness at the loan-month grain, and a hard halt rather than a warning for filing outputs; the hand-edited org spreadsheet is treated as an untrusted source with validation and versioned reference data; 0.5=generic checks without failure actions or without treating the spreadsheet as a risk; 0.0=no gates",
+        "weight": 0.15
+      },
+      {
+        "dimension": "rerun_and_restatement",
+        "description": "1.0=re-runs replace whole partitions with the run date passed in, re-issued risk months are handled as new record-time entries rather than overwrites, and the backfill procedure states how a restatement is produced without altering the as-filed view; 0.5=idempotent loads mentioned but restatement interaction with history not addressed; 0.0=appending or in-place patch loads",
+        "weight": 0.1
+      },
+      {
+        "dimension": "builder_check",
+        "description": "1.0=includes a Builder Check section with cold-read questions sorted into answered-in-model, labeled agent calls, and user questions, putting only build-changing ones (e.g., whether the board pack follows as-filed or as-currently-known) to the user in one round; 0.5=open questions not sorted; 0.0=no builder check",
+        "weight": 0.1
+      }
+    ]
+  },
+  {
+    "id": "cdc-fed-lakehouse",
+    "skill": "greenfield-analytical-data-model",
+    "task_description": "Our platform team is standing up a lakehouse fed by change-data-capture from about a dozen service databases owned by six product teams (orders, customers, payments, inventory, and so on). Analysts and two ML teams will consume it. The product teams change their schemas whenever they like and have no idea anyone downstream depends on them. We want the layer design, keys, and how we handle deletes and schema drift decided before we build ingestion.",
+    "rubric": [
+      {
+        "dimension": "cdc_raw_and_rebuildable_layers",
+        "description": "1.0=lands the change stream append-only in raw (every insert, update, and delete event with source position and arrival time), derives current-state and historical tables from it deterministically, and states that a derived layer can be dropped and rebuilt by replaying raw; deletes are preserved as events in raw and the derived current-state view applies them; 0.5=layers defined but raw is a merged current-state copy, losing change history or deletes; 0.0=change events applied directly to a single table with no raw layer",
+        "weight": 0.2
+      },
+      {
+        "dimension": "contracts_and_ownership_at_source",
+        "description": "1.0=names each product team as owner of its source, identifies reading internal service tables without a contract as the root risk, proposes data contracts (schema, keys, semantics, freshness) for the sources consumers rely on, and treats sources without one as untrusted at ingestion; published lakehouse datasets get their own owner and contract; 0.5=ownership noted but no contract proposal for the CDC boundary; 0.0=ownership and contracts not addressed",
+        "weight": 0.2
+      },
+      {
+        "dimension": "schema_drift_and_evolution",
+        "description": "1.0=raw keeps payloads as received so additive source changes never break ingestion, a gate detects breaking source changes (removed or retyped columns) before derived layers consume them, and published datasets follow an additive-by-default rule with breaking changes (including grain or meaning changes) shipped as new versions with an overlap window; 0.5=schema drift acknowledged but handled only by 'alert and fix'; 0.0=schema changes not addressed",
+        "weight": 0.2
+      },
+      {
+        "dimension": "grain_keys_and_ordering",
+        "description": "1.0=states grain and key per dataset, uses source primary keys plus change position to order and deduplicate events, and states how out-of-order or replayed change events resolve to the same current state (merge on stable key, idempotent apply), so a reconnect that replays a window produces no duplicates; 0.5=keys stated but ordering and duplicate change events not addressed; 0.0=no grain or keys",
+        "weight": 0.15
+      },
+      {
+        "dimension": "history_and_ml_consumers",
+        "description": "1.0=decides per attribute which tables need as-of history (e.g., customer attributes for ML training as of event time to avoid leakage) versus current state only, and keeps quality gates (freshness per source, volume, null and distribution checks) with failure actions before ML and analyst datasets publish; 0.5=one of history policy or gates addressed; 0.0=neither",
+        "weight": 0.15
+      },
+      {
+        "dimension": "builder_check",
+        "description": "1.0=includes a Builder Check section with cold-read questions sorted into answered-in-model, labeled agent calls, and user questions, with only build-changing ones put to the user in one round; 0.5=open questions not sorted; 0.0=no builder check",
+        "weight": 0.1
+      }
+    ]
+  }
+]
