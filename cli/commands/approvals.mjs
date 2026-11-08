@@ -100,6 +100,14 @@ function planStanding(root, planPath, expectedSha) {
  * @returns {{receipt: object, path: string, replaced: boolean}}
  */
 export function approve(root, artifact, opts) {
+  return prepareApproval(root, artifact, opts).write();
+}
+
+/**
+ * Every check `approve` makes, with no writes: returns the receipt path and a `write()` that
+ * records the decision. Lets a bundle check all of its artifacts before writing any (ADR-017).
+ */
+function prepareApproval(root, artifact, opts) {
   const artifactPath = toArtifactPath(root, artifact);
   const abs = join(root, artifactPath);
   if (!existsSync(abs)) throw new Error(`artifact does not exist: ${artifactPath}`);
@@ -153,7 +161,6 @@ export function approve(root, artifact, opts) {
   if (opts.tier) receipt.tier = opts.tier;
   if (Array.isArray(opts.bundle) && opts.bundle.length > 1) receipt.bundle = opts.bundle;
 
-  const dir = ensureProjectDir(root, APPROVALS_DIR);
   const replaced = priorFile;
   if (replaced) {
     if (!isRegularFile(path)) {
@@ -170,21 +177,27 @@ export function approve(root, artifact, opts) {
   if (lstatSync(snapshot, { throwIfNoEntry: false }) !== undefined && !isRegularFile(snapshot)) {
     throw new Error(`${relative(root, snapshot)} is not a regular file (symlink?) — refusing to overwrite`);
   }
-  if (via) {
-    // Keep the pre-amendment text so a reviewer can see exactly what the amendment changed.
-    const previous = previousSnapshotPath(root, artifactPath);
-    if (lstatSync(previous, { throwIfNoEntry: false }) !== undefined && !isRegularFile(previous)) {
-      throw new Error(`${relative(root, previous)} is not a regular file (symlink?) — refusing to overwrite`);
-    }
-    const before = prior ? readSnapshot(root, prior) : null;
-    if (before !== null) {
-      writeFileSafe(dir, previous, before);
-      receipt.previous = { sha256: prior.sha256, decision: prior.decision, date: prior.date };
-    }
+  // Keep the pre-amendment text so a reviewer can see exactly what the amendment changed.
+  const previous = via ? previousSnapshotPath(root, artifactPath) : undefined;
+  if (previous && lstatSync(previous, { throwIfNoEntry: false }) !== undefined && !isRegularFile(previous)) {
+    throw new Error(`${relative(root, previous)} is not a regular file (symlink?) — refusing to overwrite`);
   }
-  writeFileSafe(dir, snapshot, text);
-  writeFileSafe(dir, path, `${JSON.stringify(receipt, null, 2)}\n`);
-  return { receipt, path, replaced };
+  const before = via && prior ? readSnapshot(root, prior) : null;
+
+  return {
+    artifactPath,
+    path,
+    write() {
+      const dir = ensureProjectDir(root, APPROVALS_DIR);
+      if (previous && before !== null) {
+        writeFileSafe(dir, previous, before);
+        receipt.previous = { sha256: prior.sha256, decision: prior.decision, date: prior.date };
+      }
+      writeFileSafe(dir, snapshot, text);
+      writeFileSafe(dir, path, `${JSON.stringify(receipt, null, 2)}\n`);
+      return { receipt, path, replaced };
+    },
+  };
 }
 
 /**
@@ -222,9 +235,20 @@ export function approveBundle(root, artifacts, opts = {}) {
     }
   }
   const now = opts.now ?? new Date();
-  return planned.map(({ artifactPath, checkpoint }) =>
-    approve(root, artifactPath, { ...opts, checkpoint, decision, now, bundle: paths }),
+  // Run every per-file check (tier, receipt collisions, symlinked receipts or snapshots) first,
+  // so a failure on the last file leaves no receipt behind for the earlier ones.
+  const prepared = planned.map(({ artifactPath, checkpoint }) =>
+    prepareApproval(root, artifactPath, { ...opts, checkpoint, decision, now, bundle: paths }),
   );
+  const receiptFiles = new Map();
+  for (const p of prepared) {
+    const other = receiptFiles.get(p.path);
+    if (other) {
+      throw new Error(`${other} and ${p.artifactPath} map to the same receipt file — rename one artifact`);
+    }
+    receiptFiles.set(p.path, p.artifactPath);
+  }
+  return prepared.map((p) => p.write());
 }
 
 function readReceipt(file) {

@@ -707,6 +707,27 @@ describe("groundwork approve / verify", () => {
       expect(() => approveBundle(dir, [...FILES, "docs/missing.md"], { now: NOW })).toThrow(/does not exist/);
       expect(existsSync(join(dir, ".groundwork/approvals"))).toBe(false);
       expect(() => approveBundle(dir, FILES, { decision: "amended", via: "docs/spec.md" })).toThrow(/one artifact/);
+      expect(() => approveBundle(dir, FILES, { tier: "extreme", now: NOW })).toThrow(/--tier/);
+      expect(existsSync(join(dir, ".groundwork/approvals"))).toBe(false);
+    });
+
+    it("writes nothing when a per-file check fails on a later artifact", () => {
+      const dir = designBundle();
+      // The last artifact's receipt is a symlink: refusing it must not leave receipts for the others.
+      mkdirSync(join(dir, ".groundwork/approvals"), { recursive: true });
+      writeFileSync(join(dir, "elsewhere.json"), "{}");
+      symlinkSync(join(dir, "elsewhere.json"), join(dir, ".groundwork/approvals/docs__data-model.md.json"));
+      expect(() => approveBundle(dir, FILES, { now: NOW })).toThrow(/symlink/);
+      expect(readdirSync(join(dir, ".groundwork/approvals"))).toEqual(["docs__data-model.md.json"]);
+    });
+
+    it("refuses two artifacts that share a receipt file", () => {
+      const dir = designBundle();
+      mkdirSync(join(dir, "docs/a"), { recursive: true });
+      writeFileSync(join(dir, "docs/a/spec.md"), "# Spec: A\n");
+      writeFileSync(join(dir, "docs/a__spec.md"), "# Spec: B\n");
+      expect(() => approveBundle(dir, ["docs/a/spec.md", "docs/a__spec.md"], { now: NOW })).toThrow(/same receipt file/);
+      expect(existsSync(join(dir, ".groundwork/approvals"))).toBe(false);
     });
 
     it("takes several files on the command line, and an explicit checkpoint for all of them", () => {
