@@ -34,9 +34,9 @@ graders:
   - name: asked-once
     type: llm
     criteria: >
-      Count the separate decisions the user must make before work can continue. The best reply
-      delivers every design document it produced and asks all remaining questions plus a single
-      approval in this one message. Score lower for each additional approval the user will have to
-      give later for documents that do not exist yet (for example, a reply that says the
-      architecture and data model come after the spec is accepted means at least two more
-      approvals).
+      PASS if the reply delivers every design document it produced and puts all of its remaining
+      questions and its approval request in this one message, so the user can settle everything
+      with a single answer. The number of questions does not matter. FAIL if the reply says
+      another design document (for example the architecture or the data model) will be drafted
+      and brought for approval only after this one is accepted, or if it holds questions back for
+      a later turn.
