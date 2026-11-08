@@ -59,7 +59,7 @@
       {
         "dimension": "access_patterns_validated",
         "description": "1.0=2-4 concrete patterns per entity including the hot paths ('available stock by product across warehouses', 'reservations by order id', 'stock levels by warehouse for cycle count') with fields and any scan-shaped pattern flagged for restructuring now rather than in production; 0.5=a few patterns without fields or frequency notes; 0.0=no access-pattern validation",
-        "weight": 0.20
+        "weight": 0.2
       },
       {
         "dimension": "schema_evolution_strategy",
@@ -69,7 +69,7 @@
       {
         "dimension": "consistency_requirements",
         "description": "1.0=for each boundary, states strong vs eventual consistency with reasoning: reservation-versus-available-stock must be strongly consistent to prevent overselling, while cycle-count corrections and cross-warehouse analytics can be eventually consistent and reconciled; 0.5=says 'use transactions' globally without per-boundary analysis; 0.0=consistency never addressed — oversell behavior discovered in production",
-        "weight": 0.20
+        "weight": 0.2
       }
     ]
   },
@@ -82,7 +82,7 @@
       {
         "dimension": "entities_scoped",
         "description": "1.0=3-7 core entities with one-sentence definitions (Referral, ReferralStatus/StatusEvent, Specialist, CareCoordinator assignment — with Patient and Appointment recognized as externally owned), staying inside the referral domain rather than remodeling the whole hospital; 0.5=entity list mixes referral-domain entities with full re-definitions of externally owned ones; 0.0=no entity-level model",
-        "weight": 0.10
+        "weight": 0.1
       },
       {
         "dimension": "relationship_cardinality",
@@ -107,7 +107,30 @@
       {
         "dimension": "evolution_and_consistency",
         "description": "1.0=schema evolution strategy chosen with the external billing consumer in mind (breaking changes hit a vendor), and consistency stated per boundary — referral-to-status strongly consistent within the service, scheduling and billing integration eventually consistent via events with reconciliation, with reasoning; 0.5=only one of evolution strategy or consistency addressed; 0.0=neither addressed",
-        "weight": 0.20
+        "weight": 0.2
+      }
+    ]
+  },
+  {
+    "id": "grill-me-data-model",
+    "skill": "greenfield-data-model-first",
+    "task_description": "Interview me first, then design the data model for shared household budgets: members, accounts, transactions, and monthly category budgets.",
+    "context": "## Project Context\n\n- Stack: mobile app with an offline-first local store syncing to a relational backend\n- Users: households of 1-6 people; any member can add a transaction\n- Existing spec: docs/spec.md says a budget belongs to the household, not a member\n",
+    "rubric": [
+      {
+        "dimension": "one_question_with_recommendation",
+        "description": "1.0=the response asks exactly ONE question and gives a recommended answer with a one-line reason the user can accept with 'yes', and does not deliver a full draft yet; 0.5=asks one question without a recommendation, or a small cluster of 2-3 questions; 0.0=delivers a full draft first, or asks a long list of questions",
+        "weight": 0.5
+      },
+      {
+        "dimension": "reads_context_before_asking",
+        "description": "1.0=the question is not answered by the provided context (stack, existing ADRs, existing spec) and the response shows it used that context; 0.5=the question is reasonable but ignores something the context settles; 0.0=asks something the context already answers",
+        "weight": 0.25
+      },
+      {
+        "dimension": "question_changes_what_gets_built",
+        "description": "1.0=the first question is the highest-leverage branch (its answer changes components, ownership, or scope); 0.5=a real question but low leverage; 0.0=a cosmetic or rhetorical question",
+        "weight": 0.25
       }
     ]
   }

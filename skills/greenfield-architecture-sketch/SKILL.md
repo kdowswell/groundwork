@@ -49,6 +49,12 @@ The agent draws the structural questions out of the spec and proposes a sketch. 
 
 ## Steps
 
+**Grilling mode (opt-in).** Run this only when the user asks for it: a `--grill` argument, or a phrase such as "grill me" or "interview me first". Without that request, skip it entirely: write the full draft first and ask once at the end, as the numbered steps say. When it is requested:
+- Before asking anything, read the repository, the project context, and existing decision records. Never ask a question they already answer.
+- Walk the decision tree one branch at a time, in this order: the system boundary, then the components and where each runs, then which flows are synchronous and which are not, then each external dependency and what happens when it fails. Ask **one** question per reply, and give your recommended answer with a one-line reason, so the user can accept it with "yes".
+- Stop when every branch whose answer changes what gets built is resolved. Then follow the numbered steps in full; the fresh-eyes review should find little.
+- Write each decision that crystallizes during the interview as a **Proposed** decision record, using the `adr` playbook's template, and cite it in the architecture.
+
 1. **Draw the system boundary.** **First, if a spec file is named or present in the project, run `npx @kdowswell/groundwork verify <spec path>` from the project root, and act on the first Checkpoint before writing anything else.** With no spec file, work from the request as given. Write one sentence: "This system is responsible for X and hands off Y to Z." Anything inside the boundary is your problem; anything outside is a dependency. Ambiguity here is technical debt's favorite entry point.
 
 2. **Name the major components.** List 3–7 components with a one-sentence responsibility for each, where each runs (the user's device, the backend, a third party), and whether it holds persistent state. A component is a distinct unit that could in principle be deployed, tested, or replaced independently. If a component's responsibility spans more than one sentence, split it.

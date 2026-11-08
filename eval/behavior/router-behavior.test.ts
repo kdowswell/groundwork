@@ -298,6 +298,27 @@ One-way doors: None
     expect(approvals.filter((c) => !/--decision=/.test(c)), "never a plain approval the user didn't give").toEqual([]);
   }, 180_000);
 
+  // Grilling is opt-in (#29): the default first reply is a full draft; --grill asks one question.
+  const IDEA = "an internal tool for our support leads to see which escalations are stuck and reassign them";
+
+  it("rule:router-grill-opt-in — without --grill, the first reply is a full draft, not a question", async () => {
+    const dir = workspace({ ".groundwork/context.md": CONTEXT_MD });
+    const { trace, finalText } = await runScenario({ workspace: dir, maxTurns: 20, userMessage: `/groundwork spec ${IDEA}` });
+    const drafted =
+      filesWritten(trace).some((f) => kindOfFile(dir, f) === "Spec") || /^##\s+(Problem|Scope)/m.test(finalText);
+    expect(drafted, `expected a drafted spec; reply:\n${finalText}`).toBe(true);
+  }, 300_000);
+
+  it("rule:router-grill-opt-in — with --grill, the first reply is one question with a recommended answer", async () => {
+    const dir = workspace({ ".groundwork/context.md": CONTEXT_MD });
+    const { trace, finalText } = await runScenario({ workspace: dir, userMessage: `/groundwork spec --grill ${IDEA}` });
+    expect(filesWritten(trace), "no draft before the interview").toEqual([]);
+    const questions = finalText.split("\n").filter((l) => /\?\s*(\*\*)?\s*$/.test(l));
+    expect(questions.length, `expected one question; reply:\n${finalText}`).toBeGreaterThanOrEqual(1);
+    expect(questions.length, `expected one question; reply:\n${finalText}`).toBeLessThanOrEqual(2);
+    expect(finalText.toLowerCase(), finalText).toMatch(/recommend/);
+  }, 180_000);
+
   // ADR-016: old names keep working, run the renamed playbook, and say the new name once.
   for (const [oldName, newName, ask] of [
     ["sketch", "architecture", "/groundwork sketch the system for an internal escalation tracker"],

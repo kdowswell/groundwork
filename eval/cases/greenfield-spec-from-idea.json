@@ -54,17 +54,17 @@
       {
         "dimension": "non_goals_specificity",
         "description": "1.0=explicit exclusions stated (e.g., not replacing the back-office database system, no analytics dashboard in v1, no iOS/Android parity initially); 0.5=vague scope limits; 0.0=no non-goals",
-        "weight": 0.20
+        "weight": 0.2
       },
       {
         "dimension": "riskiest_assumption_identified",
         "description": "1.0=names the riskiest assumption — likely offline sync correctness, or whether technicians will adopt the app vs. paper; should be falsifiable; 0.5=mentions risk areas without identifying the single most dangerous one; 0.0=no assumption identification",
-        "weight": 0.20
+        "weight": 0.2
       },
       {
         "dimension": "open_questions_categorized",
         "description": "1.0=blocking questions (e.g., 'what does conflict resolution look like if two techs edit the same record offline?') separated from deferrable ones; 0.5=questions listed but not prioritized; 0.0=no open questions",
-        "weight": 0.10
+        "weight": 0.1
       }
     ]
   },
@@ -86,17 +86,40 @@
       {
         "dimension": "non_goals_specificity",
         "description": "1.0=states what is explicitly out of scope (e.g., in-app notification center, SMS, push notifications, user preference management in v1); 0.5=implies limits without listing; 0.0=no non-goals",
-        "weight": 0.20
+        "weight": 0.2
       },
       {
         "dimension": "riskiest_assumption_identified",
         "description": "1.0=identifies the most dangerous assumption (e.g., 'we assume customers want email notifications — false if customers check the platform directly and emails create noise'); 0.5=mentions risk without falsifiable framing; 0.0=no assumption named",
-        "weight": 0.20
+        "weight": 0.2
       },
       {
         "dimension": "open_questions_categorized",
         "description": "1.0=blocking questions separated from deferrable (e.g., blocking: 'who owns the report-completion event — which service fires it?'; deferrable: 'should users be able to configure notification frequency?'); 0.5=questions listed without categories; 0.0=no open questions",
-        "weight": 0.10
+        "weight": 0.1
+      }
+    ]
+  },
+  {
+    "id": "grill-me-spec",
+    "skill": "greenfield-spec-from-idea",
+    "task_description": "Grill me before you write anything: I want a spec for a tool that lets our clinic's front-desk staff see which patients are running late for appointments and offer their slot to the waitlist.",
+    "context": "## Project Context\n\n- Stack: TypeScript web app, one relational store\n- Team: 3 engineers, one clinic group (6 clinics)\n- Existing: an appointment system of record (vendor) with a read API; SMS sending is already used for reminders\n- Constraint: patient data is PHI\n",
+    "rubric": [
+      {
+        "dimension": "one_question_with_recommendation",
+        "description": "1.0=the response asks exactly ONE question and gives a recommended answer with a one-line reason the user can accept with 'yes', and does not deliver a full draft yet; 0.5=asks one question without a recommendation, or a small cluster of 2-3 questions; 0.0=delivers a full draft first, or asks a long list of questions",
+        "weight": 0.5
+      },
+      {
+        "dimension": "reads_context_before_asking",
+        "description": "1.0=the question is not answered by the provided context (stack, existing ADRs, existing spec) and the response shows it used that context; 0.5=the question is reasonable but ignores something the context settles; 0.0=asks something the context already answers",
+        "weight": 0.25
+      },
+      {
+        "dimension": "question_changes_what_gets_built",
+        "description": "1.0=the first question is the highest-leverage branch (its answer changes components, ownership, or scope); 0.5=a real question but low leverage; 0.0=a cosmetic or rhetorical question",
+        "weight": 0.25
       }
     ]
   }

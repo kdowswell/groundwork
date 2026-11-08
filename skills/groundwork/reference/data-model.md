@@ -40,6 +40,12 @@ The agent proposes a first-draft data model based on available context — the s
 
 ## Steps
 
+**Grilling mode (opt-in).** Run this only when the user asks for it: a `--grill` argument, or a phrase such as "grill me" or "interview me first". Without that request, skip it entirely: write the full draft first and ask once at the end, as the numbered steps say. When it is requested:
+- Before asking anything, read the repository, the project context, and existing decision records. Never ask a question they already answer.
+- Walk the decision tree one branch at a time, in this order: the core entities, then who owns each one, then the relationships and their cardinality, then which writes need strong consistency and which can lag. Ask **one** question per reply, and give your recommended answer with a one-line reason, so the user can accept it with "yes".
+- Stop when every branch whose answer changes what gets built is resolved. Then follow the numbered steps in full; the fresh-eyes review should find little.
+- Write each decision that crystallizes during the interview as a **Proposed** decision record, using the `adr` playbook's template, and cite it in the data model.
+
 1. **List the core entities.** **First, if a spec file is named or present in the project, run `npx @kdowswell/groundwork verify <spec path>` from the project root, and the same for an architecture sketch if one exists, and act on the first Checkpoint before writing anything else.** With no spec file, work from the request as given. Start from the primary data entity in the spec. Expand outward: what other things does the system need to know about? Write each entity as a noun with a one-sentence definition. Aim for 3–7 core entities. If you have more than 10, you are either modeling the whole domain (too broad) or modeling implementation details (too narrow).
 
 2. **Draw relationships.** For each pair of related entities, write the cardinality: one-to-one, one-to-many, many-to-many. Where the relationship is many-to-many, name the join concept explicitly — it is almost always a first-class entity that carries meaning of its own.

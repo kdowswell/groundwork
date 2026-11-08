@@ -73,6 +73,11 @@ recorded per file (`npx @kdowswell/groundwork approve docs/spec.md docs/architec
 docs/data-model.md`). `continue` builds on what you've already approved and asks only about what
 changed.
 
+`spec`, `architecture`, and `data-model` draft in full by default and ask once at the end. If you'd
+rather be interviewed first, add `--grill` (or say "grill me"): the agent asks one question at a
+time, each with its recommended answer, checks the repo and context before asking anything they
+could answer, and records decisions that crystallize as Proposed ADRs.
+
 The other commands are compiled from standalone phase skills (below) by `npm run sync:router`.
 The standalone skills stay the source of truth and remain individually installable.
 

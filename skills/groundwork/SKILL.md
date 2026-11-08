@@ -11,7 +11,7 @@ description: >
   tradeoff analysis, reviewing an existing system, triaging tech debt, planning a
   safe production change, or any /groundwork command. Not for writing feature
   code directly.
-argument-hint: "[command] [target]"
+argument-hint: "[command] [--grill] [target]"
 user-invocable: true
 tags: [router, architecture, phases, toolkit]
 ---
@@ -49,9 +49,9 @@ what the request needs — never preload multiple playbooks. <!-- rule:router-pr
 | **Design something new** | | |
 | `start [idea]` | The whole design in one pass: spec, architecture, data model, and ADRs, with one approval | [reference/start.md](reference/start.md) |
 | `continue` | Finish whatever design documents are missing, draft, or changed since approval, with one approval | [reference/continue.md](reference/continue.md) |
-| `spec [idea]` | Turn an idea into a spec with scope and success criteria | [reference/spec.md](reference/spec.md) |
-| `architecture [system]` | Define system boundaries, components, and data flows before coding | [reference/architecture.md](reference/architecture.md) |
-| `data-model [domain]` | Design the core data model before implementation | [reference/data-model.md](reference/data-model.md) |
+| `spec [--grill] [idea]` | Turn an idea into a spec with scope and success criteria | [reference/spec.md](reference/spec.md) |
+| `architecture [--grill] [system]` | Define system boundaries, components, and data flows before coding | [reference/architecture.md](reference/architecture.md) |
+| `data-model [--grill] [domain]` | Design the core data model before implementation | [reference/data-model.md](reference/data-model.md) |
 | `principles` | Select load-bearing principles from project context | [reference/principles.md](reference/principles.md) |
 | `adr` | Establish architecture decision records | [reference/adr.md](reference/adr.md) |
 | **Decide under uncertainty** | | |
@@ -100,6 +100,10 @@ session, say once that it is now the new name (for example: "`sketch` is now `ar
 - **General architecture request, no command named:** infer the activity (below), pick the one
   command whose entry criteria the request satisfies, tell the user which playbook you are
   using, and proceed. <!-- rule:router-announce-choice -->
+- **Grilling is opt-in.** `spec`, `architecture`, and `data-model` interview the user one
+  question at a time, each with a recommended answer, only when asked: `--grill`, "grill me", or
+  "interview me first". Otherwise the first reply is the full draft, with questions asked once at
+  the end. <!-- rule:router-grill-opt-in -->
 - **Missing context:** if `.groundwork/context.md` does not exist and the request designs
   something new or changes a running system, offer `init` first (it takes minutes and improves every later command). If the
   user declines, proceed without it and say which defaults you assumed. Never block on init.

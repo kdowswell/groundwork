@@ -44,6 +44,12 @@ The human's job is to answer questions honestly, including "I don't know." Open 
 
 ## Steps
 
+**Grilling mode (opt-in).** Run this only when the user asks for it: a `--grill` argument, or a phrase such as "grill me" or "interview me first". Without that request, skip it entirely: write the full draft first and ask once at the end, as the numbered steps say. When it is requested:
+- Before asking anything, read the repository, the project context, and existing decision records. Never ask a question they already answer.
+- Walk the decision tree one branch at a time, in this order: the problem and who has it, then scope (in and out), then the success criteria, then the primary data entity and its owner. Ask **one** question per reply, and give your recommended answer with a one-line reason, so the user can accept it with "yes".
+- Stop when every branch whose answer changes what gets built is resolved. Then follow the numbered steps in full; the fresh-eyes review should find little.
+- Write each decision that crystallizes during the interview as a **Proposed** decision record, using the `adr` playbook's template, and cite it in the spec.
+
 1. **Restate the problem, not the solution.** Before engaging with "what to build," articulate the problem it solves in one sentence: what is the user currently unable to do, or doing badly, that this changes? If the input makes this clear, write it. If not, write the most plausible interpretation and flag it: "Problem statement (needs validation): ..." — then continue. Do not wait for a confirmed problem statement before producing the draft spec.
 
 2. **Identify the primary user and their context.** Name who experiences the problem. Where are they? What are they doing when they hit it? What's their constraint (time, attention, connectivity, tools)? This context will change every decision from data model to UI affordance.
