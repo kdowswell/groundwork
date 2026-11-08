@@ -1,0 +1,111 @@
+[
+  {
+    "id": "clinic-booking-web-api",
+    "skill": "greenfield-threat-model",
+    "task_description": "We're about to start building the public booking API for a chain of physiotherapy clinics: patients sign up, book and cancel appointments, and upload referral letters; clinic staff see their clinic's schedule. The architecture is approved. Before we write code I want to know what could go wrong security-wise and what we should build in from the start.",
+    "context": "## Approved Architecture Summary\n\nComponents: a single-page web client; a booking API behind a public load balancer; a relational store holding patients, appointments, and staff accounts; an object store for uploaded referral letters; a third-party email provider for confirmations. Patients log in with email and password; staff log in through the company identity provider. Each clinic's staff should only see their own clinic. ~40 clinics, ~3,000 bookings/day. No AI or agent features. Subject to GDPR.",
+    "rubric": [
+      {
+        "dimension": "boundaries_and_classification",
+        "description": "1.0=lists the trust boundaries (browser to API, API to data store, API to object store, API to email provider, staff identity provider to API, clinic-to-clinic tenant boundary) with the data crossing each and a classification per flow — referral letters and patient records classified highest (health data under GDPR), schedule data lower; 0.5=boundaries listed but data classification missing or uniform across flows; 0.0=no boundary list, jumps straight to a generic security checklist",
+        "weight": 0.2
+      },
+      {
+        "dimension": "stride_per_boundary_ranked",
+        "description": "1.0=threats are organized by boundary and STRIDE letter, each with likelihood and impact and a Rank, sorted, with the cross-clinic data exposure (staff of one clinic reading another's patients, or patients enumerating appointment ids) and the referral-letter upload path ranked near the top; letters with no plausible threat are skipped rather than padded; 0.5=STRIDE used but threats unranked, or every threat rated the same; 0.0=no STRIDE structure and no ranking",
+        "weight": 0.25
+      },
+      {
+        "dimension": "mitigations_cite_principles_and_guardrail",
+        "description": "1.0=every threat above Low has a mitigation that names an existing principle id (e.g., least-privilege, zero-trust, data-classification) and states deterministic vs model-judged — all deterministic here since there is no model; 0.5=mitigations present but missing principle ids or guardrail type on several rows; 0.0=generic advice not tied to specific threats",
+        "weight": 0.2
+      },
+      {
+        "dimension": "toxic_flow_handled_correctly",
+        "description": "1.0=states in one line that the toxic-flow pass does not apply because there is no ai_system or autonomous_agents signal, without inventing agent sessions; 0.5=omits the section without saying why; 0.0=fabricates AI-related threats or a toxic-flow table for a system with no model",
+        "weight": 0.1
+      },
+      {
+        "dimension": "residual_risk_and_detector_rules",
+        "description": "1.0=a Residual Risk section names what is left and when to revisit it, and Candidate Detector Rules lists checkable rules (e.g., queries for clinic data without a clinic-scope filter, an upload handler without type and size validation) each tied to a principle; 0.5=one of the two sections present or vague; 0.0=neither",
+        "weight": 0.1
+      },
+      {
+        "dimension": "acceptance_and_builder_check",
+        "description": "1.0=includes a Builder Check section from a cold read, sorted into answered / agent call / user, and ends by asking the user to accept the risk ranking and residual risk, without recording approval on their behalf; 0.5=asks for acceptance but no builder check, or builder check without sorting; 0.0=neither, or claims the model is approved",
+        "weight": 0.15
+      }
+    ]
+  },
+  {
+    "id": "sales-email-agent-crm",
+    "skill": "greenfield-threat-model",
+    "task_description": "We're adding an AI sales assistant to our product: it reads each salesperson's inbound email, looks up the sender in our CRM (deal size, contract terms, contact history), drafts a reply, and sends it automatically for routine messages like meeting requests and pricing questions. It also updates the CRM with notes from the thread. The architecture is approved and the team wants to start next week. Threat model it first.",
+    "context": "## Project Context\n\nSignals: ai_system PRESENT, autonomous_agents PRESENT.\n\n## Approved Architecture Summary\n\nOne agent loop per salesperson's mailbox. Tools: read_inbox, search_crm (full read access to all accounts), update_crm_record, send_email (any recipient). The agent runs with a service credential that has read/write on the whole CRM and send-as on every salesperson's mailbox. A prompt-injection classifier screens inbound email before the agent sees it. Agent outputs are logged to a shared trace store that the whole engineering team can read.",
+    "rubric": [
+      {
+        "dimension": "toxic_flow_flagged",
+        "description": "1.0=the Toxic Flows table marks the mailbox agent session as holding all three — untrusted input (inbound email from anyone), sensitive access (CRM deal and contract data), and outbound/state change (send_email to any recipient, update_crm_record) — and ranks it Critical in the Threats table with a concrete exfiltration scenario (an email instructing the agent to send account details elsewhere); 0.5=mentions prompt injection as a risk but does not identify the three-property combination in one session; 0.0=no toxic-flow analysis, or treats the classifier as sufficient",
+        "weight": 0.3
+      },
+      {
+        "dimension": "mitigation_removes_a_property",
+        "description": "1.0=the toxic-flow mitigation removes or gates one of the three properties deterministically — e.g., split reading email from sending, restrict send_email to replying to the thread's existing participants via an allowlist enforced in code, require human approval for any send that includes CRM data — and explicitly says the classifier cannot be the only control; 0.5=proposes stronger filtering or prompt hardening as the main fix; 0.0=no mitigation for the toxic flow",
+        "weight": 0.2
+      },
+      {
+        "dimension": "agent_identity_and_privilege",
+        "description": "1.0=flags the shared service credential (whole-CRM read/write, send-as every mailbox) as its own threat and proposes per-agent identity scoped to the one salesperson's accounts and mailbox, citing zero-trust and least-privilege; also flags the shared trace store as holding confidential CRM data readable by all engineers (data-classification); 0.5=raises over-broad permissions without proposing per-agent scoping, or misses the trace store; 0.0=agent permissions not examined",
+        "weight": 0.2
+      },
+      {
+        "dimension": "guardrail_type_per_mitigation",
+        "description": "1.0=every mitigation names a principle id and a guardrail type, with sending, CRM writes, and data leaving the system marked deterministic, and model-judged reserved for low-cost cases like drafting a reply a person reviews; least-agency is applied to question whether auto-send is needed at all; 0.5=guardrail types present but a Critical or High threat relies on a model-judged control without being called out; 0.0=no guardrail typing",
+        "weight": 0.15
+      },
+      {
+        "dimension": "candidate_detector_rules",
+        "description": "1.0=lists checkable rules such as an outbound send tool without a recipient allowlist, a wildcard CRM scope on an agent credential, or model output written to a record without schema validation, each tied to a principle id; 0.5=rules listed but vague or not checkable by reading code/config; 0.0=section missing",
+        "weight": 0.05
+      },
+      {
+        "dimension": "acceptance_of_residual_risk",
+        "description": "1.0=ends by asking the user to accept the ranking and residual risk, makes clear the toxic flow cannot be accepted as residual risk silently, and includes a Builder Check section; 0.5=asks for acceptance but treats the Critical threat as routine; 0.0=no acceptance step, or records approval on the user's behalf",
+        "weight": 0.1
+      }
+    ]
+  },
+  {
+    "id": "internal-nightly-reconciliation-job",
+    "skill": "greenfield-threat-model",
+    "task_description": "Quick one: we have a nightly job that reads yesterday's invoices from our billing database, compares totals against the ledger table in the same database, and writes a mismatch report to an internal reporting table that the finance team views in a dashboard. Our security lead wants a threat model on file for everything that touches finance data. Keep it proportionate.",
+    "context": "## System Summary\n\nRuns on the internal scheduler under a dedicated service account. Reads invoices and ledger; writes only to the reporting table. No external inputs, no network calls outside the database, no AI or model calls. Finance dashboard access is controlled by the company identity provider. Built and maintained by one engineer.",
+    "rubric": [
+      {
+        "dimension": "proportionality",
+        "description": "1.0=states a Short size up front with the reason (one or two trust boundaries, no external input), and keeps the model compact — roughly a handful of threats, no padding of every STRIDE letter, no invented internet-facing or AI threats; 0.5=correct content but noticeably padded with generic threats or boilerplate sections; 0.0=a full enterprise-scale model with dozens of threats for a single internal job",
+        "weight": 0.3
+      },
+      {
+        "dimension": "relevant_threats_ranked",
+        "description": "1.0=identifies the threats that actually matter here — an over-scoped service account (write access beyond the reporting table), tampering with the report or ledger going unnoticed (repudiation, no audit trail), and the job silently failing or skipping a night so mismatches are missed — each with likelihood, impact, and Rank; 0.5=some relevant threats but unranked or mixed with irrelevant ones; 0.0=generic threats unrelated to this job",
+        "weight": 0.25
+      },
+      {
+        "dimension": "mitigations_cite_principles",
+        "description": "1.0=each mitigation above Low cites an existing principle id (e.g., least-privilege for a read-only role on invoices and ledger with write only to the report table, data-classification for finance data) and is marked deterministic; 0.5=mitigations without principle ids or guardrail type; 0.0=no mitigations",
+        "weight": 0.2
+      },
+      {
+        "dimension": "toxic_flow_not_applicable",
+        "description": "1.0=one line saying the toxic-flow pass does not apply because there is no model or agent; 0.5=section silently omitted; 0.0=fabricates agent sessions or AI threats",
+        "weight": 0.1
+      },
+      {
+        "dimension": "acceptance_and_builder_check",
+        "description": "1.0=includes a brief Builder Check (may be 'No open questions') and asks the user to accept the ranking and residual risk without recording approval for them; 0.5=one of the two missing; 0.0=neither",
+        "weight": 0.15
+      }
+    ]
+  }
+]

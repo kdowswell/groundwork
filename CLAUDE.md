@@ -27,10 +27,10 @@ groundwork/
 │   ├── _schema/            JSON Schema for skill frontmatter
 │   ├── groundwork/         Router skill: /groundwork <command> (single entry point)
 │   │   ├── SKILL.md        Command table + routing rules; rule-marked (<!-- rule:... -->)
-│   │   ├── reference/      20 playbooks — 16 GENERATED from phase skills + init, doctor, start, continue
+│   │   ├── reference/      21 playbooks — 17 GENERATED from phase skills + init, doctor, start, continue
 │   │   │   └── principles/ GENERATED trimmed principle copies (keeps relative links working)
 │   │   └── scripts/        context.mjs (session context loader), status.mjs (artifact state + next step), hook.mjs (lifecycle hook dispatcher)
-│   ├── greenfield-*/       Phase 1: 5 skills (greenfield-spec-from-idea, etc.)
+│   ├── greenfield-*/       Phase 1: 6 skills (greenfield-spec-from-idea, etc.)
 │   │   └── SKILL.md        Literal filename required by Agent Skills standard
 │   ├── exploration-*/      Phase 2: 4 skills
 │   └── brownfield-*/       Phase 3: 7 skills

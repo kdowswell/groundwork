@@ -275,6 +275,49 @@ If false, alerts matter more than the board.
 | Board columns? | Method content (ops lead) |
 `;
 
+describe("agent lens (#36)", () => {
+  const AGENT_ARCH = `# Architecture: Support assistant
+
+## Components
+| Component | Runs on | State | Responsibility |
+|---|---|---|---|
+| Web app | Backend | Stateless | Serves the chat UI |
+| Triage agent | Backend | Stateless | Reads tickets and drafts replies |
+| Ticket store | Backend | Stateful | Holds tickets |
+
+## Primary Data Flow
+1. The web app sends the message to the triage agent.
+2. The triage agent reads the ticket store.
+
+## Agents and Tools
+| Agent | Tool | Side effect | Credential |
+|---|---|---|---|
+| Triage agent | send_email | Acts outside | scoped token |
+
+## Sessions
+| Session | Untrusted input | Sensitive access | Outbound or state change | All three? |
+|---|---|---|---|---|
+| Inbound email triage | yes | yes | yes | Yes: outbound email limited to the ticket's requester |
+| Internal summary | no | yes | no | no |
+`;
+
+  it("draws agent components distinctly and calls out toxic sessions", () => {
+    const dir = project(AGENT_ARCH);
+    const { html } = render(dir, "docs/spec.md", { write: false });
+    expect(html).toMatch(/<div class="comp agent"[^>]*><span>Triage agent<\/span><span class="tag agent">agent<\/span>/);
+    expect(html).toMatch(/<div class="comp"[^>]*><span>Web app<\/span>/);
+    expect(html).toContain("<span>Toxic flow</span><strong>1 session(s)");
+    expect(html).toContain("<strong>Inbound email triage</strong> — outbound email limited to the ticket&#39;s requester");
+  });
+
+  it("changes nothing for an architecture without the agent sections", () => {
+    const dir = project(AGENT_ARCH.split("## Agents and Tools")[0]);
+    const { html } = render(dir, "docs/spec.md", { write: false });
+    expect(html).not.toContain("comp agent");
+    expect(html).not.toContain("Toxic flow");
+  });
+});
+
 describe("spec visuals (ADR-009)", () => {
   const page = (source: string) => render(project(source), "docs/spec.md", { write: false }).html;
 
@@ -497,6 +540,20 @@ describe("changes since approval (ADR-009)", () => {
     const dir = project();
     approve(dir, "docs/spec.md", { checkpoint: "greenfield-spec-from-idea/accept" });
     expect(render(dir, "docs/spec.md", { write: false }).html).not.toContain('id="changes"');
+  });
+});
+
+describe("threat models (ADR-020)", () => {
+  it("recognizes a threat model and offers its acceptance checkpoint", () => {
+    const dir = tempDir();
+    mkdirSync(join(dir, "docs"));
+    writeFileSync(
+      join(dir, "docs/threats.md"),
+      "# Threat Model: Support assistant\n\n## Mitigations\n| Threat ID | Mitigation | Principle | Guardrail |\n|---|---|---|---|\n| T1 | Allowlist outbound email | least-agency | deterministic |\n",
+    );
+    const r = render(dir, "docs/threats.md", { write: false });
+    expect(r.checkpoint).toBe("greenfield-threat-model/accept");
+    expect(r.html).toContain("Threat model · <code>docs/threats.md</code>");
   });
 });
 

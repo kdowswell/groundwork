@@ -104,6 +104,37 @@ function stepTitle(text) {
 // ---------------------------------------------------------------------------
 // Architecture
 
+/** Lower-cased agent names from the agent lens's "Agents and Tools" table (#36). */
+function agentNamesFrom(lines) {
+  const table = sectionTable(lines, "Agents and Tools");
+  if (!table) return new Set();
+  const col = column(table, /agent/i, 0);
+  return new Set(
+    table.rows.map((r) => plain(r[col] ?? "").toLowerCase()).filter((n) => n && !/^\.{3}$/.test(n)),
+  );
+}
+
+/** Agent sessions with untrusted input, sensitive access, and outbound ability all at once. */
+function toxicSessions(lines) {
+  const table = sectionTable(lines, "Sessions");
+  if (!table) return "";
+  const nameCol = column(table, /session/i, 0);
+  const allCol = column(table, /all three/i, -1);
+  const legs = [/untrusted/i, /sensitive/i, /outbound|state/i].map((re) => column(table, re, -1));
+  const yes = (v) => /^\s*(\*\*)?yes\b/i.test(v ?? "");
+  const flagged = table.rows.filter((r) =>
+    allCol !== -1 ? yes(r[allCol]) : legs.every((c) => c !== -1 && yes(r[c])),
+  );
+  if (flagged.length === 0) return "";
+  const items = flagged
+    .map((r) => {
+      const fix = allCol !== -1 ? plain(r[allCol]).replace(/^yes[\s:;,.—-]*/i, "") : "";
+      return `<li><strong>${escapeHtml(plain(r[nameCol]))}</strong>${fix ? ` — ${escapeHtml(clip(fix, 160))}` : ""}</li>`;
+    })
+    .join("");
+  return `<figure class="viz callout bad"><span>Toxic flow</span><strong>${flagged.length} session(s) combine untrusted input, sensitive access, and outbound ability</strong><ul class="plain">${items}</ul></figure>`;
+}
+
 function systemMap(lines) {
   const table = sectionTable(lines, "Components");
   if (!table) return "";
@@ -120,6 +151,8 @@ function systemMap(lines) {
     }))
     .filter((c) => c.name && !/^\.{3}$/.test(c.name));
   if (components.length < 2 || components.length > MAX_MAP_COMPONENTS) return "";
+  // Agent lens (#36): components named in the Agents and Tools table are drawn as agents.
+  const agentNames = agentNamesFrom(lines);
 
   // Group into lanes, in order of first appearance.
   const laneOrder = [];
@@ -153,10 +186,11 @@ function systemMap(lines) {
     col += span;
   });
   ordered.forEach((c, i) => {
-    const badge = c.stateful ? `<span class="tag">stateful</span>` : "";
+    const agent = aliases[i].some((a) => agentNames.has(a));
+    const badge = `${agent ? `<span class="tag agent">agent</span>` : ""}${c.stateful ? `<span class="tag">stateful</span>` : ""}`;
     const title = c.responsibility ? ` title="${escapeHtml(c.responsibility)}"` : "";
     parts.push(
-      `<div class="comp" style="grid-column:${i + 2};grid-row:2"${title}><span>${escapeHtml(c.name)}</span>${badge}</div>`,
+      `<div class="comp${agent ? " agent" : ""}" style="grid-column:${i + 2};grid-row:2"${title}><span>${escapeHtml(c.name)}</span>${badge}</div>`,
     );
   });
   steps.forEach((s, si) => {
@@ -832,6 +866,7 @@ export function deriveVisuals(kind, source) {
     add("Components", systemMap(lines));
     add("External Dependencies", dependencies(lines));
     add("Sync / Async Boundary", syncAsync(lines));
+    add("Sessions", toxicSessions(lines));
   }
   if (kind?.label === "Spec") {
     const summary = specSummary(lines);
@@ -861,6 +896,7 @@ figure.viz figcaption{font-size:12px;letter-spacing:.04em;text-transform:upperca
 .sysmap .band{background:color-mix(in srgb,var(--accent) 5%,transparent);border-radius:8px;z-index:0}
 .sysmap .band.alt{background:color-mix(in srgb,var(--accent) 11%,transparent)}
 .sysmap .lane{z-index:1;text-align:center;font-size:12px;line-height:1.3;font-weight:600;color:var(--accent);padding:6px 4px 2px}
+.sysmap .comp.agent{border-style:dashed;border-color:var(--warn)}.tag.agent{background:transparent;border:1px dashed currentColor}
 .sysmap .comp{z-index:1;margin:4px 4px 8px;padding:8px 5px;overflow-wrap:break-word;hyphens:auto;border:1px solid var(--line);border-radius:8px;background:var(--panel);
 font-size:12.5px;font-weight:600;line-height:1.3;text-align:center;display:flex;flex-direction:column;gap:4px;align-items:center;justify-content:center}
 .sysmap .tag{font-size:10.5px;font-weight:600;color:var(--warn);background:var(--warn-bg);border-radius:999px;padding:0 7px}

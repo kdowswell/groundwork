@@ -26,6 +26,10 @@ principles:
   - fallacies-of-distributed-computing
   - api-contract-first
   - conways-law-organizational-alignment
+  - least-agency
+  - durable-agent-execution
+  - simplest-agent-architecture-first
+  - context-engineering
 time_box: "45-90 minutes"
 tags: [architecture, design, greenfield]
 ---
@@ -72,13 +76,20 @@ The agent draws the structural questions out of the spec and proposes a sketch. 
 
 7. **Check active principles against the sketch.** For each principle in the project's active set, ask: does the sketch violate it or create tension with it? Document any tensions explicitly — they are not necessarily blockers, but they must be acknowledged.
 
-8. **Run a builder check before you ask the user anything.** It runs on the finished draft: write every earlier step in full first, and never open with questions. Do not defer it until open questions are resolved either. Its purpose is to gather every question into one round, asked at the end of the same response that delivers the complete sketch, so the user is asked once. Hand the sketch to a fresh reviewer: the sketch file only, not this conversation. Give them this brief: "You will build exactly this. List every question you would need answered before you could start, and every place where two competent builders would build different things. Quote the line each question comes from. Do not suggest improvements." Use an isolated subagent if the runtime offers one. Otherwise do a deliberate cold read yourself, treating anything not written in the sketch as unknown. Sort each question the reviewer returns into one of three groups:
+8. **Add the agent lens when the system has AI agents.** Do this only when the project's `ai_system` or `autonomous_agents` signal is present, or a component you named in Step 2 lets a model choose tools or actions; otherwise skip it and leave the agent sections out of the output entirely. When it applies, fill five sections:
+   - **Agents and Tools:** each agent, each tool it can call, the side effect of each tool (read-only, writes internal state, acts outside the system), and the credential it uses. Start from the simplest shape that works: if a fixed workflow would do, say so and use it instead of an agent.
+   - **Autonomy and Override:** for each consequential action, whether the agent decides alone, a deterministic check gates it, or a person approves it, and how a person stops or undoes a run.
+   - **Sessions:** for each agent session, mark untrusted input, sensitive access, and outbound or state-changing ability, using the same terms as `/groundwork threat`. Flag any session with all three; name which one you will remove.
+   - **Durability:** which steps checkpoint and resume after a crash or a wait for a person, and the idempotency key that stops a retried step from acting twice.
+   - **Budgets:** tokens and latency per agent step, the total per task, and how the model version is pinned and upgraded.
+
+9. **Run a builder check before you ask the user anything.** It runs on the finished draft: write every earlier step in full first, and never open with questions. Do not defer it until open questions are resolved either. Its purpose is to gather every question into one round, asked at the end of the same response that delivers the complete sketch, so the user is asked once. Hand the sketch to a fresh reviewer: the sketch file only, not this conversation. Give them this brief: "You will build exactly this. List every question you would need answered before you could start, and every place where two competent builders would build different things. Quote the line each question comes from. Do not suggest improvements." Use an isolated subagent if the runtime offers one. Otherwise do a deliberate cold read yourself, treating anything not written in the sketch as unknown. Sort each question the reviewer returns into one of three groups:
    - **Answered by the sketch:** the reviewer missed it. Tighten the wording so the next reader won't.
    - **Your call:** the answer doesn't change what gets built, or one option is clearly right. Decide, write the answer into the sketch, and label it "Agent call:".
    - **For the user:** the answer changes what gets built.
    Bring the user only the last group, in one round. Ask all of them in that one message, however many there are; do not hold any back for a later turn. Record every question and its resolution in the sketch's Builder Check section. The section is never left out; if the cold read finds nothing, write "No open questions."
 
-9. **Record the user's decision.** When the user answers the acceptance Checkpoint, run `npx @kdowswell/groundwork approve <architecture path> --checkpoint=greenfield-architecture-sketch/accept`, adding `--decision=changes-requested` if they asked for changes or `--decision=delegated` if they told you to decide. Record only an answer the user gave in this conversation. If they decided in the review page, it is already recorded: confirm with `npx @kdowswell/groundwork verify` instead of recording it again, and never submit the page yourself. With no one available to answer, record nothing and leave the artifact marked as a draft. If the CLI is unavailable, write the decision and date at the top of the artifact instead and say it is unverified.
+10. **Record the user's decision.** When the user answers the acceptance Checkpoint, run `npx @kdowswell/groundwork approve <architecture path> --checkpoint=greenfield-architecture-sketch/accept`, adding `--decision=changes-requested` if they asked for changes or `--decision=delegated` if they told you to decide. Record only an answer the user gave in this conversation. If they decided in the review page, it is already recorded: confirm with `npx @kdowswell/groundwork verify` instead of recording it again, and never submit the page yourself. With no one available to answer, record nothing and leave the artifact marked as a draft. If the CLI is unavailable, write the decision and date at the top of the artifact instead and say it is unverified.
 
 ## Checkpoints
 
@@ -148,6 +159,22 @@ Full reference: [principles/api-contract-first.md](principles/api-contract-first
 Steps 2 and 6 are where this principle is most load-bearing. When naming components in Step 2, ask: does each component map to one team's ownership, or will multiple teams contribute to the same component? Components that multiple teams share tend to accumulate conflicting assumptions and coupling that mirrors the organizational boundary — each team bends the component toward its own use case. If the sketch produces a component that two teams will both own, that's a structural signal: either split the component along team lines, or designate one team as owner with a clear contract for the other to consume. In Step 6 (highest-stakes decisions), if the proposed architecture requires the organization to be restructured to deliver it effectively, name that dependency in an ADR — it is a structural decision, not a side effect to discover after the architecture is locked.
 Full reference: [principles/conways-law-organizational-alignment.md](principles/conways-law-organizational-alignment.md)
 
+**least-agency**
+Step 8's Agents and Tools and Autonomy and Override sections are where this principle is cheapest to honor, before any tool is wired. Every tool listed is autonomy granted; every "Acts outside" side effect needs an answer in the override table. If an action is irreversible and the agent decides it alone, that row is the design's weakest point, and it should change before code: add a deterministic check or a person, or make the action reversible.
+Full reference: [principles/least-agency.md](principles/least-agency.md)
+
+**durable-agent-execution**
+Step 8's Durability section applies this principle. A step that waits for a person, calls a slow tool, or can crash mid-task must resume from a checkpoint rather than restart, and a retried step needs an idempotency key so it never sends the email or charges the card twice. Decide these at the architecture stage, because retrofitting durable execution means restructuring the agent loop.
+Full reference: [principles/durable-agent-execution.md](principles/durable-agent-execution.md)
+
+**simplest-agent-architecture-first**
+Step 8 opens by asking whether a fixed workflow would do. A single model call or a scripted chain is easier to test, cheaper, and safer than an agent choosing its own tools; add autonomy only where the task genuinely branches on what the model finds. An architecture with several cooperating agents should say why one agent, or none, wasn't enough.
+Full reference: [principles/simplest-agent-architecture-first.md](principles/simplest-agent-architecture-first.md)
+
+**context-engineering**
+Step 8's Budgets section is where this principle becomes a number. A per-step token budget forces decisions about what each step sees: retrieved documents, tool results, earlier turns. A step with no budget tends to receive everything, which costs money, adds latency, and dilutes what the model attends to.
+Full reference: [principles/context-engineering.md](principles/context-engineering.md)
+
 ## Output Format
 
 An `architecture.md` file (or equivalent diagram + notes) with:
@@ -184,6 +211,32 @@ It receives from: ...
 
 ## Active Principle Tensions
 - {{PRINCIPLE}}: ...
+
+<!-- The five agent sections below appear only when Step 8 applies; leave them out otherwise. -->
+## Agents and Tools
+| Agent | Tool | Side effect | Credential |
+|---|---|---|---|
+| ... | ... | Read-only / Writes internal state / Acts outside | ... |
+
+## Autonomy and Override
+| Action | Decided by | How a person stops or undoes it |
+|---|---|---|
+| ... | Agent alone / Deterministic check / Person approves | ... |
+
+## Sessions
+| Session | Untrusted input | Sensitive access | Outbound or state change | All three? |
+|---|---|---|---|---|
+| ... | yes / no | yes / no | yes / no | {{IF YES: WHICH LEG IS REMOVED}} |
+
+## Durability
+| Step | Checkpoints and resumes? | Idempotency key |
+|---|---|---|
+| ... | ... | ... |
+
+## Budgets
+| Step | Tokens | Latency | Model version policy |
+|---|---|---|---|
+| ... | ... | ... | Pinned to ...; upgrades re-run the eval suite |
 
 ## Builder Check
 | Question (from a cold read) | Resolution |
