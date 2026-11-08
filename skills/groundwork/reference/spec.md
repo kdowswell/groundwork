@@ -44,6 +44,12 @@ The human's job is to answer questions honestly, including "I don't know." Open 
 
 ## Steps
 
+**Grilling mode (opt-in).** Run this only when the user asks for it: a `--grill` argument, or a phrase such as "grill me" or "interview me first". Without that request, skip it entirely: write the full draft first and ask once at the end, as the numbered steps say. When it is requested:
+- Before asking anything, read the repository, the project context, and existing decision records. Never ask a question they already answer.
+- Walk the decision tree one branch at a time, in this order: the problem and who has it, then scope (in and out), then the success criteria, then the primary data entity and its owner. Ask **one** question per reply, and give your recommended answer with a one-line reason, so the user can accept it with "yes".
+- Stop when every branch whose answer changes what gets built is resolved. Then follow the numbered steps in full; the fresh-eyes review should find little.
+- Write each decision that crystallizes during the interview as a **Proposed** decision record, using the `adr` playbook's template, and cite it in the spec.
+
 1. **Restate the problem, not the solution.** Before engaging with "what to build," articulate the problem it solves in one sentence: what is the user currently unable to do, or doing badly, that this changes? If the input makes this clear, write it. If not, write the most plausible interpretation and flag it: "Problem statement (needs validation): ..." — then continue. Do not wait for a confirmed problem statement before producing the draft spec.
 
 2. **Identify the primary user and their context.** Name who experiences the problem. Where are they? What are they doing when they hit it? What's their constraint (time, attention, connectivity, tools)? This context will change every decision from data model to UI affordance.
@@ -92,6 +98,17 @@ If the spec contains blocking questions after the draft is written, Phase 2 must
 
 **Does the user accept this spec as the basis for architecture and data modeling?**
 Ask once the spec is complete. If the spec is long or still has open questions for the user, offer once to show it as a review page (`npx @kdowswell/groundwork render <spec path> --serve`), where the user can read it beside its open questions and findings and decide there. **Accepted:** record the approval; architecture and data modeling may start from it, and any later edit to the spec makes the approval stale, so the next step re-asks. **Changes requested:** record that, revise, and ask again; nothing downstream starts from this version. **Delegated ("you decide"):** record it as delegated, state the calls you made in your next reply, and proceed. The agent never answers this Checkpoint on the user's behalf.
+
+## Red Flags
+
+Observable signs this playbook is being skipped or gamed. Check your own work against them before you ask for approval; each one you find is something to fix, not to explain away.
+
+- The first reply is a list of questions rather than a full draft, and the user did not ask to be grilled.
+- The Builder Check section is missing, or reads "No open questions" on a spec longer than about 150 lines.
+- A success criterion has no number or observable condition ("fast", "easy to use", "scalable").
+- The Non-goals list is empty.
+- The spec names a specific product, framework, or vendor the user never chose.
+- An acceptance decision is recorded with no answer from the user anywhere in the conversation.
 
 ## Principle Application
 

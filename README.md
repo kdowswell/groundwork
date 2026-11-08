@@ -17,6 +17,25 @@ groundwork is a two-layer library:
 Around those two layers sits a toolkit: a single `/groundwork` router command, a durable
 per-project context file, and a deterministic detector that enforces what the skills teach.
 
+## How groundwork compares
+
+Build-phase packs (Superpowers, Matt Pocock's skills, Addy Osmani's agent-skills) teach agents to
+implement, test, and ship. groundwork covers the decisions before that: a cited principle library,
+a deterministic detector, and hash-pinned approvals. Each design choice has an outside signal
+behind it:
+
+| groundwork | Outside signal |
+|---|---|
+| Behavior deltas for changes ([ADR-012](docs/decisions/ADR-012-brownfield-behavior-deltas.md)) | [OpenSpec](https://www.thoughtworks.com/radar/tools/openspec) deltas (Radar Vol. 35, Trial); [Kiro](https://kiro.dev/docs/specs/index) bugfix specs also list unchanged behavior |
+| Router-only invocation ([ADR-011](docs/decisions/ADR-011-router-only-model-invocation.md)) | [Progressive context disclosure](https://www.thoughtworks.com/radar/techniques/progressive-context-disclosure) (Adopt) |
+| Detector and hooks instead of more prose rules | The Radar's answer to [agent instruction bloat](https://www.thoughtworks.com/radar/techniques/agent-instruction-bloat) (Caution): turn rules into deterministic checks |
+| Review pages ([ADR-008](docs/decisions/ADR-008-generated-html-review-views.md), [ADR-009](docs/decisions/ADR-009-derived-review-visuals.md)) | [Interactive visual plans with agents](https://www.thoughtworks.com/radar/techniques/interactive-visual-plans-with-agents) (Trial) |
+| Risk tiers on change plans ([ADR-018](docs/decisions/ADR-018-risk-tiered-approvals.md)) | [Risk-tiered human oversight](https://www.thoughtworks.com/radar/techniques/risk-tiered-human-oversight) (Trial), against [human-in-the-loop theater](https://www.thoughtworks.com/radar/techniques/human-in-the-loop-theater) (Caution) |
+| Paired with/without evals (`eval/`) | [SkillsBench](https://arxiv.org/abs/2602.12670) paired evaluation |
+
+They compose: use groundwork for judgment and approvals, then a build-phase pack for TDD,
+debugging, and shipping. [docs/HARNESSES.md](docs/HARNESSES.md) covers installing them side by side.
+
 ## Quick Start
 
 ```bash
@@ -72,6 +91,11 @@ starting the next. They end with one fresh-eyes review across all of them and **
 recorded per file (`npx @kdowswell/groundwork approve docs/spec.md docs/architecture.md
 docs/data-model.md`). `continue` builds on what you've already approved and asks only about what
 changed.
+
+`spec`, `architecture`, and `data-model` draft in full by default and ask once at the end. If you'd
+rather be interviewed first, add `--grill` (or say "grill me"): the agent asks one question at a
+time, each with its recommended answer, checks the repo and context before asking anything they
+could answer, and records decisions that crystallize as Proposed ADRs.
 
 The other commands are compiled from standalone phase skills (below) by `npm run sync:router`.
 The standalone skills stay the source of truth and remain individually installable.
@@ -276,6 +300,18 @@ records that edit as an amendment rather than asking you again:
 ```bash
 npx @kdowswell/groundwork approve docs/spec.md --decision=amended --via=docs/plan-calendars.md
 ```
+
+Every change plan also gets a **risk tier**, derived from what the plan already says
+([ADR-018](docs/decisions/ADR-018-risk-tiered-approvals.md)):
+
+| Tier | When | What it changes |
+|---|---|---|
+| Low | Degraded or no user impact, a rollback that works as written, nothing removed, unchanged behavior already tested | You can approve it or just say "go ahead"; a go-ahead is recorded as delegated, and CI and code review are the gate |
+| Moderate | Anything between | One approval before code, as usual |
+| High | Catastrophic or silent failure, a one-way door, or removed behavior | One approval, plus a named reviewer and `/groundwork check` in the pull request (advice, not a block) |
+
+The tier is stored with the approval (`approve <plan> --tier=high`) and shown by `verify`,
+`doctor`, and the review page. No tier adds a stop.
 
 An amendment is the agent's (`decidedBy: "agent-amended"`) and stands only while the plan's
 approval does. The spec's review page shows exactly what the amendment changed, so it can be

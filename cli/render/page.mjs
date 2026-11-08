@@ -213,7 +213,14 @@ function approvalBadge(approval, changesHref = "#changes", amendmentHref = "#ame
     approval.status === "fresh"
       ? ` ${escapeHtml(approval.date ?? "")}${approval.decidedBy === "agent-delegated" ? " · delegated to agent" : ""}`
       : "";
-  return `<span class="badge ${s.cls}">${s.text}${suffix}</span>`;
+  return `<span class="badge ${s.cls}">${s.text}${suffix}</span>${tierBadge(approval)}`;
+}
+
+/** The risk tier recorded with a change plan's approval (ADR-018). */
+function tierBadge(approval) {
+  if (!approval?.tier) return "";
+  const cls = approval.tier === "high" ? "bad" : approval.tier === "moderate" ? "warn" : "ok";
+  return ` <span class="badge ${cls}">${escapeHtml(approval.tier)} risk</span>`;
 }
 
 /**

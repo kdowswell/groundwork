@@ -22,6 +22,7 @@ and name the command that would firm it up as your next step.
 - Rollback strategy is explicit: how to undo the change after deployment
 - Test coverage plan covers the changed behavior and adjacent behaviors
 - Deployment sequence is ordered to minimize risk
+- A risk tier (low / moderate / high) is assigned from the blast radius and reversibility
 - The user has accepted the plan, and its builder check is recorded
 
 ---
@@ -44,6 +45,7 @@ The agent structures the plan by asking probing questions about the change's sco
 - **Test coverage map** — which behaviors must be verified before, during, and after the change
 - **Staged rollout** — a deployment sequence that limits exposure before the change is confirmed safe
 - **Go / no-go criteria** — the observable signals that determine whether to proceed, pause, or roll back at each stage
+- **Risk tier** — low, moderate, or high, derived from the blast radius, the rollback, and the delta; it sets how much review the change gets, so a small, reversible change isn't asked for the same scrutiny as an irreversible one
 
 ## Steps
 
@@ -89,15 +91,21 @@ The agent structures the plan by asking probing questions about the change's sco
 
 8. **Identify coordination requirements.** Does this change require coordination with another team, service, or external party? If so, plan it explicitly: who needs to act, in what order, and what confirmation is required before each step.
 
-9. **Run a builder check before you ask the user anything.** It runs on the finished draft: write every earlier step in full first, and never open with questions. Its purpose is to gather every question into one round, asked at the end of the same response that delivers the complete plan, so the user is asked once. Hand the plan to a fresh reviewer: the plan file only, not this conversation. Give them this brief: "You will implement exactly this change. List every question you would need answered before you could start, and every place where two competent engineers would implement different things. Quote the line each question comes from. Do not suggest improvements." Use an isolated subagent if the runtime offers one. Otherwise do a deliberate cold read yourself, treating anything not written in the plan as unknown. Sort each question the reviewer returns into one of three groups:
+9. **Assign the risk tier.** Derive it from what the plan already says; don't ask the user for it:
+   - **High** if any of: Blast Radius severity is Catastrophic or Silent; the rollback names a one-way door or an unresolved gap; the delta's **Removed** group is not empty.
+   - **Low** if all of: severity is Degraded or None; every rollback step is executable as written; Removed is empty; every **Unchanged** item already has a test that would catch it breaking.
+   - **Moderate** otherwise.
+   Write it in the Risk Tier section with one line saying which of these decided it. For **high**, also write the review path: name the reviewer the user should ask (a role if no name is known) and recommend running `/groundwork check` on the change in its pull request. That is advice in the plan, not a gate. Never lower a tier to make approval easier; if the user disagrees with it, record their reason in the section.
+
+10. **Run a builder check before you ask the user anything.** It runs on the finished draft: write every earlier step in full first, and never open with questions. Its purpose is to gather every question into one round, asked at the end of the same response that delivers the complete plan, so the user is asked once. Hand the plan to a fresh reviewer: the plan file only, not this conversation. Give them this brief: "You will implement exactly this change. List every question you would need answered before you could start, and every place where two competent engineers would implement different things. Quote the line each question comes from. Do not suggest improvements." Use an isolated subagent if the runtime offers one. Otherwise do a deliberate cold read yourself, treating anything not written in the plan as unknown. Sort each question the reviewer returns into one of three groups:
    - **Answered by the plan:** the reviewer missed it. Tighten the wording so the next reader won't.
    - **Your call:** the answer doesn't change what gets built, or one option is clearly right. Decide, write the answer into the plan, and label it "Agent call:".
    - **For the user:** the answer changes what gets built.
    Bring the user only the last group, in one round. Ask all of them in that one message, however many there are; do not hold any back for a later turn. Record every question and its resolution in the plan's Builder Check section. The section is never left out; if the cold read finds nothing, write "No open questions."
 
-10. **Record the user's decision.** When the user answers the acceptance Checkpoint, run `npx @kdowswell/groundwork approve <plan path> --checkpoint=brownfield-safe-change-plan/accept`, adding `--decision=changes-requested` if they asked for changes or `--decision=delegated` if they told you to decide. Record only an answer the user gave in this conversation. If they decided in the review page, it is already recorded: confirm with `npx @kdowswell/groundwork verify` instead of recording it again, and never submit the page yourself. With no one available to answer, record nothing and leave the plan marked as a draft. If the CLI is unavailable, write the decision and date at the top of the plan instead and say it is unverified.
+11. **Record the user's decision.** When the user answers the acceptance Checkpoint, run `npx @kdowswell/groundwork approve <plan path> --checkpoint=brownfield-safe-change-plan/accept --tier=<tier>`, adding `--decision=changes-requested` if they asked for changes or `--decision=delegated` if they told you to decide. Record only an answer the user gave in this conversation. If they decided in the review page, it is already recorded: confirm with `npx @kdowswell/groundwork verify` instead of recording it again, and never submit the page yourself. With no one available to answer, record nothing and leave the plan marked as a draft. If the CLI is unavailable, write the decision and date at the top of the plan instead and say it is unverified.
 
-11. **When you implement the change, apply the delta to the baseline spec in the same change set.** This is part of implementing the change, like updating a test, not a step after it ships. First run `npx @kdowswell/groundwork verify <plan path>`; implement only from an approved, unchanged plan. Then edit the spec: add each Added requirement, rewrite each Modified one to its After text at the cited section, delete each Removed one, and leave Unchanged items as they are. Change nothing the delta doesn't name. Record the edit with `npx @kdowswell/groundwork approve <spec path> --decision=amended --via=<plan path>`; the user approved this delta with the plan, so do not ask them to approve the spec again. Code review of the change set covers the spec edit. With no baseline spec, edit nothing; you may offer once to start a spec from the delta's After and Unchanged items, and drop it if the user declines.
+12. **When you implement the change, apply the delta to the baseline spec in the same change set.** This is part of implementing the change, like updating a test, not a step after it ships. First run `npx @kdowswell/groundwork verify <plan path>`; implement only from an approved, unchanged plan. Then edit the spec: add each Added requirement, rewrite each Modified one to its After text at the cited section, delete each Removed one, and leave Unchanged items as they are. Change nothing the delta doesn't name. Record the edit with `npx @kdowswell/groundwork approve <spec path> --decision=amended --via=<plan path>`; the user approved this delta with the plan, so do not ask them to approve the spec again. Code review of the change set covers the spec edit. With no baseline spec, edit nothing; you may offer once to start a spec from the delta's After and Unchanged items, and drop it if the user declines.
 
 ## Checkpoints
 
@@ -116,8 +124,22 @@ Schema migrations that drop columns or tables, data transformations that overwri
 **Did the builder check surface questions that change what gets built?**
 **Yes:** put them to the user before the acceptance Checkpoint, and fold each answer into the plan. Acceptance cannot be asked while any of them is open, because the user would be approving a change that two engineers would implement differently. **No:** go straight to acceptance, and list the "Agent call:" decisions you made so the user can overturn any of them when they answer.
 
+**Does the risk tier match the plan?**
+Check the tier against the rules in Step 9 before asking for acceptance, because it changes the question you ask. **Low:** tell the user it's low risk and that they can approve it or tell you to go ahead; a "go ahead" or "you decide" is recorded as delegated, and CI and code review are the gate from there. **Moderate:** ask for acceptance as usual. **High:** ask for acceptance, and point to the review path the plan names (a named reviewer, and `/groundwork check` in the pull request). The tier never adds a stop beyond this one approval.
+
 **Does the user accept this plan as the basis for the change?**
-Ask once the plan is complete. If the plan is long or still has open questions for the user, offer once to show it as a review page (`npx @kdowswell/groundwork render <plan path> --serve`), where the user can read the delta beside its open questions and findings and decide there. **Accepted:** record the approval; implementation may start from it, applying the delta to the spec in the same change set (Step 11), and any later edit to the plan makes the approval stale, so implementation re-asks. **Changes requested:** record that, revise, and ask again; nothing is implemented from this version. **Delegated ("you decide"):** record it as delegated, state the calls you made in your next reply, and proceed. The agent never answers this Checkpoint on the user's behalf.
+Ask once the plan is complete. If the plan is long or still has open questions for the user, offer once to show it as a review page (`npx @kdowswell/groundwork render <plan path> --serve`), where the user can read the delta beside its open questions and findings and decide there. **Accepted:** record the approval; implementation may start from it, applying the delta to the spec in the same change set (Step 12), and any later edit to the plan makes the approval stale, so implementation re-asks. **Changes requested:** record that, revise, and ask again; nothing is implemented from this version. **Delegated ("you decide"):** record it as delegated, state the calls you made in your next reply, and proceed. The agent never answers this Checkpoint on the user's behalf.
+
+## Red Flags
+
+Observable signs this playbook is being skipped or gamed. Check your own work against them before you ask for approval; each one you find is something to fix, not to explain away.
+
+- The Unchanged group is empty.
+- The rollback strategy is a single line such as "revert the deploy" with no data, cache, or flag steps.
+- The risk tier is low while the severity is Catastrophic or Silent, the Removed group has items, or a one-way door is named.
+- Code for the change was written before the plan had a recorded decision.
+- A Modified row has no spec section or evidence path for its Before.
+- An approval is recorded with no answer from the user anywhere in the conversation.
 
 ## Principle Application
 
@@ -134,7 +156,7 @@ Step 5 (rollback strategy) and Step 7 (deployment sequence) both benefit from fe
 Full reference: [principles/feature-flags.md](principles/feature-flags.md)
 
 **blue-green-canary**
-Step 7 (deployment sequence) is where this principle applies. For high-blast-radius changes, canary deployment reduces the scope of a mistake from "all users" to "a small percentage of users."
+Step 7 (deployment sequence) is where this principle applies. For high-blast-radius changes, canary deployment reduces the scope of a mistake from "all users" to "a small percentage of users." It also feeds Step 9: a canary stage with a working rollback is what lets a Degraded-severity change come out low risk rather than moderate.
 Full reference: [principles/blue-green-canary.md](principles/blue-green-canary.md)
 
 **idempotency-by-design**
@@ -180,6 +202,11 @@ Baseline: {{SPEC PATH (approved YYYY-MM-DD) | observed behavior (no spec): EVIDE
 ## Blast Radius
 **Severity:** Catastrophic / Degraded / Silent / None
 **Affected:** ...
+
+## Risk Tier
+**Tier:** low / moderate / high
+**Why:** {{THE STEP 9 RULE THAT DECIDED IT}}
+**Review path:** {{HIGH ONLY: NAMED REVIEWER (OR ROLE), AND /groundwork check IN THE PULL REQUEST}}
 
 ## Detection Signals
 | Signal | Threshold | Detection time |

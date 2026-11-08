@@ -8,32 +8,37 @@
       {
         "dimension": "blast_radius_specificity",
         "description": "1.0=explicitly names what fails and who is affected with severity (e.g., Catastrophic: all login fails; Silent: role checks return wrong results); 0.5=mentions impact but not specific systems or severity levels; 0.0=does not assess blast radius at all",
-        "weight": 0.22
+        "weight": 0.198
       },
       {
         "dimension": "rollback_completeness",
         "description": "1.0=step-by-step rollback including database migration state, session handling, and who to notify — executable without the author; 0.5=mentions rollback concept but steps are vague or say 'revert the deploy'; 0.0=no rollback plan",
-        "weight": 0.22
+        "weight": 0.198
       },
       {
         "dimension": "deployment_sequencing",
         "description": "1.0=explicitly ordered stages with verification checks between steps, feature flags or dual-path operation for the migration period; 0.5=some staging mentioned but no verification gates; 0.0=single-step deploy or no deployment sequence",
-        "weight": 0.17
+        "weight": 0.153
       },
       {
         "dimension": "test_coverage_failure_modes",
         "description": "1.0=covers changed behavior AND failure modes (session expiry mid-migration, partial migration state, provider timeout, SAML edge cases); 0.5=covers happy path tests only; 0.0=no test coverage plan",
-        "weight": 0.17
+        "weight": 0.153
       },
       {
         "dimension": "planning_before_implementation",
         "description": "1.0=output contains only planning artifacts (blast radius, rollback, test plan, deployment sequence) and explicitly defers implementation; 0.5=mostly planning but drifts into code or architecture specifics; 0.0=jumps to implementation before planning is complete",
-        "weight": 0.07
+        "weight": 0.063
       },
       {
         "dimension": "behavior_delta",
         "description": "1.0=states the change as a behavior delta against a named baseline (the existing spec, or observed behavior with evidence): what is added, what is modified as before → after, what is removed, and an explicit list of adjacent behavior that must stay unchanged, with the unchanged items feeding the test plan; 0.5=describes what changes but leaves before/after or the must-stay-unchanged behavior implicit; 0.0=only a prose description of the change",
-        "weight": 0.15
+        "weight": 0.135
+      },
+      {
+        "dimension": "risk_tier",
+        "description": "1.0=assigns a risk tier with a reason tied to the blast radius severity, rollback, and removed behavior, and the tier is high (session handling for all users is a Catastrophic-severity path and SAML customers cannot have downtime); a high tier names a reviewer or role and recommends /groundwork check in the pull request; 0.5=assigns a tier but the reason is generic or the tier doesn't follow from the plan's own severity and rollback; 0.0=no risk tier",
+        "weight": 0.1
       }
     ]
   },
@@ -45,32 +50,37 @@
       {
         "dimension": "blast_radius_specificity",
         "description": "1.0=explicitly names what fails and who is affected if the migration goes wrong (e.g., app startup fails, queries break, new feature returns wrong tier); 0.5=mentions risk but not specific failure scenarios; 0.0=does not assess blast radius",
-        "weight": 0.22
+        "weight": 0.198
       },
       {
         "dimension": "rollback_completeness",
         "description": "1.0=step-by-step rollback addressing that dropping a NOT NULL column with data is a destructive operation — includes whether rollback is possible and what state the data would be in; 0.5=mentions rollback but doesn't address the one-way-door risk of data migrations; 0.0=no rollback plan",
-        "weight": 0.22
+        "weight": 0.198
       },
       {
         "dimension": "deployment_sequencing",
         "description": "1.0=separates schema migration from application deploy, includes backfill strategy for 2.8M rows, addresses lock time on Postgres; 0.5=mentions staging but doesn't address large-table migration specifics; 0.0=single-step deploy or no sequencing",
-        "weight": 0.17
+        "weight": 0.153
       },
       {
         "dimension": "test_coverage_failure_modes",
         "description": "1.0=covers migration rollback, partial backfill state, and the pricing feature receiving wrong tier values during migration window; 0.5=covers happy path only; 0.0=no test coverage plan",
-        "weight": 0.17
+        "weight": 0.153
       },
       {
         "dimension": "planning_before_implementation",
         "description": "1.0=output is a plan only — blast radius, rollback, migration sequence, test coverage — no migration SQL or code written; 0.5=mostly planning with some implementation drift; 0.0=writes migration code before planning is complete",
-        "weight": 0.07
+        "weight": 0.063
       },
       {
         "dimension": "behavior_delta",
         "description": "1.0=states the change as a behavior delta against a named baseline (the existing spec, or observed behavior with evidence): what is added, what is modified as before → after, what is removed, and an explicit list of adjacent behavior that must stay unchanged, with the unchanged items feeding the test plan; 0.5=describes what changes but leaves before/after or the must-stay-unchanged behavior implicit; 0.0=only a prose description of the change",
-        "weight": 0.15
+        "weight": 0.135
+      },
+      {
+        "dimension": "risk_tier",
+        "description": "1.0=assigns a risk tier with a reason tied to the blast radius severity, rollback, and removed behavior, and the tier is moderate or high (a backfill on a 2.8M-row table is Degraded at best and Catastrophic if it locks the table; high if the rollback cannot drop the column safely); a high tier names a reviewer or role and recommends /groundwork check in the pull request; 0.5=assigns a tier but the reason is generic or the tier doesn't follow from the plan's own severity and rollback; 0.0=no risk tier",
+        "weight": 0.1
       }
     ]
   },
@@ -82,31 +92,64 @@
       {
         "dimension": "blast_radius_specificity",
         "description": "1.0=explicitly names affected user segments (active subscribers, failed-payment retry queue, annual billing), what breaks if the swap fails mid-migration, and severity levels; 0.5=mentions payment risk without specifics; 0.0=no blast radius assessment",
-        "weight": 0.22
+        "weight": 0.198
       },
       {
         "dimension": "rollback_completeness",
         "description": "1.0=rollback addresses whether Stripe customer records and payment methods can be recovered, how to handle subscriptions that partially migrated, and what to do with pending webhook events; 0.5=mentions rollback without addressing payment-specific complexity; 0.0=no rollback plan",
-        "weight": 0.22
+        "weight": 0.198
       },
       {
         "dimension": "deployment_sequencing",
         "description": "1.0=stages new customer creation on Braintree first, then migrates existing subscriptions with dual-processing during transition, then deprecates Stripe — with explicit go/no-go criteria; 0.5=mentions dual-processing but not ordering or criteria; 0.0=big-bang cutover or no sequence",
-        "weight": 0.17
+        "weight": 0.153
       },
       {
         "dimension": "test_coverage_failure_modes",
         "description": "1.0=covers failed charge scenarios, webhook delivery failures, partial migration state (some customers on each processor), and annual billing edge cases; 0.5=covers standard payment flows only; 0.0=no test coverage plan",
-        "weight": 0.17
+        "weight": 0.153
       },
       {
         "dimension": "planning_before_implementation",
         "description": "1.0=output is planning artifacts only — defers Braintree integration code; 0.5=mostly planning with some implementation hints; 0.0=starts writing integration code before plan is documented",
-        "weight": 0.07
+        "weight": 0.063
       },
       {
         "dimension": "behavior_delta",
         "description": "1.0=states the change as a behavior delta against a named baseline (the existing spec, or observed behavior with evidence): what is added, what is modified as before → after, what is removed, and an explicit list of adjacent behavior that must stay unchanged, with the unchanged items feeding the test plan; 0.5=describes what changes but leaves before/after or the must-stay-unchanged behavior implicit; 0.0=only a prose description of the change",
+        "weight": 0.135
+      },
+      {
+        "dimension": "risk_tier",
+        "description": "1.0=assigns a risk tier with a reason tied to the blast radius severity, rollback, and removed behavior, and the tier is high (a payment failure is Catastrophic, and card-token migration between processors is a one-way door); a high tier names a reviewer or role and recommends /groundwork check in the pull request; 0.5=assigns a tier but the reason is generic or the tier doesn't follow from the plan's own severity and rollback; 0.0=no risk tier",
+        "weight": 0.1
+      }
+    ]
+  },
+  {
+    "id": "log-field-rename-low-risk",
+    "skill": "brownfield-safe-change-plan",
+    "task_description": "Our order service writes a structured log field called `usr` that our internal dashboards query. We want to rename it to `user_id` for consistency with every other service. Nothing customer-facing reads these logs, and the dashboards are ours. I'd like a quick plan so this doesn't surprise anyone.",
+    "context": "## Current System\n\nOrder service (TypeScript) emitting JSON logs to the team's log platform. Two internal dashboards and one saved alert query use `usr`. Deploys go through CI with a canary stage and one-click rollback to the previous release. There is a unit test asserting the log line's shape.\n\n## Constraints\n\n- Log retention is 30 days; dashboards query the last 7 days\n- The team owns all three consumers of the field",
+    "rubric": [
+      {
+        "dimension": "behavior_delta",
+        "description": "1.0=states Modified (usr → user_id, citing the logging code path) and Unchanged items (log volume, every other field, the alert still firing) with evidence paths, and keeps the delta small; 0.5=delta present but misses the dashboards/alert as consumers; 0.0=no delta",
+        "weight": 0.25
+      },
+      {
+        "dimension": "risk_tier",
+        "description": "1.0=assigns LOW: severity is None or Degraded (internal dashboards only), rollback is a one-click release revert, nothing is removed, the shape test covers the field; says the user can approve or tell the agent to go ahead (recorded as delegated) and that CI and code review are the gate; 0.5=assigns moderate with a reasonable rationale, or low with no rationale; 0.0=assigns high, or adds review ceremony (named reviewer, extra approvals) to this change, or no tier",
+        "weight": 0.3
+      },
+      {
+        "dimension": "proportionality",
+        "description": "1.0=the plan is short (no multi-team coordination table, no multi-stage canary for a log field) and handles the one real hazard: dashboards and the alert query must accept both names during the 7-day window or be updated in the same change; 0.5=covers the hazard but is padded with irrelevant sections; 0.0=misses the dashboard/alert dependency or is heavyweight",
+        "weight": 0.3
+      },
+      {
+        "dimension": "rollback_completeness",
+        "description": "1.0=rollback is the release revert plus restoring the dashboard queries, executable without the author; 0.5=says 'revert' without the query side; 0.0=no rollback",
         "weight": 0.15
       }
     ]

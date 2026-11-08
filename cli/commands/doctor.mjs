@@ -44,7 +44,7 @@ function approvalFindings(root) {
         r.status === "invalid"
           ? `${r.receiptFile}: ${r.message}`
           : r.status === "stale"
-            ? `${r.artifact} changed after its ${r.decision} decision at ${r.checkpoint} — re-ask the Checkpoint`
+            ? `${r.artifact} changed after its ${r.decision} decision at ${r.checkpoint}${r.tier ? ` (${r.tier} risk)` : ""} — re-ask the approval`
             : `${r.artifact} (${r.checkpoint}) no longer exists — remove ${r.receiptFile} or restore it`,
     }));
 }
@@ -66,6 +66,69 @@ export function activePrincipleIds(raw) {
     if (m) ids.push(m[1]);
   }
   return ids;
+}
+
+/** Bullet names under a "## Bounded Contexts" heading (the "(optional)" suffix is allowed). */
+function boundedContexts(raw) {
+  const section = raw.split(/^## Bounded Contexts\b.*$/m)[1]?.split(/^## /m)[0] ?? "";
+  return section
+    .split("\n")
+    .map((l) => l.match(/^\s*-\s*([^—:{}\n]+?)\s*(?:—|:|-\s|$)/)?.[1]?.trim())
+    .filter((name) => name && !/^\(.*\)$/.test(name));
+}
+
+/** Rows of the "## Glossary" table as {term, context}; placeholder rows are skipped. */
+function glossaryRows(raw) {
+  const section = raw.split(/^## Glossary\b.*$/m)[1]?.split(/^## /m)[0];
+  if (section === undefined) return null;
+  const rows = [];
+  for (const line of section.split("\n")) {
+    if (!/^\s*\|/.test(line) || /^\s*\|\s*-/.test(line)) continue;
+    const cells = line.split("|").slice(1, -1).map((c) => c.trim());
+    if (cells.length < 3 || /^term$/i.test(cells[0]) || /\{\{/.test(line)) continue;
+    rows.push({ term: cells[0].replace(/[*`]/g, "").toLowerCase(), context: cells[2].replace(/[*`]/g, "") });
+  }
+  return rows;
+}
+
+/**
+ * Glossary checks (#30). Advisory: info severity, and only when the context declares the
+ * bounded contexts the check depends on.
+ */
+function glossaryFindings(raw) {
+  const findings = [];
+  const contexts = boundedContexts(raw);
+  const rows = glossaryRows(raw);
+  if ((rows === null || rows.length === 0) && contexts.length > 1) {
+    findings.push({
+      check: "glossary-missing",
+      severity: "info",
+      message: `context lists ${contexts.length} bounded contexts but no Glossary — /groundwork data-model can write one`,
+    });
+    return findings;
+  }
+  if (!rows) return findings;
+  const known = new Set(contexts.map((c) => c.toLowerCase()));
+  const seen = new Map();
+  for (const { term, context } of rows) {
+    if (known.size > 0 && context && !known.has(context.toLowerCase())) {
+      findings.push({
+        check: "glossary-drift",
+        severity: "info",
+        message: `glossary term "${term}" names context "${context}", which Bounded Contexts doesn't list`,
+      });
+    }
+    const contextsForTerm = seen.get(term) ?? [];
+    if (contextsForTerm.includes(context.toLowerCase())) {
+      findings.push({
+        check: "glossary-drift",
+        severity: "info",
+        message: `glossary term "${term}" appears twice in the same context — merge the rows or qualify one`,
+      });
+    }
+    seen.set(term, [...contextsForTerm, context.toLowerCase()]);
+  }
+  return findings;
 }
 
 export function doctor(root) {
@@ -122,6 +185,8 @@ export function doctor(root) {
       }
     }
   }
+
+  findings.push(...glossaryFindings(raw));
 
   const stackSection = raw.split(/^## Stack\s*$/m)[1]?.split(/^## /m)[0] ?? "";
   for (const { file, hint, label } of MANIFEST_LANGUAGE_HINTS) {

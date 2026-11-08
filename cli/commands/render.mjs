@@ -14,6 +14,7 @@ import { dirname, join, posix, relative, resolve, sep } from "node:path";
 import { fileURLToPath } from "node:url";
 import { detect } from "../engine/detect.mjs";
 import { analyzeArtifact, buildPage, messagePage } from "../render/page.mjs";
+import { riskTier } from "../render/visuals.mjs";
 import { amendmentDiff, approve, approvedDiff, digestFile, verify } from "./approvals.mjs";
 import { activePrincipleIds } from "./doctor.mjs";
 import {
@@ -249,6 +250,7 @@ export function serve(root, artifact, opts = {}) {
           result = approve(root, rendered.artifactPath, {
             checkpoint: rendered.checkpoint,
             decision,
+            tier: riskTier(readFileSync(abs, "utf8"))?.tier,
             notes: (form.get("notes") ?? "").trim() || undefined,
             now: opts.now,
           });

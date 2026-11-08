@@ -439,6 +439,7 @@ describe("change plans (ADR-012)", () => {
     expect(r.html).toContain('<span class="ref">Scope, item 19 (Business calendar)</span>');
     expect(r.html).toMatch(/<figure class="viz callout warn"><span>Blast radius<\/span><strong>Silent<\/strong>/);
     expect(r.html).not.toContain("<span>One-way door</span>"); // "One-way doors: None" draws no callout
+    expect(r.html).toMatch(/<figure class="viz callout bad"><span>Risk tier<\/span><strong>High<\/strong><em>Silent severity/);
     expect(r.html).toMatch(/<h2>Baseline<\/h2><p><code>docs\/spec\.md<\/code><\/p><span class="badge ok">Approved, unchanged since/);
   });
 
@@ -496,6 +497,38 @@ describe("changes since approval (ADR-009)", () => {
     const dir = project();
     approve(dir, "docs/spec.md", { checkpoint: "greenfield-spec-from-idea/accept" });
     expect(render(dir, "docs/spec.md", { write: false }).html).not.toContain('id="changes"');
+  });
+});
+
+describe("risk tiers (ADR-018)", () => {
+  const PLAN = readFileSync(join(__dirname, "../eval/plugin/_fixtures/plan-team-calendars.md"), "utf8");
+
+  it("draws nothing for the template placeholder or a missing section", async () => {
+    const { riskTier } = await import("../cli/render/visuals.mjs");
+    expect(riskTier(PLAN)).toMatchObject({ tier: "high" });
+    expect(riskTier("# Safe Change Plan: x\n\n## Risk Tier\n**Tier:** low / moderate / high\n")).toBeNull();
+    expect(riskTier("# Safe Change Plan: x\n")).toBeNull();
+  });
+
+  it("shows the recorded tier beside the approval badge", () => {
+    const dir = tempDir();
+    mkdirSync(join(dir, "docs"));
+    writeFileSync(join(dir, "docs/plan.md"), PLAN);
+    approve(dir, "docs/plan.md", { checkpoint: "brownfield-safe-change-plan/accept", tier: "high" });
+    const { html } = render(dir, "docs/plan.md", { write: false });
+    expect(html).toMatch(/Approved, unchanged since[^<]*<\/span> <span class="badge bad">high risk<\/span>/);
+  });
+
+  it("records the plan's tier with a decision made in the page", async () => {
+    const dir = tempDir();
+    mkdirSync(join(dir, "docs"));
+    writeFileSync(join(dir, "docs/plan.md"), PLAN);
+    const { url, done, rendered } = await serve(dir, "docs/plan.md", { now: new Date("2026-10-22T00:00:00Z") });
+    const page = await http(url);
+    await post(url, { token: tokenOf(page.body), sha256: rendered.sha256, decision: "approved" });
+    await done;
+    const receipt = JSON.parse(readFileSync(join(dir, ".groundwork/approvals/docs__plan.md.json"), "utf8"));
+    expect(receipt).toMatchObject({ decision: "approved", tier: "high" });
   });
 });
 

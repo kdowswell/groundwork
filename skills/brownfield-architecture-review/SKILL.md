@@ -83,7 +83,9 @@ The agent drives the assessment by applying principles to what it can observe ab
 
 6. **Write the recommended sequence.** Improvements should be sequenced to pay down the highest-impact debt first and to avoid dependencies between improvements. If improvement A creates the foundation that improvement B requires, A must come before B.
 
-7. **Checkpoint against the planned work.** For each finding, ask: does the planned feature or refactoring make this gap better, worse, or irrelevant? If planned work will make a Non-compliant finding worse, address the finding before starting the planned work.
+7. **Check the code's language against the domain glossary.** If the project has a glossary (the Glossary section of the project context, or a data model's), sample the names in the main modules, interfaces, schemas, and docs. Flag terms that drift from it: a concept renamed between files, a glossary term used with a different meaning, or one name used for two concepts across contexts. Each drift is a finding under `bounded-contexts`, with the file and the glossary row it conflicts with. With no glossary and more than one bounded context, record "no shared vocabulary" as one At Risk finding and recommend `data-model` to create it.
+
+8. **Checkpoint against the planned work.** For each finding, ask: does the planned feature or refactoring make this gap better, worse, or irrelevant? If planned work will make a Non-compliant finding worse, address the finding before starting the planned work.
 
 ## Checkpoints
 
@@ -95,6 +97,16 @@ If every finding requires a major refactoring, the review has been calibrated to
 
 **Does the sequence make sense given the team's capacity?**
 A review that produces 15 high-priority improvements and doesn't account for the team's sprint capacity produces a guilt list, not a plan. Pick the 3 improvements that have the highest leverage and fit in the available time. Schedule the rest.
+
+## Red Flags
+
+Observable signs this playbook is being skipped or gamed. Check your own work against them before you ask for approval; each one you find is something to fix, not to explain away.
+
+- A principle is marked Compliant with no file, configuration, or artifact cited as evidence.
+- A Non-compliant finding has no concrete improvement.
+- Every assessed principle is Compliant on a system with incidents in the last six months.
+- Findings are listed without an impact ranking.
+- The review never read deployment configuration or monitoring, only code.
 
 ## Principle Application
 
@@ -119,7 +131,7 @@ Step 2 (gather system artifacts) and Step 3 (assess each active principle) toget
 Full reference: [principles/separation-of-concerns.md](principles/separation-of-concerns.md)
 
 **bounded-contexts**
-Step 2 should include reading the data model schemas and service interface definitions to assess whether domain boundaries are explicit and respected. The most common finding is a "god service" or "platform team's database" that has accumulated entities from multiple domains because it was convenient — not because it represents a coherent bounded context. Assess: do teams outside this service's domain write directly to its data store? Are there entities in the schema that no single team owns? Do the same terms mean different things in different parts of the codebase?
+Step 2 should include reading the data model schemas and service interface definitions to assess whether domain boundaries are explicit and respected. The most common finding is a "god service" or "platform team's database" that has accumulated entities from multiple domains because it was convenient — not because it represents a coherent bounded context. Assess: do teams outside this service's domain write directly to its data store? Are there entities in the schema that no single team owns? Do the same terms mean different things in different parts of the codebase? Step 7 checks that last question against the glossary, when one exists.
 Full reference: [principles/bounded-contexts.md](principles/bounded-contexts.md)
 
 **fallacies-of-distributed-computing**

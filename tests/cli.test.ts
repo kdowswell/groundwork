@@ -87,6 +87,35 @@ describe("groundwork doctor", () => {
     expect(result.findings.map((f: any) => f.check)).toContain("context-missing");
   });
 
+  it("reports a missing or drifting glossary, advisory only (#30)", () => {
+    const dir = tempDir();
+    mkdirSync(join(dir, ".groundwork"), { recursive: true });
+    const base = "# Project Context\n\n## Stage\n- Last reviewed: 2099-01-01\n\n## Active Principles\n- bounded-contexts — x\n\n";
+    const contexts = "## Bounded Contexts (optional)\n- Billing — invoices and payments\n- Identity — logins and sessions\n\n";
+    const write = (extra: string) => writeFileSync(join(dir, ".groundwork/context.md"), base + extra);
+    const checks = () => doctor(dir).findings.filter((f: any) => f.check.startsWith("glossary"));
+
+    write("");
+    expect(checks()).toEqual([]); // no bounded contexts declared: nothing to say
+    write(contexts);
+    expect(checks()).toMatchObject([{ check: "glossary-missing", severity: "info" }]);
+    write(
+      contexts +
+        "## Glossary\n| Term | Meaning | Owning context | Not to be confused with |\n|---|---|---|---|\n" +
+        "| Account | A billing account | Billing | login |\n| Account | A login | Identity | billing account |\n",
+    );
+    expect(checks()).toEqual([]); // the same term, qualified per context, is the point of a glossary
+    write(
+      contexts +
+        "## Glossary\n| Term | Meaning | Owning context | Not to be confused with |\n|---|---|---|---|\n" +
+        "| Account | A billing account | Billing | login |\n| Account | A ledger | Billing | |\n| Cart | Items | Shop | |\n",
+    );
+    expect(checks().map((f: any) => f.message)).toEqual([
+      'glossary term "account" appears twice in the same context — merge the rows or qualify one',
+      'glossary term "cart" names context "Shop", which Bounded Contexts doesn\'t list',
+    ]);
+  });
+
   it("flags stale dates, empty principles, unknown ids, and stack drift", () => {
     const dir = tempDir();
     mkdirSync(join(dir, ".groundwork"), { recursive: true });
@@ -360,6 +389,9 @@ describe("hook script", () => {
     approve(dir, "docs/plan.md", { checkpoint: "brownfield-safe-change-plan/accept" });
     expect(digest()).toContain("Approved change plan docs/plan.md: when you implement it, apply its Behavior Delta");
     expect(digest()).toContain("--decision=amended --via=docs/plan.md");
+    expect(digest()).not.toContain("high risk");
+    approve(dir, "docs/plan.md", { checkpoint: "brownfield-safe-change-plan/accept", tier: "high" });
+    expect(digest()).toContain("It is high risk: before merging, run `/groundwork check`"); // ADR-018
 
     writeFileSync(join(dir, "docs/spec.md"), "# Spec: X\n\nPer-team calendars.\n");
     approve(dir, "docs/spec.md", { decision: "amended", via: "docs/plan.md" } as any);
@@ -498,6 +530,29 @@ describe("groundwork approve / verify", () => {
     writeFileSync(join(dir, "docs/specs/orders.md"), "# Orders\n\nScope: v1.\n");
     return dir;
   }
+
+  it("keeps a change plan's risk tier on its receipt, validated, and shows it (ADR-018)", () => {
+    const dir = projectWithSpec();
+    expect(() => approve(dir, "docs/specs/orders.md", { checkpoint: "plan", tier: "extreme" })).toThrow(/--tier must be one of/);
+    approve(dir, "docs/specs/orders.md", { checkpoint: "plan", tier: "low", decision: "delegated", now: NOW });
+    expect(verify(dir).receipts[0]).toMatchObject({ status: "fresh", tier: "low", decision: "delegated" });
+    expect(runCli(["verify"], { cwd: dir }).stdout).toContain("[low risk]");
+    // Older receipts carry no tier and stay valid.
+    const file = join(dir, ".groundwork/approvals/docs__specs__orders.md.json");
+    const { tier, ...older } = JSON.parse(readFileSync(file, "utf8"));
+    writeFileSync(file, JSON.stringify(older));
+    expect(verify(dir).ok).toBe(true);
+    writeFileSync(file, JSON.stringify({ ...older, tier: "extreme" }));
+    expect(verify(dir).receipts[0].status).toBe("invalid");
+  });
+
+  it("names a stale receipt's tier in doctor (ADR-018)", () => {
+    const dir = projectWithSpec();
+    approve(dir, "docs/specs/orders.md", { checkpoint: "plan", tier: "high", now: NOW });
+    writeFileSync(join(dir, "docs/specs/orders.md"), "# Orders\n\nScope: v2.\n");
+    const stale = doctor(dir).findings.find((f: any) => f.check === "approval-stale");
+    expect(stale?.message).toContain("(high risk)");
+  });
 
   describe("one decision across several artifacts (ADR-017)", () => {
     function designBundle() {

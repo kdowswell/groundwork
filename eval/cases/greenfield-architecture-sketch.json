@@ -55,7 +55,7 @@
       {
         "dimension": "component_responsibilities",
         "description": "1.0=3-7 components (e.g., feed/provider connector, scheduled fetcher, normalizer, stats store, dashboard/API) each with a distinct one-sentence responsibility — ingestion and normalization not fused into one 'and'-joined blob; 0.5=components exist but responsibilities blur together or exceed one sentence; 0.0=no components named",
-        "weight": 0.20
+        "weight": 0.2
       },
       {
         "dimension": "primary_data_flow_traced",
@@ -65,7 +65,7 @@
       {
         "dimension": "dependency_failure_modes",
         "description": "1.0=each provider API and feed source listed with its failure behavior — rate limits, stale or missing stats, provider API changes — and classified Catastrophic vs Degraded (one provider down should degrade that podcaster's data, not the product); 0.5=acknowledges providers can fail without per-dependency behavior or severity; 0.0=assumes providers are always available",
-        "weight": 0.20
+        "weight": 0.2
       },
       {
         "dimension": "sync_async_boundary",
@@ -93,7 +93,7 @@
       {
         "dimension": "component_responsibilities",
         "description": "1.0=3-7 components with one-sentence responsibilities that map cleanly to team ownership seams (intake API, document handling, fraud-score orchestration, routing, audit trail), flagging any component two teams would both own as a structural problem; 0.5=components listed without ownership awareness or with overlapping responsibilities; 0.0=no component decomposition",
-        "weight": 0.20
+        "weight": 0.2
       },
       {
         "dimension": "primary_data_flow_traced",
@@ -103,7 +103,7 @@
       {
         "dimension": "dependency_failure_modes",
         "description": "1.0=fraud vendor, regulated storage platform, and case-management system each get what-we-need, failure behavior, and severity — specifically addressing the 30-second fraud-score spikes and maintenance windows (intake should degrade to accept-and-score-later, not block submission: catastrophic vs degraded made explicit); 0.5=dependencies listed but the fraud vendor's latency variance is not confronted; 0.0=no failure-mode analysis on dependencies",
-        "weight": 0.20
+        "weight": 0.2
       },
       {
         "dimension": "sync_async_boundary",
@@ -114,6 +114,29 @@
         "dimension": "structural_decisions_captured",
         "description": "1.0=roughly three highest-stakes decisions stated as 'We will use X rather than Y because Z' (e.g., async fraud scoring vs inline, append-only audit event log vs derived audit reports for the 7-year requirement) and flagged for decision records; 0.5=decisions embedded in the sketch but not extracted as statements; 0.0=no structural decisions surfaced",
         "weight": 0.15
+      }
+    ]
+  },
+  {
+    "id": "grill-me-architecture",
+    "skill": "greenfield-architecture-sketch",
+    "task_description": "/groundwork architecture --grill for a service that ingests delivery-driver GPS pings and tells dispatchers when a delivery will be late.",
+    "context": "## Project Context\n\n- Stack: Go services on a managed container platform, a relational store, a message queue already in use\n- Scale: ~4,000 drivers, one ping every 10 seconds while on shift\n- Existing ADR: docs/decisions/ADR-003 — all inter-service events go through the existing message queue\n",
+    "rubric": [
+      {
+        "dimension": "one_question_with_recommendation",
+        "description": "1.0=the response asks exactly ONE question and gives a recommended answer with a one-line reason the user can accept with 'yes', and does not deliver a full draft yet; 0.5=asks one question without a recommendation, or a small cluster of 2-3 questions; 0.0=delivers a full draft first, or asks a long list of questions",
+        "weight": 0.5
+      },
+      {
+        "dimension": "reads_context_before_asking",
+        "description": "1.0=the question is not answered by the provided context (stack, existing ADRs, existing spec) and the response shows it used that context; 0.5=the question is reasonable but ignores something the context settles; 0.0=asks something the context already answers",
+        "weight": 0.25
+      },
+      {
+        "dimension": "question_changes_what_gets_built",
+        "description": "1.0=the first question is the highest-leverage branch (its answer changes components, ownership, or scope); 0.5=a real question but low leverage; 0.0=a cosmetic or rhetorical question",
+        "weight": 0.25
       }
     ]
   }

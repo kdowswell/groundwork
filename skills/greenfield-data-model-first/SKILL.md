@@ -14,6 +14,7 @@ entry_criteria:
   - "Data ownership is established (if not, propose owners and mark them for confirmation)"
   - "Active principles are selected (if not, apply the ones the request obviously touches and say so)"
 exit_criteria:
+  - "Every entity and its domain terms appear in the glossary, and no term carries two meanings without being qualified"
   - "Core entities and their relationships are modeled"
   - "Ownership of each entity is explicitly assigned"
   - "Schema evolution strategy is chosen"
@@ -47,6 +48,12 @@ The agent proposes a first-draft data model based on available context — the s
 
 ## Steps
 
+**Grilling mode (opt-in).** Run this only when the user asks for it: a `--grill` argument, or a phrase such as "grill me" or "interview me first". Without that request, skip it entirely: write the full draft first and ask once at the end, as the numbered steps say. When it is requested:
+- Before asking anything, read the repository, the project context, and existing decision records. Never ask a question they already answer.
+- Walk the decision tree one branch at a time, in this order: the core entities, then who owns each one, then the relationships and their cardinality, then which writes need strong consistency and which can lag. Ask **one** question per reply, and give your recommended answer with a one-line reason, so the user can accept it with "yes".
+- Stop when every branch whose answer changes what gets built is resolved. Then follow the numbered steps in full; the fresh-eyes review should find little.
+- Write each decision that crystallizes during the interview as a **Proposed** decision record, using the `adr` playbook's template, and cite it in the data model.
+
 1. **List the core entities.** **First, if a spec file is named or present in the project, run `npx @kdowswell/groundwork verify <spec path>` from the project root, and the same for an architecture sketch if one exists, and act on the first Checkpoint before writing anything else.** With no spec file, work from the request as given. Start from the primary data entity in the spec. Expand outward: what other things does the system need to know about? Write each entity as a noun with a one-sentence definition. Aim for 3–7 core entities. If you have more than 10, you are either modeling the whole domain (too broad) or modeling implementation details (too narrow).
 
 2. **Draw relationships.** For each pair of related entities, write the cardinality: one-to-one, one-to-many, many-to-many. Where the relationship is many-to-many, name the join concept explicitly — it is almost always a first-class entity that carries meaning of its own.
@@ -66,13 +73,15 @@ The agent proposes a first-draft data model based on available context — the s
 
 7. **Check the model against active principles.** For each principle in the active set that touches data (data-ownership, consistency-models, schema-evolution, data-classification), verify the model is compliant. Note any tensions.
 
-8. **Run a builder check before you ask the user anything.** It runs on the finished draft: write every earlier step in full first, and never open with questions. Do not defer it until open questions are resolved either. Its purpose is to gather every question into one round, asked at the end of the same response that delivers the complete data model, so the user is asked once. Hand the data model to a fresh reviewer: the data model file only, not this conversation. Give them this brief: "You will build exactly this. List every question you would need answered before you could start, and every place where two competent builders would build different things. Quote the line each question comes from. Do not suggest improvements." Use an isolated subagent if the runtime offers one. Otherwise do a deliberate cold read yourself, treating anything not written in the data model as unknown. Sort each question the reviewer returns into one of three groups:
+8. **Write or update the domain glossary.** For each entity and each term the spec or the code uses for it, write one row: term, one-line meaning, owning bounded context, and "not to be confused with". Keep the terms the domain experts use, not implementation names. If a project glossary already exists (the Glossary section of the project context), update its rows in place and touch no other section of that file; otherwise put the table in this data model's Glossary section and say once that it can move into the project context. Flag every term that carries two meanings across contexts ("account" as a billing account and as a login): either qualify it per context or rename one side, and record which you chose.
+
+9. **Run a builder check before you ask the user anything.** It runs on the finished draft: write every earlier step in full first, and never open with questions. Do not defer it until open questions are resolved either. Its purpose is to gather every question into one round, asked at the end of the same response that delivers the complete data model, so the user is asked once. Hand the data model to a fresh reviewer: the data model file only, not this conversation. Give them this brief: "You will build exactly this. List every question you would need answered before you could start, and every place where two competent builders would build different things. Quote the line each question comes from. Do not suggest improvements." Use an isolated subagent if the runtime offers one. Otherwise do a deliberate cold read yourself, treating anything not written in the data model as unknown. Sort each question the reviewer returns into one of three groups:
    - **Answered by the data model:** the reviewer missed it. Tighten the wording so the next reader won't.
    - **Your call:** the answer doesn't change what gets built, or one option is clearly right. Decide, write the answer into the data model, and label it "Agent call:".
    - **For the user:** the answer changes what gets built.
    Bring the user only the last group, in one round. Ask all of them in that one message, however many there are; do not hold any back for a later turn. Record every question and its resolution in the data model's Builder Check section. The section is never left out; if the cold read finds nothing, write "No open questions."
 
-9. **Record the user's decision.** When the user answers the acceptance Checkpoint, run `npx @kdowswell/groundwork approve <data model path> --checkpoint=greenfield-data-model-first/accept`, adding `--decision=changes-requested` if they asked for changes or `--decision=delegated` if they told you to decide. Record only an answer the user gave in this conversation. If they decided in the review page, it is already recorded: confirm with `npx @kdowswell/groundwork verify` instead of recording it again, and never submit the page yourself. With no one available to answer, record nothing and leave the artifact marked as a draft. If the CLI is unavailable, write the decision and date at the top of the artifact instead and say it is unverified.
+10. **Record the user's decision.** When the user answers the acceptance Checkpoint, run `npx @kdowswell/groundwork approve <data model path> --checkpoint=greenfield-data-model-first/accept`, adding `--decision=changes-requested` if they asked for changes or `--decision=delegated` if they told you to decide. Record only an answer the user gave in this conversation. If they decided in the review page, it is already recorded: confirm with `npx @kdowswell/groundwork verify` instead of recording it again, and never submit the page yourself. With no one available to answer, record nothing and leave the artifact marked as a draft. If the CLI is unavailable, write the decision and date at the top of the artifact instead and say it is unverified.
 
 ## Checkpoints
 
@@ -94,6 +103,16 @@ Migration-managed evolution requires coordinated deploys and rollback capability
 **Does the user accept this data model as the basis for implementation?**
 Ask once the data model is complete. If the data model is long or still has open questions for the user, offer once to show it as a review page (`npx @kdowswell/groundwork render <data model path> --serve`), where the user can read it beside its open questions and findings and decide there. **Accepted:** record the approval; implementation may start from it, and any later edit to the data model makes the approval stale, so the next step re-asks. **Changes requested:** record that, revise, and ask again; nothing downstream starts from this version. **Delegated ("you decide"):** record it as delegated, state the calls you made in your next reply, and proceed. The agent never answers this Checkpoint on the user's behalf.
 
+## Red Flags
+
+Observable signs this playbook is being skipped or gamed. Check your own work against them before you ask for approval; each one you find is something to fix, not to explain away.
+
+- An entity has two owners, or none.
+- A relationship that crosses a service or storage boundary has no consistency decision.
+- The Glossary uses a different name for an entity than the Entities table does.
+- The schema evolution strategy is blank or reads "TBD".
+- Entities owned by another team are embedded as full records instead of referenced by identifier.
+
 ## Principle Application
 
 **data-ownership**
@@ -114,6 +133,8 @@ Steps 1 and 3 together are where bounded context decisions crystallize. Listing 
 When an entity's ownership is contested between two teams, that's not a personnel question — it's a signal that the two teams are working within the same conceptual space and the bounded context hasn't been properly drawn. Surface this in Step 3 rather than splitting ownership or creating shared write access as a workaround.
 
 What good looks like: every entity in the model has exactly one owner, and entities owned by other teams appear in the model only as identifiers (foreign keys to their bounded context) rather than as full embedded records.
+
+Step 8 makes the boundary's language explicit. A bounded context is as much a vocabulary as a set of entities: when "order" means a cart in one context and a fulfillment in another, the glossary is where that difference is written down once, so agents stop renaming the concept from file to file and a reviewer can tell when code crosses a boundary by the words it uses.
 
 Full reference: [principles/bounded-contexts.md](principles/bounded-contexts.md)
 
@@ -154,6 +175,11 @@ Reason: ...
 
 ## Principle Compliance Notes
 - {{PRINCIPLE}}: ...
+
+## Glossary
+| Term | Meaning | Owning context | Not to be confused with |
+|---|---|---|---|
+| ... | One line, in the domain's own words | ... | ... |
 
 ## Builder Check
 | Question (from a cold read) | Resolution |
