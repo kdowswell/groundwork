@@ -55,7 +55,7 @@ The agent reads the signals in the project context and matches them against each
    | `greenfield_ideation` | Stage is ideation or discovery with no working system yet | `data-ownership`, `field-first` (if applicable) |
    | `ai_system` | The product itself embeds LLM or agent features: model calls over user or company data, retrieval, tool-using agents | `prompt-injection-containment`, `least-agency`, `eval-driven-development`, `deterministic-core-probabilistic-edge`, `model-as-versioned-dependency`, `ml-ai-observability` |
    | `autonomous_agents` | The product runs agents that choose their own steps or tools, run for minutes or longer, or hand work to other agents | `simplest-agent-architecture-first`, `durable-agent-execution`, `context-engineering` |
-   | `agent_authored_code` | AI coding agents write or change a meaningful share of the code, and the code outlives a prototype | `executable-architecture-guardrails`, `supply-chain-security`, `agent-legible-codebase` |
+   | `agent_authored_code` | AI coding agents write or change a meaningful share of the code, and the code outlives a prototype | `executable-architecture-guardrails`, `supply-chain-security`, `agent-legible-codebase`, `deep-modules` |
    | `analytical_data_platform` | The product includes batch or streaming pipelines, an analytical store (warehouse or lakehouse), or datasets published for reporting, BI, or ML | `rebuildable-derived-data`, `data-quality-gates`, `historical-data-modeling`, `data-ownership`, `schema-evolution` |
 
 3. **Pull mandatory principles.** For each PRESENT signal, add the listed principles to the active set. These are non-negotiable — do not drop them based on count caps or team preference.

@@ -211,7 +211,7 @@ install. Each phase is one of the router's activity groups:
 
 ## Principle Library
 
-54 principles across 8 categories:
+55 principles across 8 categories:
 
 | Category | Principles |
 |---|---|
@@ -220,7 +220,7 @@ install. Each phase is one of the router's activity groups:
 | **Scalability** | Horizontal Scaling, Caching Strategy, Data Partitioning, Async Processing |
 | **Observability** | Structured Logging, Distributed Tracing, SLO / Error Budgets, Alerting Strategy, ML/AI Observability |
 | **Data** | Data Ownership, Consistency Models, Event Sourcing, Schema Evolution, Rebuildable Derived Data, Historical Data Modeling, Data Quality Gates |
-| **Design** | API Contract First, Bounded Contexts, Conway's Law Alignment, Fallacies of Distributed Computing, Field-First, Idempotency by Design, Separation of Concerns, Deterministic Core, Probabilistic Edge, Context Engineering, Agent-Legible Codebase, Simplest Agent Architecture First |
+| **Design** | API Contract First, Bounded Contexts, Conway's Law Alignment, Fallacies of Distributed Computing, Field-First, Idempotency by Design, Separation of Concerns, Deterministic Core, Probabilistic Edge, Context Engineering, Agent-Legible Codebase, Simplest Agent Architecture First, Deep Modules |
 | **Delivery** | CI/CD Pipeline, Blue-Green / Canary, Feature Flags, Infrastructure as Code, Testing Strategy, Executable Architecture Guardrails, Eval-Driven Development, Model as a Versioned Dependency |
 | **Operations** | Incident Response, Runbooks, Capacity Planning, FinOps Cost Visibility, Tech Debt Management |
 
@@ -388,7 +388,7 @@ are missing or don't follow the template draw nothing.
 
 ```
 groundwork/
-├── principles/             Architectural principle library (54 across 8 categories)
+├── principles/             Architectural principle library (55 across 8 categories)
 │   ├── _schema/            Frontmatter JSON Schema
 │   └── {category}/         One .md file per principle
 ├── skills/                 Agent Skills (flat)

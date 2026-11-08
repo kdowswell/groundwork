@@ -141,6 +141,10 @@ Full reference: [principles/conways-law-organizational-alignment.md](principles/
 In Step 2, look for tenant identifiers taken from request parameters instead of the authenticated identity, caches and search indexes without tenant scope, background jobs that lose tenant context, and shared resources with no per-tenant quota or telemetry. Any path where one missing filter would expose another tenant's data is Non-compliant, whatever the test coverage.
 Full reference: [principles/tenant-isolation.md](principles/tenant-isolation.md)
 
+**deep-modules**
+In Step 3, ask of each major module which design decision it hides. Shallow modules (pass-through wrappers, interfaces as complicated as what they implement) and knowledge leaked across modules (one data format or vendor shape known in several places) are At Risk findings: they spread every change across files and make an agent load more of the codebase than the change needs.
+Full reference: [principles/deep-modules.md](principles/deep-modules.md)
+
 ## Output Format
 
 An `architecture-review-{{DATE}}.md` file:

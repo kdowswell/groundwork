@@ -90,6 +90,11 @@
     "category": "data"
   },
   {
+    "id": "deep-modules",
+    "title": "Deep Modules and Information Hiding",
+    "category": "design"
+  },
+  {
     "id": "deterministic-core-probabilistic-edge",
     "title": "Deterministic Core, Probabilistic Edge",
     "category": "design"

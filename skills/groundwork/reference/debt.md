@@ -18,6 +18,7 @@ and name the command that would firm it up as your next step.
 - Each debt item is categorized by type and scored by cost-to-carry
 - Debt items are prioritized: pay now, schedule, accept, or delete
 - Items marked 'pay now' have an owner and estimated effort
+- deep-modules
 
 ---
 
@@ -86,6 +87,10 @@ When applying this skill, surface the principle's definition of load-bearing deb
 **finops-cost-visibility**
 The velocity tax and risk scoring in Step 3 captures developer time and incident cost. The principle extends this to infrastructure cost: some technical debt actively inflates cloud spend — over-provisioned resources holding on from an earlier scale decision, inefficient query patterns driving up compute or data-transfer costs, redundant data copies inflating storage, retry storms amplifying API call volume. When scoring an item's cost-to-carry in Step 3, include operational cost impact as part of the risk dimension, not just incident probability. An item that increases cloud spend by 20% per month carries a cost-to-carry that doesn't appear in incident metrics and may not surface in any alert — only in the monthly bill. Debt items tied to cost inefficiency that sit in actively changing code should score high on compounding rate: each new feature built on top of an inefficient pattern inherits its cost profile.
 Full reference: [principles/finops-cost-visibility.md](principles/finops-cost-visibility.md)
+
+**deep-modules**
+Rank information-leakage debt by how often the leaked decision changes. A format, protocol, or vendor shape known by many modules is high-interest debt that one deep boundary pays down. Shallow but stable code is low priority: its cost appears only when someone has to change it.
+Full reference: [principles/deep-modules.md](principles/deep-modules.md)
 
 ## Output Format
 
