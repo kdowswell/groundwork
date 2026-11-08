@@ -259,6 +259,16 @@ npx @kdowswell/groundwork install --hooks              # + Claude Code lifecycle
 npx @kdowswell/groundwork update                       # refresh an existing install
 ```
 
+### APM (Agent Package Manager)
+
+```bash
+apm install kdowswell/groundwork#v<version>     # router, phase skills, builder agent, and hooks
+npm i -D @kdowswell/groundwork                  # the CLI, and the detector engine the hooks use
+```
+
+[docs/HARNESSES.md](docs/HARNESSES.md#installing-and-pinning-a-version) covers pinning a version for
+every channel: npm, APM, the plugin marketplace, and skills.sh.
+
 ### Claude Code plugin
 
 ```

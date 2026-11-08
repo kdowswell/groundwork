@@ -42,10 +42,12 @@ const SOURCE = /\.(jsx?|tsx?|mjs|cjs|py|rb|go|java|kt|cs|php|rs|swift|vue|svelte
 const PLAN_GATE_DEFAULTS = { mode: "nudge", afterFiles: 3 };
 const RECENT_PLANNING_MS = 14 * 86_400_000;
 
-async function loadEngine() {
+async function loadEngine(cwd = process.cwd()) {
   const candidates = [
     join(SCRIPT_DIR, "engine", "detect.mjs"), // installed layout (embedded engine)
     resolve(SCRIPT_DIR, "../../../cli/engine/detect.mjs"), // repo / plugin layout
+    // Package managers that copy only the hook script (APM): the project's own dev dependency.
+    resolve(cwd, "node_modules/@kdowswell/groundwork/cli/engine/detect.mjs"),
   ];
   for (const candidate of candidates) {
     if (existsSync(candidate)) return import(pathToFileURL(candidate).href);
@@ -318,7 +320,7 @@ async function onPostToolUse(event) {
   }
 
   const notes = [];
-  const engine = await loadEngine();
+  const engine = await loadEngine(cwd);
   if (engine) {
     const material = scanFile(engine, absPath, cwd).filter((f) => f.severity !== "info");
     if (material.length > 0) {
@@ -347,7 +349,7 @@ async function onStop(event) {
   if (event.stop_hook_active) return;
 
   const cwd = event.cwd ?? process.cwd();
-  const engine = await loadEngine();
+  const engine = await loadEngine(cwd);
   const findings = engine ? files.filter((f) => existsSync(f)).flatMap((f) => scanFile(engine, f, cwd)) : [];
   const errors = findings.filter((f) => f.severity === "error");
   const warns = findings.filter((f) => f.severity === "warn");

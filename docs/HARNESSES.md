@@ -31,6 +31,31 @@ Notes:
   [Codex CLI](https://developers.openai.com/codex/skills),
   [GitHub Copilot](https://code.visualstudio.com/docs/copilot/customization/agent-skills).
 
+## Installing and pinning a version
+
+groundwork ships hooks and a CLI that run in CI, so pin a version rather than tracking `main`.
+Last verified 2026-11-08 (APM 0.35.0, skills CLI latest, Claude Code plugin marketplaces).
+
+| Channel | Install | Pin |
+|---|---|---|
+| npm CLI + installer | `npx @kdowswell/groundwork install` | `npm i -D @kdowswell/groundwork@<version>`, then `npx @kdowswell/groundwork install`; the lockfile pins it |
+| Claude Code plugin | `/plugin marketplace add kdowswell/groundwork` | The public marketplace tracks the repository. To pin, list groundwork in your own marketplace with a ref: `{ "name": "groundwork", "source": { "source": "github", "repo": "kdowswell/groundwork", "ref": "v<version>" } }` (a `sha` field pins a commit) |
+| [APM](https://microsoft.github.io/apm/) | `apm install kdowswell/groundwork` | `apm install kdowswell/groundwork#v<version>` (or a commit SHA); `apm.lock.yaml` records the resolved commit |
+| skills.sh | `npx skills add kdowswell/groundwork --skill groundwork` | `npx skills add https://github.com/kdowswell/groundwork/tree/v<version>/skills/groundwork`; `skills-lock.json` records the ref |
+
+Notes:
+
+- **APM needs no manifest.** It reads the Agent Skills layout and the plugin files directly:
+  `apm install kdowswell/groundwork` installs the router, the phase skills, the
+  `groundwork-builder` agent, and the three lifecycle hooks into `.claude/`. APM copies the hook
+  script and the modules it imports, but not the detector engine, so the hooks find the engine in
+  the project's own `node_modules`. Add `npm i -D @kdowswell/groundwork` for the after-edit and
+  stop scans. Without it, the hooks still give the session-start digest and stay silent otherwise.
+- **skills.sh** installs skills only: no hooks and no CLI. Pair it with the npm CLI for `approve`,
+  `verify`, `render`, and `detect`.
+- Whatever the channel, the CLI version the agent runs (`npx @kdowswell/groundwork`) should match the
+  skills version, because playbooks name CLI flags. A project-local dev dependency guarantees that.
+
 ## Composing with other packs
 
 groundwork stops at the plan by design. It covers the decisions that are expensive to reverse and
