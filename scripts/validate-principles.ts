@@ -9,7 +9,13 @@ import matter from "gray-matter";
 
 const ROOT = resolve(fileURLToPath(import.meta.url), "../..");
 const SCHEMA_PATH = resolve(ROOT, "principles/_schema/principle.schema.json");
-const PRINCIPLES_GLOB = "principles/**/*.md";
+// The library, plus the example overlay (ADR-023) so it stays a valid template. Overlay files
+// use the same schema; pass extra directories as arguments to check an org package.
+const PRINCIPLES_GLOBS = [
+  "principles/**/*.md",
+  "examples/overlay/.groundwork/principles/**/*.md",
+  ...process.argv.slice(2).map((dir) => `${dir.replace(/\/$/, "")}/**/*.md`),
+];
 const IGNORE = ["principles/README.md", "principles/_schema/**"];
 
 type FileError = { file: string; messages: string[] };
@@ -76,7 +82,7 @@ async function main(): Promise<void> {
   const schema = loadSchema();
   const validate = ajv.compile(schema);
 
-  const files = await glob(PRINCIPLES_GLOB, {
+  const files = await glob(PRINCIPLES_GLOBS, {
     cwd: ROOT,
     ignore: IGNORE,
     absolute: true,

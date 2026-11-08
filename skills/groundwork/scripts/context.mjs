@@ -14,10 +14,13 @@
  *   STATUS <kind> <path> <state>   one per groundwork artifact found (status.mjs)
  *   STATUS <kind> — missing        a design artifact (spec, architecture, data-model) not found
  *   NEXT <command> — <reason>      the one command worth running next
+ *   OVERLAY <id> <path> <source>   a project or org principle (ADR-023); load it from <path>
+ *   OVERLAY_PROBLEM <path> — <msg> an overlay file doctor will report
  */
-import { existsSync, readFileSync } from "node:fs";
+import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { dirname, join, parse, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
+import { resolveOverlays } from "./overlays.mjs";
 import { formatStatus, projectStatus } from "./status.mjs";
 
 const STALE_AFTER_DAYS = 90;
@@ -95,6 +98,29 @@ function printStatus(root) {
   console.log("---END STATUS---");
 }
 
+/** Built-in ids: the synced copies beside this script's playbooks. */
+function builtInIds() {
+  const dir = join(dirname(fileURLToPath(import.meta.url)), "..", "reference", "principles");
+  try {
+    return new Set(readdirSync(dir).filter((n) => n.endsWith(".md")).map((n) => n.slice(0, -3)));
+  } catch {
+    return new Set();
+  }
+}
+
+function printOverlays(root) {
+  let result;
+  try {
+    result = resolveOverlays(root, builtInIds());
+  } catch {
+    return;
+  }
+  for (const p of result.principles) {
+    console.log(`OVERLAY ${p.id} ${p.path} ${p.source}${p.overrides ? " overrides-built-in" : ""}`);
+  }
+  for (const p of result.problems) console.log(`OVERLAY_PROBLEM ${p.path} — ${p.message}`);
+}
+
 function main() {
   const contextPath = findContextFile(process.cwd());
 
@@ -118,11 +144,13 @@ function main() {
   console.log("---BEGIN PROJECT CONTEXT---");
   console.log(raw.trimEnd());
   console.log("---END PROJECT CONTEXT---");
+  printOverlays(projectRoot(process.cwd(), contextPath));
   printStatus(projectRoot(process.cwd(), contextPath));
   console.log(
     "Directives: honor this context in every command. Report staleness to the user once; " +
       "repair only via /groundwork doctor when asked. Use STATUS and NEXT for a bare /groundwork " +
-      "and for each command's next step. Do not rerun this script this session.",
+      "and for each command's next step. Read OVERLAY principles from their path; they rank with built-ins " +
+      "and an overrides-built-in one replaces the library copy. Do not rerun this script this session.",
   );
 }
 

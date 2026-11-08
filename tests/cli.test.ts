@@ -292,6 +292,56 @@ describe("groundwork learn inputs (ADR-021)", () => {
   });
 });
 
+describe("principle overlays (ADR-023)", () => {
+  const EXAMPLE = readFileSync(join(ROOT, "examples/overlay/.groundwork/principles/security/approved-data-stores.md"), "utf8");
+  const CONTEXT = (ids: string[]) =>
+    `# Project Context\n\n## Stage\n- Last reviewed: 2099-01-01\n\n## Active Principles\n${ids.map((i) => `- ${i} — x`).join("\n")}\n`;
+  function withOverlay(file: string, text: string, ids: string[]) {
+    const dir = tempDir();
+    mkdirSync(join(dir, ".groundwork"), { recursive: true });
+    writeFileSync(join(dir, ".groundwork/context.md"), CONTEXT(ids));
+    mkdirSync(join(dir, file, ".."), { recursive: true });
+    writeFileSync(join(dir, file), text);
+    return dir;
+  }
+
+  it("treats a valid project overlay as a known principle and lists it", () => {
+    const dir = withOverlay(".groundwork/principles/security/approved-data-stores.md", EXAMPLE, ["approved-data-stores", "zero-trust"]);
+    const result = doctor(dir);
+    expect(result.findings).toEqual([]);
+    expect(result.overlays).toMatchObject([{ id: "approved-data-stores", source: "project" }]);
+    expect(formatDoctorHuman(result)).toContain("Overlay principles (ADR-023): approved-data-stores from project");
+    const loader = execFileSync(process.execPath, [join(ROOT, "skills/groundwork/scripts/context.mjs")], { cwd: dir, encoding: "utf8" });
+    expect(loader).toContain("OVERLAY approved-data-stores .groundwork/principles/security/approved-data-stores.md project");
+  });
+
+  it("reads org packages listed in config, after the project overlay", () => {
+    const dir = withOverlay("vendor/acme-principles/security/approved-data-stores.md", EXAMPLE, ["approved-data-stores"]);
+    writeFileSync(join(dir, ".groundwork/config.json"), JSON.stringify({ principles: { overlays: ["vendor/acme-principles", "../outside"] } }));
+    const result = doctor(dir);
+    expect(result.overlays).toMatchObject([{ id: "approved-data-stores", source: "vendor/acme-principles" }]);
+    expect(result.findings.map((f: any) => f.message)).toEqual(["../outside: overlay package not found inside the project"]);
+  });
+
+  it("refuses a silent collision with a built-in, and accepts a declared override", () => {
+    const clash = EXAMPLE.replace("id: approved-data-stores", "id: zero-trust");
+    const dir = withOverlay(".groundwork/principles/security/zero-trust.md", clash, ["zero-trust"]);
+    expect(doctor(dir).findings.map((f: any) => f.message).join()).toMatch(/collides with a built-in principle; add "overrides: zero-trust"/);
+    writeFileSync(join(dir, ".groundwork/principles/security/zero-trust.md"), clash.replace("title:", "overrides: zero-trust\ntitle:"));
+    const ok = doctor(dir);
+    expect(ok.findings).toEqual([]);
+    expect(ok.overlays).toMatchObject([{ id: "zero-trust", overrides: "zero-trust" }]);
+  });
+
+  it("reports overlay files that don't follow the library format", () => {
+    const broken = EXAMPLE.replace("category: security", "category: vibes").replace("## Further Reading", "## Notes");
+    const dir = withOverlay(".groundwork/principles/security/approved-data-stores.md", broken, ["zero-trust"]);
+    const messages = doctor(dir).findings.filter((f: any) => f.check === "overlay-invalid").map((f: any) => f.message);
+    expect(messages.join("\n")).toMatch(/category must be one of/);
+    expect(messages.join("\n")).toMatch(/missing section "## Further Reading"/);
+  });
+});
+
 describe("command names (ADR-016)", () => {
   it("every alias maps to a command, and the router lists both", async () => {
     const { COMMAND_MAP, COMMAND_ALIASES } = await import("../scripts/router-commands.js");

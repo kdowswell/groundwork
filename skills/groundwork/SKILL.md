@@ -39,7 +39,10 @@ what the request needs — never preload multiple playbooks. <!-- rule:router-pr
    `npx @kdowswell/groundwork verify <file>` from the project root before following the playbook, and act on
    the result as the Approvals section says. <!-- rule:router-verify-handoff -->
 4. **Honor active principles.** If project context names active principles, they constrain every
-   command's output; synced copies live in `reference/principles/`. <!-- rule:router-honor-principles -->
+   command's output; synced copies live in `reference/principles/`. A principle the context
+   loader lists as OVERLAY (the project's or organization's own, ADR-023) is read from its path and
+   counts like a built-in; one marked overrides-built-in replaces the library copy.
+   <!-- rule:router-honor-principles -->
 
 ## Commands
 

@@ -60,7 +60,7 @@ The agent reads the signals in the project context and matches them against each
 
 3. **Pull mandatory principles.** For each PRESENT signal, add the listed principles to the active set. These are non-negotiable — do not drop them based on count caps or team preference.
 
-4. **Score remaining principles by applies_when.** For principles not yet in the active set, scan their `applies_when` frontmatter. Add any whose scope, scale, stage, and domain all match the project context.
+4. **Score remaining principles by applies_when.** For principles not yet in the active set, scan their `applies_when` frontmatter. Add any whose scope, scale, stage, and domain all match the project context. Include overlay principles too: the project's `.groundwork/principles/` and any org packages listed under `principles.overlays` in `.groundwork/config.json` (the context loader lists them as OVERLAY). They are scored exactly like library principles, and an overlay that declares `overrides: <id>` replaces that library principle in the scoring.
 
 5. **Suppress contradicted principles.** If `solo_or_prototype` is PRESENT, remove principles whose `applies_when.scale` contains only `enterprise`. Document the suppression explicitly.
 

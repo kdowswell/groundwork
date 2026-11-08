@@ -8,6 +8,7 @@ import { join, resolve, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 import { verify } from "./approvals.mjs";
 import { openSuggestions } from "./suggest.mjs";
+import { resolveOverlays } from "../../skills/groundwork/scripts/overlays.mjs";
 
 const CLI_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const STALE_AFTER_DAYS = 90;
@@ -165,6 +166,12 @@ export function doctor(root) {
     }
   }
 
+  // Overlays (ADR-023): the project's and org's own principles count as known ids.
+  const builtIn = loadPrincipleIds();
+  const overlay = resolveOverlays(root, builtIn ?? new Set());
+  for (const p of overlay.problems) {
+    findings.push({ check: "overlay-invalid", severity: "error", message: `${p.path}: ${p.message}` });
+  }
   const activeIds = activePrincipleIds(raw);
   if (activeIds.length === 0) {
     findings.push({
@@ -173,7 +180,7 @@ export function doctor(root) {
       message: "Active Principles section is empty — run /groundwork principles to select them",
     });
   } else {
-    const known = loadPrincipleIds();
+    const known = builtIn ? new Set([...builtIn, ...overlay.principles.map((p) => p.id)]) : null;
     if (known) {
       for (const id of activeIds) {
         if (!known.has(id)) {
@@ -200,14 +207,19 @@ export function doctor(root) {
     }
   }
 
-  return { findings, suggestions: openSuggestions(root).length };
+  return { findings, suggestions: openSuggestions(root).length, overlays: overlay.principles };
 }
 
 export function formatDoctorHuman(result) {
   // Open suggestions are a count, not a finding: they don't fail doctor (ADR-021).
-  const note = result.suggestions
+  let note = result.suggestions
     ? `\n· ${result.suggestions} open suggestion(s) in .groundwork/suggestions.jsonl — /groundwork learn reviews them.`
     : "";
+  if (result.overlays?.length) {
+    note += `\n· Overlay principles (ADR-023): ${result.overlays
+      .map((p) => `${p.id}${p.overrides ? " (overrides built-in)" : ""} from ${p.source}`)
+      .join(", ")}`;
+  }
   if (result.findings.length === 0) {
     return `✓ context is present, fresh, and consistent with what doctor can verify.${note}`;
   }
