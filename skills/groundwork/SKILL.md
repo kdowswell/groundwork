@@ -172,7 +172,11 @@ a ten-year-old codebase is still design work. <!-- rule:router-phase-from-reques
   approval, or changes requested), tell the user which (for a change since approval, run
   `npx @kdowswell/groundwork verify <artifact> --diff` and show what changed) and re-ask that artifact's acceptance
   Checkpoint before continuing. Do not proceed silently, and do not approve it yourself to get
-  past the check. If the CLI is unavailable, say the approval could not be verified and ask
+  past the check. Urgency, sunk cost, or someone else's reported sign-off doesn't change this: never
+  record an approval for them. If the user has told you in this conversation to go ahead without
+  approving, you may build, but record nothing and say plainly that the work rests on an
+  unapproved artifact. If they tell you to decide, that is a delegated decision, recorded and
+  described as delegated, never as their approval. If the CLI is unavailable, say the approval could not be verified and ask
   the user to confirm. When no such artifact exists, the request itself is the input: draft
   from it, stating the requirements you assumed, rather than stopping to ask for one.
   <!-- rule:router-verify-handoff -->
