@@ -139,5 +139,33 @@
         "weight": 0.25
       }
     ]
+  },
+  {
+    "id": "agentic-support-assistant",
+    "skill": "greenfield-architecture-sketch",
+    "task_description": "Sketch the architecture for a support assistant that reads incoming customer emails, looks up the customer's orders and past tickets, drafts a reply, and can issue refunds up to $50 on its own. Support agents review anything above that.",
+    "context": "## Project Context\n\n- Stack: TypeScript services, one relational store, a message queue already in use\n- Signals: ai_system, autonomous_agents\n- Active principles: least-agency, prompt-injection-containment, durable-agent-execution\n- Scale: ~3,000 emails/day\n",
+    "rubric": [
+      {
+        "dimension": "agent_lens_completeness",
+        "description": "1.0=includes all five agent sections: Agents and Tools (each tool with its side effect and credential), Autonomy and Override (refund ≤$50 decided by a deterministic check or the agent, >$50 by a person, and how a person stops a run), Sessions (the email-triage session marked untrusted input + sensitive access + outbound/state change, flagged, with the leg removed named), Durability (the human-review wait and refund step resume from a checkpoint with an idempotency key), Budgets (tokens/latency per step and a model-version policy); 0.5=three or four of the five, or the sections exist but the toxic session is not flagged; 0.0=no agent lens",
+        "weight": 0.4
+      },
+      {
+        "dimension": "refund_guardrail",
+        "description": "1.0=the $50 limit is enforced by deterministic code outside the model, refunds are idempotent, and the agent's credential cannot exceed the limit; 0.5=limit stated but enforced by prompt only; 0.0=no limit enforcement",
+        "weight": 0.25
+      },
+      {
+        "dimension": "simplest_shape",
+        "description": "1.0=asks whether parts can be a fixed workflow (e.g., lookup and drafting as a scripted chain) and justifies the autonomy kept; 0.5=one agent with no justification; 0.0=multiple cooperating agents with no reason",
+        "weight": 0.15
+      },
+      {
+        "dimension": "classic_sections",
+        "description": "1.0=boundary, components with Runs on, primary data flow, external dependencies with failure modes, sync/async split are all present and consistent with the agent sections; 0.5=some missing; 0.0=only agent material",
+        "weight": 0.2
+      }
+    ]
   }
 ]
