@@ -18,7 +18,7 @@ time_box: "20-45 minutes"
 tags: [principles, architecture, greenfield, setup]
 ---
 
-# Signal-Driven Principle Selection
+# Principle Selection
 
 ## How This Skill Works
 
@@ -100,3 +100,5 @@ A populated `Active Principles` section (in `context/project-context.template.md
 Suppressed:
 - chaos-engineering — Solo prototype; premature for current team size and stage
 ```
+
+**Next step:** End your reply (not the artifact) with one recommended next command and why, worked out from what exists now (the router's Next steps table), never a list. Usually `start` (or `spec`) for new work, or `review` for a running system, so the selected principles get applied.

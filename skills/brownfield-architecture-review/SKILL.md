@@ -33,7 +33,7 @@ time_box: "2-4 hours"
 tags: [brownfield, architecture, audit, review]
 ---
 
-# Brownfield Architecture Review
+# Architecture Review
 
 ## How This Skill Works
 
@@ -176,3 +176,5 @@ An `architecture-review-{{DATE}}.md` file:
 |---|---|---|---|
 | ... | ... | Makes it worse / better / irrelevant | Address before / after / during |
 ```
+
+**Next step:** End your reply (not the artifact) with one recommended next command and why, worked out from what exists now (the router's Next steps table), never a list. Usually `plan` for the top finding to fix, or `debt` when there are many findings to rank against planned work.

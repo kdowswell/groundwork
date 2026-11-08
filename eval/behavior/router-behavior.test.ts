@@ -49,8 +49,11 @@ afterAll(() => {
 });
 
 describe.skipIf(!hasKey)("router behavior (live model)", () => {
-  it("rule:router-no-arg-menu — bare /groundwork presents a menu and runs nothing", async () => {
-    const dir = workspace({ ".groundwork/context.md": CONTEXT_MD });
+  it("rule:router-no-arg-menu — bare /groundwork opens with status and one next step, then the menu, and runs nothing", async () => {
+    const dir = workspace({
+      ".groundwork/context.md": CONTEXT_MD,
+      "docs/spec.md": "# Spec: Escalation tracker\n\n## Problem\nLeads can't see stuck escalations.\n",
+    });
     const { trace, finalText } = await runScenario({
       workspace: dir,
       userMessage: "/groundwork",
@@ -65,7 +68,28 @@ describe.skipIf(!hasKey)("router behavior (live model)", () => {
     expect(named.length, `menu should name commands, got:\n${finalText}`).toBeGreaterThanOrEqual(4);
     // No artifact was produced (menus describe; commands produce).
     expect(finalText).not.toMatch(/^# (Safe Change Plan|Spec|Architecture)/m);
-  });
+    // Status first: the draft spec and a suggested next command appear before the menu.
+    const lower = finalText.toLowerCase();
+    expect(lower, "status should name the spec's state").toMatch(/docs\/spec\.md[\s\S]{0,80}(draft|not approved|unapproved)/);
+    expect(lower, "status should suggest a next command").toMatch(/next|suggest|recommend/);
+    expect(lower.indexOf("docs/spec.md"), "status comes before the menu").toBeLessThan(lower.lastIndexOf("review"));
+  }, 180_000);
+
+  it("rule:router-next-step — data-model with no spec drafts from the request instead of stopping", async () => {
+    const dir = workspace({ ".groundwork/context.md": CONTEXT_MD });
+    const { trace, finalText } = await runScenario({
+      workspace: dir,
+      userMessage:
+        "/groundwork data-model for a support escalation tracker: escalations, assignees, and an audit trail of reassignments. There is no spec.",
+    });
+
+    expect(playbooksRead(trace)).toContain("data-model.md");
+    // A draft, not a request for a spec: entities appear and the reply ends with a next step.
+    expect(finalText, `expected a drafted model:\n${finalText}`).toMatch(/escalation/i);
+    expect(finalText).toMatch(/assum/i);
+    expect(finalText.toLowerCase()).toMatch(/next/);
+    expect(finalText).not.toMatch(/(write|create|need) (a|the) spec first/i);
+  }, 180_000);
 
   it("rule:router-one-playbook + rule:router-context-first — explicit command loads context, then exactly that playbook", async () => {
     const dir = workspace({ ".groundwork/context.md": CONTEXT_MD });

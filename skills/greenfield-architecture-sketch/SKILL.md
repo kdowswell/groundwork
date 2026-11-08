@@ -9,8 +9,8 @@ description: >
   drawn the system boundary, or when the team is about to build without a design.
 phase: greenfield
 entry_criteria:
-  - "A spec exists with a problem statement, scope, and primary data entity"
-  - "Active principles have been selected (signal-driven-principles skill)"
+  - "A spec with a problem statement, scope, and primary data entity (if none exists, draft from the request and list the requirements you assumed)"
+  - "Active principles are selected (if not, apply the ones the request obviously touches and say so)"
 exit_criteria:
   - "System boundary is drawn: what is inside this system vs. outside"
   - "Major components are named with one-sentence responsibilities"
@@ -30,7 +30,7 @@ time_box: "45-90 minutes"
 tags: [architecture, design, greenfield]
 ---
 
-# Architecture Sketch
+# Architecture
 
 ## How This Skill Works
 
@@ -174,3 +174,5 @@ It receives from: ...
 |---|---|
 | ... | Answered in sketch (wording tightened) / Agent call: ... / User: ... |
 ```
+
+**Next step:** End your reply (not the artifact) with one recommended next command and why, worked out from what exists now (the router's Next steps table), never a list. Usually `data-model` once the architecture is approved; `adr` when a decision in it was close and expensive to reverse; `compare` when a component choice is still open.

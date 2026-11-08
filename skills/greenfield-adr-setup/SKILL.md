@@ -11,7 +11,7 @@ description: >
 phase: greenfield
 entry_criteria:
   - "At least one structural decision has been made or is being made"
-  - "A location for ADRs is chosen (directory, wiki, or doc system)"
+  - "A location for ADRs is chosen (if not, propose one beside the code)"
 exit_criteria:
   - "ADR format is established and documented"
   - "At least one ADR is written for the highest-stakes current decision"
@@ -114,3 +114,5 @@ We will {{DO X}} rather than {{Y or Z}}.
 - **{{ALTERNATIVE A}}** — rejected because ...
 - **{{ALTERNATIVE B}}** — rejected because ...
 ```
+
+**Next step:** End your reply (not the artifact) with one recommended next command and why, worked out from what exists now (the router's Next steps table), never a list. Usually the command for the work the decision unblocks: `architecture`, `data-model`, or `plan`.

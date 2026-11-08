@@ -213,6 +213,60 @@ describe("command names (ADR-016)", () => {
   });
 });
 
+describe("project status (status.mjs)", () => {
+  const LOADER = join(ROOT, "skills/groundwork/scripts/context.mjs");
+  const SPEC = "# Spec: Escalations\n\n## Problem\nLeads can't see stuck escalations.\n";
+  const ARCH = "# Architecture: Escalations\n\n## System Boundary\nThe board.\n";
+
+  function scaffold() {
+    const dir = tempDir();
+    mkdirSync(join(dir, ".git"));
+    mkdirSync(join(dir, "docs"));
+    writeFileSync(join(dir, "docs/spec.md"), SPEC);
+    writeFileSync(join(dir, "docs/architecture.md"), ARCH);
+    approve(dir, "docs/spec.md", { checkpoint: "greenfield-spec-from-idea/accept" });
+    approve(dir, "docs/architecture.md", { checkpoint: "greenfield-architecture-sketch/accept" });
+    return dir;
+  }
+
+  it("reports an approved spec, a stale architecture, a missing data model, and one next step", async () => {
+    const { projectStatus, formatStatus, nextStep } = await import("../skills/groundwork/scripts/status.mjs");
+    const dir = scaffold();
+    writeFileSync(join(dir, "docs/architecture.md"), `${ARCH}Added after approval.\n`);
+    const status = projectStatus(dir);
+    expect(status.artifacts.map((a: any) => [a.kind, a.path, a.state])).toEqual([
+      ["spec", "docs/spec.md", "approved"],
+      ["architecture", "docs/architecture.md", "stale"],
+    ]);
+    // Two things unsettled (a stale architecture and no data model): finish them together.
+    expect(nextStep(status).command).toBe("continue");
+    const lines = formatStatus(status);
+    expect(lines).toContain("STATUS data-model — missing");
+    expect(lines.filter((l: string) => l.startsWith("NEXT "))).toHaveLength(1);
+  });
+
+  it("walks the design path one step at a time", async () => {
+    const { projectStatus, nextStep } = await import("../skills/groundwork/scripts/status.mjs");
+    const empty = tempDir();
+    expect(nextStep(projectStatus(empty)).command).toBe("start");
+
+    const dir = scaffold();
+    expect(nextStep(projectStatus(dir)).command).toBe("data-model");
+    writeFileSync(join(dir, "docs/data-model.md"), "# Data Model: Escalations\n");
+    expect(nextStep(projectStatus(dir)).command).toBe("data-model"); // a draft: finish it
+    approve(dir, "docs/data-model.md", { checkpoint: "greenfield-data-model-first/accept" });
+    expect(nextStep(projectStatus(dir)).command).toBe("build");
+  });
+
+  it("is printed by the context loader, with or without a context file", () => {
+    const dir = scaffold();
+    const stdout = execFileSync(process.execPath, [LOADER], { cwd: dir, encoding: "utf8" });
+    expect(stdout).toContain("CONTEXT_MISSING");
+    expect(stdout).toContain("STATUS spec docs/spec.md approved");
+    expect(stdout).toMatch(/^NEXT \/groundwork data-model — /m);
+  });
+});
+
 describe("context loader (skill script)", () => {
   const LOADER = join(ROOT, "skills/groundwork/scripts/context.mjs");
 

@@ -10,9 +10,9 @@ description: >
   team is about to write code without an explicit data design.
 phase: greenfield
 entry_criteria:
-  - "The primary data entity is named (from spec-from-idea)"
-  - "Data ownership is established"
-  - "Active principles are selected"
+  - "The primary data entity is named, ideally in an approved spec (if not, infer it from the request and label it an assumption)"
+  - "Data ownership is established (if not, propose owners and mark them for confirmation)"
+  - "Active principles are selected (if not, apply the ones the request obviously touches and say so)"
 exit_criteria:
   - "Core entities and their relationships are modeled"
   - "Ownership of each entity is explicitly assigned"
@@ -28,7 +28,7 @@ time_box: "45-90 minutes"
 tags: [data, schema, greenfield, architecture]
 ---
 
-# Data Model First
+# Data Model
 
 ## How This Skill Works
 
@@ -160,3 +160,5 @@ Reason: ...
 |---|---|
 | ... | Answered in data model (wording tightened) / Agent call: ... / User: ... |
 ```
+
+**Next step:** End your reply (not the artifact) with one recommended next command and why, worked out from what exists now (the router's Next steps table), never a list. Usually: start building once the spec, architecture, and data model are approved; `adr` for a consistency or ownership decision that was close; `architecture` when none exists yet.

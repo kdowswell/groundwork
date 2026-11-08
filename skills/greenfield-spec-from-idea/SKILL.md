@@ -26,7 +26,7 @@ time_box: "30-60 minutes"
 tags: [planning, requirements, greenfield, spec]
 ---
 
-# Spec From Idea
+# Spec
 
 ## How This Skill Works
 
@@ -202,3 +202,5 @@ Owner: {{TEAM, SERVICE, OR ROLE}}
 |---|---|
 | ... | Answered in spec (wording tightened) / Agent call: ... / User: ... |
 ```
+
+**Next step:** End your reply (not the artifact) with one recommended next command and why, worked out from what exists now (the router's Next steps table), never a list. Usually `architecture` once the spec is approved; `risks` first when the riskiest assumption could sink the idea, or `continue` when several design documents are still missing.

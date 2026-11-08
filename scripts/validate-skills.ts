@@ -107,6 +107,32 @@ function checkStepsSection(body: string): string | null {
   return null;
 }
 
+/** The body of a "## <name>" section, up to the next "## " heading, or null. */
+function sectionBody(body: string, name: string): string | null {
+  const start = body.search(new RegExp(`^## ${name}\\b`, "m"));
+  if (start === -1) return null;
+  // Headings inside fenced blocks (artifact templates) don't end the section.
+  const lines = body.slice(start).split("\n").slice(1);
+  let fenced = false;
+  const kept: string[] = [];
+  for (const line of lines) {
+    if (/^\s*(```|~~~)/.test(line)) fenced = !fenced;
+    else if (!fenced && /^## /.test(line)) break;
+    kept.push(line);
+  }
+  return kept.join("\n");
+}
+
+/** Phase skills end with one recommended next command (rule:router-next-step). */
+function checkNextStep(body: string): string | null {
+  const output = sectionBody(body, "Output Format");
+  if (output === null) return 'missing "## Output Format" section';
+  if (!/^\*\*Next step:\*\*\s+\S/m.test(output)) {
+    return '"## Output Format" must include a "**Next step:**" line (one recommended next command and why)';
+  }
+  return null;
+}
+
 function validateFile(
   filePath: string,
   validate: (data: unknown) => boolean,
@@ -174,6 +200,11 @@ function validateFile(
   if (stepsErr) messages.push(stepsErr);
 
   messages.push(...checkPrincipleFiles(dirname(filePath), data.principles));
+
+  if (data.phase) {
+    const nextErr = checkNextStep(parsed.content);
+    if (nextErr) messages.push(nextErr);
+  }
 
   return messages.length ? { file: filePath, messages } : null;
 }

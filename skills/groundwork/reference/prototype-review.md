@@ -6,13 +6,14 @@
 **Phase:** Decide under uncertainty · **Time box:** 2-4 hours
 
 **Before you start:** load project context for this session if you have not already (see the
-router's Steps); honor active principles throughout. Entry criteria below must hold — if one
-does not, say which and route to the command that establishes it instead of proceeding.
+router's Steps); honor active principles throughout. Entry criteria below are what this playbook
+works best from. If one doesn't hold, don't stop: draft from what exists, label what you assumed,
+and name the command that would firm it up as your next step.
 
 **Entry criteria:**
 - A working prototype or proof-of-concept exists
-- Active principles are selected for the project
-- The original question or hypothesis the prototype was testing is known
+- Active principles are selected (if not, apply the ones the prototype obviously touches and say so)
+- The question the prototype was testing is known (if not, reconstruct it from the prototype and confirm it at approval)
 
 **Exit criteria:**
 - The prototype is evaluated against production criteria it was not designed to meet
@@ -129,3 +130,5 @@ A `prototype-review-{{PROTOTYPE-NAME}}.md` file with:
 
 Rationale: ...
 ```
+
+**Next step:** End your reply (not the artifact) with one recommended next command and why, worked out from what exists now (the router's Next steps table), never a list. Build on it → `plan` (or `architecture` if none exists); rewrite → `spec` or `start`; hybrid → `replace` for the parts that get rewritten.

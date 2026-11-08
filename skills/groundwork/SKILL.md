@@ -71,9 +71,12 @@ session, say once that it is now the new name (for example: "`sketch` is now `ar
 
 ## Routing
 
-- **No argument:** present the Commands table grouped by activity, note which group the project
-  context suggests, and let the user choose. Never auto-run a command from a bare
-  `/groundwork`. <!-- rule:router-no-arg-menu -->
+- **No argument:** open with where the project stands: each artifact from the context loader's
+  STATUS lines and its state (approved, draft, changes requested, changed since approval, or
+  missing), then one suggested next command with its reason (the NEXT line, or the Next steps
+  table below). Then present the Commands table grouped by activity and let the user choose.
+  Never auto-run a command from a bare `/groundwork`, the suggested one included.
+  <!-- rule:router-no-arg-menu -->
 - **Explicit or clearly implied command:** load its playbook and follow it. If two commands
   genuinely fit, ask once with the specific candidates — do not run both.
   <!-- rule:router-ask-once -->
@@ -84,6 +87,26 @@ session, say once that it is now the new name (for example: "`sketch` is now `ar
   something new or changes a running system, offer `init` first (it takes minutes and improves every later command). If the
   user declines, proceed without it and say which defaults you assumed. Never block on init.
   <!-- rule:router-offer-init -->
+
+## Next steps
+
+Every command ends its output with **one** recommended next command and why, worked out from
+what exists now, never a generic list. No command stops because an earlier document is missing:
+it drafts from what exists and labels what it assumed. <!-- rule:router-next-step -->
+
+| Where the project stands | Next |
+|---|---|
+| No spec, architecture, or data model | `start` |
+| Several design documents missing, unapproved, or changed since approval | `continue` |
+| One design document is a draft, has changes requested, or changed since approval | that document's command |
+| Spec approved, no architecture | `architecture` |
+| Architecture approved, no data model | `data-model` |
+| Spec, architecture, and data model approved | Start building; run `plan` before changing anything in production |
+| A change plan is approved and not yet implemented | Implement it; what it changes rides with the code |
+| A change plan is a draft or changed since approval | `plan` |
+
+Outside the design path, follow the playbook's own Next step (a `spike` that settles a question
+leads to `adr`; a `review` with high-severity findings leads to `plan` or `debt`).
 
 ## Activities
 

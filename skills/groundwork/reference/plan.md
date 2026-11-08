@@ -6,14 +6,15 @@
 **Phase:** Change a running system · **Time box:** 60-120 minutes
 
 **Before you start:** load project context for this session if you have not already (see the
-router's Steps); honor active principles throughout. Entry criteria below must hold — if one
-does not, say which and route to the command that establishes it instead of proceeding.
+router's Steps); honor active principles throughout. Entry criteria below are what this playbook
+works best from. If one doesn't hold, don't stop: draft from what exists, label what you assumed,
+and name the command that would firm it up as your next step.
 
 **Entry criteria:**
 - The change is described (what will be different after)
 - The system's spec is identified, or its absence is known
 - The system receiving the change is running in production
-- Active principles are available
+- Active principles are available (if not, apply the ones the change obviously touches and say so)
 
 **Exit criteria:**
 - The behavior delta states what is added, modified, removed, and must stay unchanged
@@ -205,3 +206,5 @@ One-way doors: {{NONE | DESCRIBE WHAT CANNOT BE REVERSED}}
 |---|---|
 | ... | Answered in plan (wording tightened) / Agent call: ... / User: ... |
 ```
+
+**Next step:** End your reply (not the artifact) with one recommended next command and why, worked out from what exists now (the router's Next steps table), never a list. Once approved: implement it, applying what it changes to the spec in the same change set. Before approval, the next step is the user's answer, not another command.

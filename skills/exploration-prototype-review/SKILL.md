@@ -10,8 +10,8 @@ description: >
 phase: exploration
 entry_criteria:
   - "A working prototype or proof-of-concept exists"
-  - "Active principles are selected for the project"
-  - "The original question or hypothesis the prototype was testing is known"
+  - "Active principles are selected (if not, apply the ones the prototype obviously touches and say so)"
+  - "The question the prototype was testing is known (if not, reconstruct it from the prototype and confirm it at approval)"
 exit_criteria:
   - "The prototype is evaluated against production criteria it was not designed to meet"
   - "A clear list of 'must change before production' items is written"
@@ -137,3 +137,5 @@ A `prototype-review-{{PROTOTYPE-NAME}}.md` file with:
 
 Rationale: ...
 ```
+
+**Next step:** End your reply (not the artifact) with one recommended next command and why, worked out from what exists now (the router's Next steps table), never a list. Build on it → `plan` (or `architecture` if none exists); rewrite → `spec` or `start`; hybrid → `replace` for the parts that get rewritten.

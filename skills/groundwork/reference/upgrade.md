@@ -6,8 +6,9 @@
 **Phase:** Change a running system · **Time box:** 2-8 hours depending on criticality
 
 **Before you start:** load project context for this session if you have not already (see the
-router's Steps); honor active principles throughout. Entry criteria below must hold — if one
-does not, say which and route to the command that establishes it instead of proceeding.
+router's Steps); honor active principles throughout. Entry criteria below are what this playbook
+works best from. If one doesn't hold, don't stop: draft from what exists, label what you assumed,
+and name the command that would firm it up as your next step.
 
 **Entry criteria:**
 - The dependency to upgrade is identified
@@ -141,3 +142,5 @@ A `dependency-upgrade-{{PACKAGE-NAME}}-{{VERSION}}.md` file:
 2. Run {{COMMAND}} to restore prior lockfile
 3. Deploy reverted version
 ```
+
+**Next step:** End your reply (not the artifact) with one recommended next command and why, worked out from what exists now (the router's Next steps table), never a list. Usually: carry out the upgrade's first stage; `plan` when the upgrade changes behavior callers depend on.

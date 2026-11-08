@@ -22,7 +22,7 @@ principles:
 tags: [brownfield, tech-debt, planning, prioritization]
 ---
 
-# Debt Triage
+# Tech Debt Triage
 
 ## How This Skill Works
 
@@ -121,3 +121,5 @@ A `debt-triage-{{DATE}}.md` file:
 |---|---|
 | ... | One sentence why this is acceptable to leave |
 ```
+
+**Next step:** End your reply (not the artifact) with one recommended next command and why, worked out from what exists now (the router's Next steps table), never a list. Usually `plan` for the first item scheduled to be paid down.

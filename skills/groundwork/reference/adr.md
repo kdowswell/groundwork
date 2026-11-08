@@ -6,12 +6,13 @@
 **Phase:** Design something new · **Time box:** 30-45 minutes
 
 **Before you start:** load project context for this session if you have not already (see the
-router's Steps); honor active principles throughout. Entry criteria below must hold — if one
-does not, say which and route to the command that establishes it instead of proceeding.
+router's Steps); honor active principles throughout. Entry criteria below are what this playbook
+works best from. If one doesn't hold, don't stop: draft from what exists, label what you assumed,
+and name the command that would firm it up as your next step.
 
 **Entry criteria:**
 - At least one structural decision has been made or is being made
-- A location for ADRs is chosen (directory, wiki, or doc system)
+- A location for ADRs is chosen (if not, propose one beside the code)
 
 **Exit criteria:**
 - ADR format is established and documented
@@ -112,3 +113,5 @@ We will {{DO X}} rather than {{Y or Z}}.
 - **{{ALTERNATIVE A}}** — rejected because ...
 - **{{ALTERNATIVE B}}** — rejected because ...
 ```
+
+**Next step:** End your reply (not the artifact) with one recommended next command and why, worked out from what exists now (the router's Next steps table), never a list. Usually the command for the work the decision unblocks: `architecture`, `data-model`, or `plan`.

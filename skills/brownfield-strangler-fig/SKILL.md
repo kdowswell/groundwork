@@ -11,7 +11,7 @@ phase: brownfield
 entry_criteria:
   - "The component to be replaced is identified"
   - "The interface (API, event, message format) between the component and its callers is known"
-  - "A replacement strategy exists (rewrite from scratch, migrate to new service, etc.)"
+  - "A replacement strategy exists, or will be chosen in this playbook"
 exit_criteria:
   - "A routing layer exists that directs traffic to old or new implementation"
   - "Migration milestones are defined with measurable completion criteria"
@@ -30,7 +30,7 @@ time_box: "2-4 hours (planning)"
 tags: [brownfield, migration, legacy, refactoring]
 ---
 
-# Strangler Fig
+# Incremental Replacement
 
 ## How This Skill Works
 
@@ -164,3 +164,5 @@ Implementation plan: ...
 Old implementation maintainer: {{WHO}}
 Bug fix policy during migration: {{PORT TO BOTH | OLD ONLY | NEW ONLY}}
 ```
+
+**Next step:** End your reply (not the artifact) with one recommended next command and why, worked out from what exists now (the router's Next steps table), never a list. Usually `plan` for the first slice to route to the new implementation.

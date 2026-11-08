@@ -9,7 +9,7 @@ description: >
   or when a decision has architectural implications that are expensive to reverse.
 phase: exploration
 entry_criteria:
-  - "At least two distinct approaches have been identified"
+  - "At least two distinct approaches are identified (if only one is, generate the strongest alternative)"
   - "The decision criteria are known (or need to be surfaced)"
   - "The team agrees this decision is worth documenting"
 exit_criteria:
@@ -120,3 +120,5 @@ A `tradeoff-{{DECISION-SLUG}}.md` file (often becomes the basis for an ADR):
 This decision should be revisited if:
 - ...
 ```
+
+**Next step:** End your reply (not the artifact) with one recommended next command and why, worked out from what exists now (the router's Next steps table), never a list. Usually `adr` to record the decision; `spike` when one criterion is still unknown.

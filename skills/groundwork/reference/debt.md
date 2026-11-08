@@ -6,8 +6,9 @@
 **Phase:** Change a running system · **Time box:** 60-90 minutes
 
 **Before you start:** load project context for this session if you have not already (see the
-router's Steps); honor active principles throughout. Entry criteria below must hold — if one
-does not, say which and route to the command that establishes it instead of proceeding.
+router's Steps); honor active principles throughout. Entry criteria below are what this playbook
+works best from. If one doesn't hold, don't stop: draft from what exists, label what you assumed,
+and name the command that would firm it up as your next step.
 
 **Entry criteria:**
 - A list of known technical debt items exists (or will be assembled in this skill)
@@ -117,3 +118,5 @@ A `debt-triage-{{DATE}}.md` file:
 |---|---|
 | ... | One sentence why this is acceptable to leave |
 ```
+
+**Next step:** End your reply (not the artifact) with one recommended next command and why, worked out from what exists now (the router's Next steps table), never a list. Usually `plan` for the first item scheduled to be paid down.
