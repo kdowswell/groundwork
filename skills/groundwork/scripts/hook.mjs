@@ -170,9 +170,15 @@ function onSessionStart(event) {
   if (proposed.length > 0) {
     lines.push(`Proposed (undecided) ADRs: ${proposed.join(", ")}.`);
   }
+  const tiers = new Map(readReceipts(repoRoot).map((r) => [r?.artifact, r?.tier]));
   for (const plan of pendingDeltas(repoRoot)) {
+    // ADR-018: a high-risk plan carries its review path into the session that implements it.
+    const high =
+      tiers.get(plan) === "high"
+        ? " It is high risk: before merging, run `/groundwork check` on the change and ask for the named reviewer the plan lists."
+        : "";
     lines.push(
-      `Approved change plan ${plan}: when you implement it, apply its Behavior Delta to its baseline spec in the same change set, then record it with \`npx @kdowswell/groundwork approve <spec> --decision=amended --via=${plan}\`. Don't ask the user to approve the spec again.`,
+      `Approved change plan ${plan}: when you implement it, apply its Behavior Delta to its baseline spec in the same change set, then record it with \`npx @kdowswell/groundwork approve <spec> --decision=amended --via=${plan}\`. Don't ask the user to approve the spec again.${high}`,
     );
   }
   lines.push("Load the full context through the /groundwork router when doing architecture work.");

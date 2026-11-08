@@ -773,6 +773,35 @@ function blastCallout(lines) {
   }</figure>`;
 }
 
+/**
+ * A change plan's risk tier from its "## Risk Tier" section ("**Tier:** low"), or null when the
+ * section is missing or still the template placeholder (ADR-018).
+ * @param {string} source
+ * @returns {{tier: "low"|"moderate"|"high", why: string} | null}
+ */
+export function riskTier(source) {
+  const body = sectionLines(source.replace(/\r\n/g, "\n").split("\n"), "Risk Tier");
+  if (!body) return null;
+  const text = plain(body.join(" "));
+  const m = text.match(/tier:\s*(low|moderate|high)\b(?!\s*\/)/i);
+  if (!m) return null;
+  const why = (text.match(/why:\s*(.+?)(?=\s+(?:review|reviewer|path):|$)/i)?.[1] ?? "").trim();
+  return { tier: m[1].toLowerCase(), why };
+}
+
+/** The risk tier as a callout: what it lets the change skip or requires of it. */
+function tierCallout(lines) {
+  const t = riskTier(lines.join("\n"));
+  if (!t) return "";
+  const cls = t.tier === "high" ? "bad" : t.tier === "moderate" ? "warn" : "ok";
+  const effect = {
+    low: "May be delegated once the user says so; CI and code review are the gate.",
+    moderate: "One plan approval before code.",
+    high: "Plan approval, a named reviewer, and /groundwork check in the pull request.",
+  }[t.tier];
+  return `<figure class="viz callout ${cls}"><span>Risk tier</span><strong>${escapeHtml(t.tier[0].toUpperCase() + t.tier.slice(1))}</strong><em>${escapeHtml(clip(t.why ? `${t.why} ${effect}` : effect, 300))}</em></figure>`;
+}
+
 /** One-way doors in the rollback strategy, called out when there are any. */
 function oneWayDoors(lines) {
   const body = sectionLines(lines, "Rollback Strategy");
@@ -813,6 +842,7 @@ export function deriveVisuals(kind, source) {
   if (kind?.label === "Change plan") {
     add("Behavior Delta", deltaColumns(lines));
     add("Blast Radius", blastCallout(lines));
+    add("Risk Tier", tierCallout(lines));
     add("Rollback Strategy", oneWayDoors(lines));
   }
   if (kind?.label === "Data model") {

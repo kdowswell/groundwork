@@ -30,6 +30,11 @@ Baseline: docs/spec.md (approved 2026-10-20)
 **Severity:** Silent
 **Affected:** Every lead's board. A wrong calendar makes escalations look stuck too early or too late, with no error.
 
+## Risk Tier
+**Tier:** high
+**Why:** Silent severity: a wrong calendar produces wrong results without an error.
+**Review path:** The support-operations lead reviews the pull request; run `/groundwork check` on it before merging.
+
 ## Detection Signals
 | Signal | Threshold | Detection time |
 |---|---|---|

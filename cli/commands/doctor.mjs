@@ -44,7 +44,7 @@ function approvalFindings(root) {
         r.status === "invalid"
           ? `${r.receiptFile}: ${r.message}`
           : r.status === "stale"
-            ? `${r.artifact} changed after its ${r.decision} decision at ${r.checkpoint} — re-ask the Checkpoint`
+            ? `${r.artifact} changed after its ${r.decision} decision at ${r.checkpoint}${r.tier ? ` (${r.tier} risk)` : ""} — re-ask the approval`
             : `${r.artifact} (${r.checkpoint}) no longer exists — remove ${r.receiptFile} or restore it`,
     }));
 }

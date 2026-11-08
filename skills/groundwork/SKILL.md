@@ -183,6 +183,12 @@ a ten-year-old codebase is still design work. <!-- rule:router-phase-from-reques
 - Don't write approval status into an artifact (a "Draft, awaiting acceptance" banner, an
   "Approved" line). The receipt is the status, and editing the artifact to update a banner
   makes its approval stale. <!-- rule:router-no-status-in-artifact -->
+- A change plan carries a risk tier (low, moderate, high) in its Risk Tier section; record it
+  with the plan's approval (`--tier=<tier>`). For a **low** tier, tell the user they can approve
+  it or tell you to go ahead, and record a go-ahead as `--decision=delegated`: CI and code review
+  are the gate from there. For a **high** tier, point to the review path the plan names (a named
+  reviewer, and `/groundwork check` in the pull request). The tier adds no stop beyond the one
+  approval, and you never lower it to make approval easier. <!-- rule:router-risk-tier -->
 - When you implement an approved change plan, apply its Behavior Delta to the baseline spec in
   the same change set as the code, then record it with
   `npx @kdowswell/groundwork approve <spec> --decision=amended --via=<plan>`. The user approved the

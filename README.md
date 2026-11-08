@@ -277,6 +277,18 @@ records that edit as an amendment rather than asking you again:
 npx @kdowswell/groundwork approve docs/spec.md --decision=amended --via=docs/plan-calendars.md
 ```
 
+Every change plan also gets a **risk tier**, derived from what the plan already says
+([ADR-018](docs/decisions/ADR-018-risk-tiered-approvals.md)):
+
+| Tier | When | What it changes |
+|---|---|---|
+| Low | Degraded or no user impact, a rollback that works as written, nothing removed, unchanged behavior already tested | You can approve it or just say "go ahead"; a go-ahead is recorded as delegated, and CI and code review are the gate |
+| Moderate | Anything between | One approval before code, as usual |
+| High | Catastrophic or silent failure, a one-way door, or removed behavior | One approval, plus a named reviewer and `/groundwork check` in the pull request (advice, not a block) |
+
+The tier is stored with the approval (`approve <plan> --tier=high`) and shown by `verify`,
+`doctor`, and the review page. No tier adds a stop.
+
 An amendment is the agent's (`decidedBy: "agent-amended"`) and stands only while the plan's
 approval does. The spec's review page shows exactly what the amendment changed, so it can be
 checked against the plan.

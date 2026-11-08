@@ -25,6 +25,8 @@ import {
 
 export const APPROVALS_DIR = join(".groundwork", "approvals");
 export const DECISIONS = ["approved", "changes-requested", "delegated", "amended"];
+/** Risk tiers a change plan assigns from its blast radius and reversibility (ADR-018). */
+export const TIERS = ["low", "moderate", "high"];
 /** Plan decisions an amendment may rest on (ADR-012). */
 const AMENDABLE_FROM = ["approved", "delegated"];
 const CHECKPOINT_ID = /^[a-z0-9][a-z0-9-]*(\/[a-z0-9][a-z0-9-]*)?$/;
@@ -93,6 +95,7 @@ function planStanding(root, planPath, expectedSha) {
  * @param {string} [opts.decision] approved | changes-requested | delegated | amended
  * @param {string} [opts.via] for amended: the approved plan whose delta this applies (ADR-012)
  * @param {string} [opts.notes]
+ * @param {string} [opts.tier] low | moderate | high: the plan's risk tier (ADR-018)
  * @param {Date} [opts.now]
  * @returns {{receipt: object, path: string, replaced: boolean}}
  */
@@ -129,6 +132,9 @@ export function approve(root, artifact, opts) {
   if (!DECISIONS.includes(decision)) {
     throw new Error(`--decision must be one of: ${DECISIONS.join(", ")}`);
   }
+  if (opts.tier !== undefined && !TIERS.includes(opts.tier)) {
+    throw new Error(`--tier must be one of: ${TIERS.join(", ")}`);
+  }
 
   // Digest and snapshot come from one read, so they always describe the same text.
   const text = normalize(readFileSync(abs, "utf8"));
@@ -144,6 +150,7 @@ export function approve(root, artifact, opts) {
   };
   if (via) receipt.via = via;
   if (opts.notes) receipt.notes = String(opts.notes);
+  if (opts.tier) receipt.tier = opts.tier;
   if (Array.isArray(opts.bundle) && opts.bundle.length > 1) receipt.bundle = opts.bundle;
 
   const dir = ensureProjectDir(root, APPROVALS_DIR);
@@ -235,6 +242,9 @@ function readReceipt(file) {
   if (!DECISIONS.includes(receipt.decision)) {
     return { error: `unknown decision "${receipt.decision}"` };
   }
+  if (receipt.tier !== undefined && !TIERS.includes(receipt.tier)) {
+    return { error: `unknown tier "${receipt.tier}"` };
+  }
   if (receipt.decision === "amended" && (typeof receipt.via?.artifact !== "string" || typeof receipt.via?.sha256 !== "string")) {
     return { error: 'an amended receipt needs "via" (the plan it applies)' };
   }
@@ -267,6 +277,7 @@ function checkReceipt(root, file) {
     date: receipt.date,
   };
   if (receipt.via) base.via = receipt.via.artifact;
+  if (receipt.tier) base.tier = receipt.tier;
   if (!existsSync(abs)) return { ...base, status: "missing" };
   const current = normalize(readFileSync(abs, "utf8"));
   if (digestText(current) === receipt.sha256) {
@@ -397,9 +408,10 @@ export function formatApproveHuman(result) {
       : receipt.decidedBy === "agent-amended"
         ? `amended by the agent via ${receipt.via.artifact}`
         : "delegated to the agent";
+  const tier = receipt.tier ? ` [${receipt.tier} risk]` : "";
   return (
     `✓ ${result.replaced ? "Replaced" : "Recorded"} ${receipt.decision} ` +
-    `for ${receipt.artifact} at ${receipt.checkpoint} (${who})\n` +
+    `for ${receipt.artifact} at ${receipt.checkpoint} (${who})${tier}\n` +
     `  sha256 ${receipt.sha256.slice(0, 12)}… → ${relative(process.cwd(), result.path) || result.path}`
   );
 }
@@ -435,7 +447,8 @@ export function formatVerifyHuman(result) {
     }
     const mark = r.status === "fresh" ? "✓" : "✗";
     const via = r.via ? ` via ${r.via}` : "";
-    const decision = r.decision ? ` ${r.decision} @ ${r.checkpoint} (${r.date})${via}` : "";
+    const tier = r.tier ? ` [${r.tier} risk]` : "";
+    const decision = r.decision ? ` ${r.decision} @ ${r.checkpoint} (${r.date})${via}${tier}` : "";
     lines.push(`  ${mark} ${r.status.padEnd(10)} ${r.artifact}${decision}`);
     if (r.lapsed) {
       lines.push(`               amendment no longer stands: ${r.lapsed} — re-ask the Checkpoint`);

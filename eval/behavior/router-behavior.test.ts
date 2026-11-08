@@ -239,6 +239,65 @@ Escalation — owned by the support-operations team.
     expect(finalText.toLowerCase()).toMatch(/approv|accept/);
   }, 600_000);
 
+  // ADR-018: the plan's tier is recorded with its approval; a low tier may be delegated.
+  const LOW_PLAN = `# Safe Change Plan: Rename the usr log field
+
+**Date:** 2026-11-01
+**Target system:** order service
+
+## Behavior Delta
+Baseline: observed behavior (no spec): src/log.ts
+
+### Added
+- (none)
+
+### Modified
+| Before | After | Spec reference |
+|---|---|---|
+| Order logs carry the user as \`usr\` | Order logs carry the user as \`user_id\` | src/log.ts:12 |
+
+### Removed
+- (none)
+
+### Unchanged (must keep working)
+- Every other log field and the log volume (covered by test/log.test.ts)
+
+## Blast Radius
+**Severity:** None
+**Affected:** Two internal dashboards, updated in the same change.
+
+## Risk Tier
+**Tier:** low
+**Why:** Severity None, a one-click release revert, nothing removed, and the shape test covers the field.
+
+## Rollback Strategy
+1. Revert to the previous release (one click in the deploy tool).
+One-way doors: None
+
+## Test Coverage Plan
+- [x] test/log.test.ts asserts the log line shape
+
+## Deployment Sequence
+1. Ship through the normal canary.
+
+## Builder Check
+| Question (from a cold read) | Resolution |
+|---|---|
+| Do the dashboards change in the same PR? | Answered in plan (wording tightened) |
+`;
+
+  it("rule:router-risk-tier — a low-tier plan the user hands off is recorded as delegated, with its tier", async () => {
+    const dir = workspace({ ".groundwork/context.md": CONTEXT_MD, "docs/plan.md": LOW_PLAN });
+    const { trace } = await runScenario({
+      workspace: dir,
+      userMessage:
+        "/groundwork plan docs/plan.md — the plan is written and reviewed. It's low risk, so you decide: go ahead and record it.",
+    });
+    const approvals = cliCalls(trace, "approve");
+    expect(approvals.some((c) => /docs\/plan\.md/.test(c) && /--decision=delegated/.test(c) && /--tier=low/.test(c)), approvals.join(" | ")).toBe(true);
+    expect(approvals.filter((c) => !/--decision=/.test(c)), "never a plain approval the user didn't give").toEqual([]);
+  }, 180_000);
+
   // ADR-016: old names keep working, run the renamed playbook, and say the new name once.
   for (const [oldName, newName, ask] of [
     ["sketch", "architecture", "/groundwork sketch the system for an internal escalation tracker"],

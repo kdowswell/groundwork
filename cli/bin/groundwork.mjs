@@ -6,7 +6,7 @@
  *   npx @kdowswell/groundwork doctor [path] [--json]
  *   npx @kdowswell/groundwork install [--providers=claude,github,cursor,agents] [--all-skills] [--global] [--hooks]
  *   npx @kdowswell/groundwork update  (same as install; idempotent)
- *   npx @kdowswell/groundwork approve <artifact>... [--checkpoint=<id>] [--decision=...] [--via=<plan>] [--notes=...]
+ *   npx @kdowswell/groundwork approve <artifact>... [--checkpoint=<id>] [--decision=...] [--via=<plan>] [--tier=...] [--notes=...]
  *   npx @kdowswell/groundwork verify [artifact] [--json] [--diff]
  *   npx @kdowswell/groundwork render <artifact> [--serve] [--checkpoint=<id>] [--port=<n>]
  */
@@ -24,6 +24,7 @@ import {
   formatVerifyHuman,
   formatVerifyDiff,
   DECISIONS,
+  TIERS,
 } from "../commands/approvals.mjs";
 import { render, serve } from "../commands/render.mjs";
 
@@ -68,6 +69,7 @@ Usage:
       --decision=<d>           ${DECISIONS.join(" | ")} (default: approved)
       --via=<plan>             with --decision=amended: the approved change plan whose delta
                                was applied; the checkpoint defaults to the artifact's own
+      --tier=<t>               ${TIERS.join(" | ")}: a change plan's risk tier, kept on the receipt
       --notes=<text>           optional context for the decision
   groundwork verify [file]     report approvals that are stale or missing their file;
                                with a file, exit 0 only if it has a fresh, non-rejected approval
@@ -139,6 +141,7 @@ async function main() {
         decision: args.flags.decision,
         via: typeof args.flags.via === "string" ? args.flags.via : undefined,
         notes: typeof args.flags.notes === "string" ? args.flags.notes : undefined,
+        tier: typeof args.flags.tier === "string" ? args.flags.tier : undefined,
       });
       console.log(formatApproveBundleHuman(results));
       break;

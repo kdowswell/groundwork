@@ -360,6 +360,9 @@ describe("hook script", () => {
     approve(dir, "docs/plan.md", { checkpoint: "brownfield-safe-change-plan/accept" });
     expect(digest()).toContain("Approved change plan docs/plan.md: when you implement it, apply its Behavior Delta");
     expect(digest()).toContain("--decision=amended --via=docs/plan.md");
+    expect(digest()).not.toContain("high risk");
+    approve(dir, "docs/plan.md", { checkpoint: "brownfield-safe-change-plan/accept", tier: "high" });
+    expect(digest()).toContain("It is high risk: before merging, run `/groundwork check`"); // ADR-018
 
     writeFileSync(join(dir, "docs/spec.md"), "# Spec: X\n\nPer-team calendars.\n");
     approve(dir, "docs/spec.md", { decision: "amended", via: "docs/plan.md" } as any);
@@ -498,6 +501,29 @@ describe("groundwork approve / verify", () => {
     writeFileSync(join(dir, "docs/specs/orders.md"), "# Orders\n\nScope: v1.\n");
     return dir;
   }
+
+  it("keeps a change plan's risk tier on its receipt, validated, and shows it (ADR-018)", () => {
+    const dir = projectWithSpec();
+    expect(() => approve(dir, "docs/specs/orders.md", { checkpoint: "plan", tier: "extreme" })).toThrow(/--tier must be one of/);
+    approve(dir, "docs/specs/orders.md", { checkpoint: "plan", tier: "low", decision: "delegated", now: NOW });
+    expect(verify(dir).receipts[0]).toMatchObject({ status: "fresh", tier: "low", decision: "delegated" });
+    expect(runCli(["verify"], { cwd: dir }).stdout).toContain("[low risk]");
+    // Older receipts carry no tier and stay valid.
+    const file = join(dir, ".groundwork/approvals/docs__specs__orders.md.json");
+    const { tier, ...older } = JSON.parse(readFileSync(file, "utf8"));
+    writeFileSync(file, JSON.stringify(older));
+    expect(verify(dir).ok).toBe(true);
+    writeFileSync(file, JSON.stringify({ ...older, tier: "extreme" }));
+    expect(verify(dir).receipts[0].status).toBe("invalid");
+  });
+
+  it("names a stale receipt's tier in doctor (ADR-018)", () => {
+    const dir = projectWithSpec();
+    approve(dir, "docs/specs/orders.md", { checkpoint: "plan", tier: "high", now: NOW });
+    writeFileSync(join(dir, "docs/specs/orders.md"), "# Orders\n\nScope: v2.\n");
+    const stale = doctor(dir).findings.find((f: any) => f.check === "approval-stale");
+    expect(stale?.message).toContain("(high risk)");
+  });
 
   describe("one decision across several artifacts (ADR-017)", () => {
     function designBundle() {
