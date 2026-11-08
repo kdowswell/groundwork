@@ -22,6 +22,7 @@ export const COMMAND_MAP: Record<string, string> = {
   postmortem: "brownfield-incident-retro",
   plan: "brownfield-safe-change-plan",
   replace: "brownfield-strangler-fig",
+  check: "brownfield-change-review",
 };
 
 /** Old command names the router still accepts (ADR-016); each maps to its new verb. */

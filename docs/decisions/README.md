@@ -30,3 +30,4 @@ Never edit an accepted ADR's decision — write a new one that supersedes it.
 - [ADR-016: Plain-language command names, one activity vocabulary, and plain words for users](ADR-016-plain-language-command-names.md)
 - [ADR-017: Outcome commands start and continue: chained playbooks, deferred approvals, one decision with a receipt per file](ADR-017-outcome-commands-start-continue.md)
 - [ADR-018: Risk-tiered change plans: scale review to blast radius, with no new default gate](ADR-018-risk-tiered-approvals.md)
+- [ADR-019: /groundwork check reviews a finished change against its approved plan](ADR-019-change-review-check.md)

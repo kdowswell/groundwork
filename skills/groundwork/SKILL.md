@@ -4,7 +4,7 @@ title: "groundwork"
 description: >
   Single entry point for the groundwork architecture toolkit: start, continue,
   spec, architecture, data-model, principles, adr, spike, risks, compare,
-  prototype-review, review, debt, upgrade, postmortem, plan, replace, plus init
+  prototype-review, review, debt, upgrade, postmortem, plan, replace, check, plus init
   and doctor. Invoke when the
   user asks for architecture or planning help — specifying a new build, designing
   a system's architecture, choosing a data model, running a research spike or
@@ -66,6 +66,7 @@ what the request needs — never preload multiple playbooks. <!-- rule:router-pr
 | `postmortem [incident]` | Blameless incident postmortem with owned action items | [reference/postmortem.md](reference/postmortem.md) |
 | `plan [change]` | Safe change plan: what changes against the spec, blast radius, rollback, test coverage | [reference/plan.md](reference/plan.md) |
 | `replace [component]` | Incrementally replace a legacy component | [reference/replace.md](reference/replace.md) |
+| `check [branch or PR]` | Review a finished change against its approved plan and the active principles: GO or FIX, advisory | [reference/check.md](reference/check.md) |
 
 `start` and `continue` chain the design playbooks strictly in sequence: read the spec playbook
 and write the spec file, and only then read the architecture playbook and write its file, and only
@@ -124,6 +125,7 @@ it drafts from what exists and labels what it assumed. <!-- rule:router-next-ste
 | Architecture approved, no data model | `data-model` |
 | Spec, architecture, and data model approved | Start building; run `plan` before changing anything in production |
 | A change plan is approved and not yet implemented | Implement it; what it changes rides with the code |
+| A change is implemented and its plan is high risk | `check`, in the pull request |
 | A change plan is a draft or changed since approval | `plan` |
 
 Outside the design path, follow the playbook's own Next step (a `spike` that settles a question
@@ -172,7 +174,11 @@ a ten-year-old codebase is still design work. <!-- rule:router-phase-from-reques
   approval, or changes requested), tell the user which (for a change since approval, run
   `npx @kdowswell/groundwork verify <artifact> --diff` and show what changed) and re-ask that artifact's acceptance
   Checkpoint before continuing. Do not proceed silently, and do not approve it yourself to get
-  past the check. If the CLI is unavailable, say the approval could not be verified and ask
+  past the check. Urgency, sunk cost, or someone else's reported sign-off doesn't change this: never
+  record an approval for them. If the user has told you in this conversation to go ahead without
+  approving, you may build, but record nothing and say plainly that the work rests on an
+  unapproved artifact. If they tell you to decide, that is a delegated decision, recorded and
+  described as delegated, never as their approval. If the CLI is unavailable, say the approval could not be verified and ask
   the user to confirm. When no such artifact exists, the request itself is the input: draft
   from it, stating the requirements you assumed, rather than stopping to ask for one.
   <!-- rule:router-verify-handoff -->

@@ -67,7 +67,7 @@ npx @kdowswell/groundwork detect .       # deterministic production-readiness + 
 
 ## The /groundwork Router
 
-One skill, nineteen commands. The router loads project context once per session and routes to
+One skill, twenty commands. The router loads project context once per session and routes to
 exactly one playbook per request. A bare `/groundwork` never runs work: it shows where the project
 stands (which design documents exist and whether they're approved), suggests one next command,
 and lists the rest. Every command ends by recommending one next step. Commands are grouped by what you're doing, chosen from the request rather than the repo's
@@ -78,7 +78,7 @@ age: a new feature spec in a ten-year-old codebase is still design work.
 | **Setting up** | `init` (write project context), `doctor` (report/repair context drift) |
 | **Designing something new** | `start`, `continue`, `spec`, `architecture`, `data-model`, `principles`, `adr` |
 | **Deciding under uncertainty** | `spike`, `risks`, `compare`, `prototype-review` |
-| **Changing a running system** | `review`, `debt`, `upgrade`, `postmortem`, `plan`, `replace` |
+| **Changing a running system** | `review`, `debt`, `upgrade`, `postmortem`, `plan`, `replace`, `check` |
 
 Earlier names still work as aliases (`sketch`, `model`, `vet`, `assume`, `triage`, `retro`,
 `strangle`); the router runs the renamed command and tells you the new name once
@@ -152,7 +152,7 @@ install. Each phase is one of the router's activity groups:
 |---|---|---|---|
 | `greenfield-` | Design something new | 5 | Creating something new: idea → spec → architecture |
 | `exploration-` | Decide under uncertainty | 4 | Research spikes, prototypes, assumption testing, tradeoffs |
-| `brownfield-` | Change a running system | 6 | Adding to, improving, or safely changing an existing system |
+| `brownfield-` | Change a running system | 7 | Adding to, improving, or safely changing an existing system |
 
 ## Skills
 
@@ -185,6 +185,7 @@ install. Each phase is one of the router's activity groups:
 | `incident-retro` | Blameless postmortem → verified timeline + owned action items |
 | `dependency-upgrade` | Safely upgrade a critical dependency with compatibility checks and staged rollout |
 | `brownfield-architecture-review` | Assess an existing system against the principle library before significant new work |
+| `change-review` | Review a finished change against its approved plan's delta and the active principles: GO or FIX, advisory (`/groundwork check`) |
 
 ## Principle Library
 
@@ -211,7 +212,7 @@ skill lives at `skills/<phase>-<skill-name>/SKILL.md`; the router lives at
 
 ```bash
 npx @kdowswell/groundwork install                      # auto-detects harness dirs; router skill only
-npx @kdowswell/groundwork install --all-skills         # also install the 15 standalone phase skills
+npx @kdowswell/groundwork install --all-skills         # also install the standalone phase skills
 npx @kdowswell/groundwork install --providers=claude,github,cursor,agents
 npx @kdowswell/groundwork install --global             # user-level (~/.claude), Claude Code only
 npx @kdowswell/groundwork install --hooks              # + Claude Code lifecycle hooks (skip if using the plugin)
@@ -227,7 +228,7 @@ npx @kdowswell/groundwork update                       # refresh an existing ins
 Then open `/plugin` and install groundwork from the list.
 
 Whichever way you install, the model sees one skill: the `/groundwork` router, which carries the
-context, approval, and verification rules. The 15 phase skills set `disable-model-invocation`, so
+context, approval, and verification rules. The phase skills set `disable-model-invocation`, so
 they add nothing to every session's context and run only when you type one by name, such as
 `/groundwork:greenfield-spec-from-idea` from the plugin
 ([ADR-011](docs/decisions/ADR-011-router-only-model-invocation.md)).
@@ -310,6 +311,12 @@ Every change plan also gets a **risk tier**, derived from what the plan already 
 | Moderate | Anything between | One approval before code, as usual |
 | High | Catastrophic or silent failure, a one-way door, or removed behavior | One approval, plus a named reviewer and `/groundwork check` in the pull request (advice, not a block) |
 
+After the code is written, `/groundwork check` reviews the diff against the approved plan
+([ADR-019](docs/decisions/ADR-019-change-review-check.md)): behavior changes the plan didn't
+declare, Unchanged behavior touched without a test, a missing spec amendment, and principle
+violations the detector can't see. It returns GO or FIX with at most about ten items, never edits
+code, and never blocks a merge.
+
 The tier is stored with the approval (`approve <plan> --tier=high`) and shown by `verify`,
 `doctor`, and the review page. No tier adds a stop.
 
@@ -366,11 +373,11 @@ groundwork/
 │   ├── _schema/            Frontmatter JSON Schema
 │   ├── groundwork/         The /groundwork router skill
 │   │   ├── SKILL.md        Command table + routing rules (rule-marked)
-│   │   ├── reference/      19 playbooks (15 compiled from phase skills + init, doctor, start, continue)
+│   │   ├── reference/      20 playbooks (16 compiled from phase skills + init, doctor, start, continue)
 │   │   └── scripts/        context.mjs session loader, status.mjs, hook.mjs lifecycle hook dispatcher
 │   ├── greenfield-*/       0-to-1 skills (5) — "design something new" playbooks
 │   ├── exploration-*/      Research and prototype skills (4) — "decide under uncertainty" playbooks
-│   └── brownfield-*/       Existing-system skills (6) — "change a running system" playbooks
+│   └── brownfield-*/       Existing-system skills (7) — "change a running system" playbooks
 ├── agents/                 groundwork-builder — read-only builder-check reviewer (plugin)
 ├── hooks/                  hooks.json — Claude Code plugin lifecycle hooks (ADR-006)
 ├── cli/                    npx @kdowswell/groundwork — detect / doctor / install / update

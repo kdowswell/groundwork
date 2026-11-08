@@ -1,6 +1,6 @@
 #!/usr/bin/env tsx
 /**
- * Compiles the 15 standalone phase skills into router playbooks under
+ * Compiles the standalone phase skills (COMMAND_MAP) into router playbooks under
  * skills/groundwork/reference/, and syncs every library principle (the
  * `principles` command can select any of them) into
  * skills/groundwork/reference/principles/ so relative
