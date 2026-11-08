@@ -26,6 +26,7 @@ export const COMMAND_MAP: Record<string, string> = {
   check: "brownfield-change-review",
   "analytics-model": "greenfield-analytical-data-model",
   "evals": "greenfield-eval-suite",
+  "path-to-prod": "brownfield-path-to-production",
 };
 
 /** Old command names the router still accepts (ADR-016); each maps to its new verb. */

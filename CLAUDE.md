@@ -27,13 +27,13 @@ groundwork/
 │   ├── _schema/            JSON Schema for skill frontmatter
 │   ├── groundwork/         Router skill: /groundwork <command> (single entry point)
 │   │   ├── SKILL.md        Command table + routing rules; rule-marked (<!-- rule:... -->)
-│   │   ├── reference/      24 playbooks — 19 GENERATED from phase skills + init, doctor, start, continue, learn
+│   │   ├── reference/      25 playbooks — 20 GENERATED from phase skills + init, doctor, start, continue, learn
 │   │   │   └── principles/ GENERATED trimmed principle copies (keeps relative links working)
 │   │   └── scripts/        context.mjs (session context loader), status.mjs (artifact state + next step), hook.mjs (lifecycle hook dispatcher)
 │   ├── greenfield-*/       Phase 1: 8 skills (greenfield-spec-from-idea, etc.)
 │   │   └── SKILL.md        Literal filename required by Agent Skills standard
 │   ├── exploration-*/      Phase 2: 4 skills
-│   └── brownfield-*/       Phase 3: 7 skills
+│   └── brownfield-*/       Phase 3: 8 skills
 ├── agents/                 Plugin subagents: groundwork-builder (read-only builder check, ADR-007)
 ├── hooks/hooks.json        Plugin lifecycle hooks → hook.mjs (SessionStart/PostToolUse/Stop, ADR-006)
 ├── cli/                    npx @kdowswell/groundwork CLI — plain ESM, ZERO runtime dependencies (ADR-005)

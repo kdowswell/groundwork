@@ -67,7 +67,7 @@ npx @kdowswell/groundwork detect .       # deterministic production-readiness + 
 
 ## The /groundwork Router
 
-One skill, twenty-four commands. The router loads project context once per session and routes to
+One skill, twenty-five commands. The router loads project context once per session and routes to
 exactly one playbook per request. A bare `/groundwork` never runs work: it shows where the project
 stands (which design documents exist and whether they're approved), suggests one next command,
 and lists the rest. Every command ends by recommending one next step. Commands are grouped by what you're doing, chosen from the request rather than the repo's
@@ -78,7 +78,7 @@ age: a new feature spec in a ten-year-old codebase is still design work.
 | **Setting up** | `init` (write project context), `doctor` (report/repair context drift), `learn` (propose additions and removals to the shared rules) |
 | **Designing something new** | `start`, `continue`, `spec`, `architecture`, `data-model`, `principles`, `adr`, `threat`, `analytics-model`, `evals` |
 | **Deciding under uncertainty** | `spike`, `risks`, `compare`, `prototype-review` |
-| **Changing a running system** | `review`, `debt`, `upgrade`, `postmortem`, `plan`, `replace`, `check` |
+| **Changing a running system** | `review`, `debt`, `upgrade`, `postmortem`, `plan`, `replace`, `check`, `path-to-prod` |
 
 Earlier names still work as aliases (`sketch`, `model`, `vet`, `assume`, `triage`, `retro`,
 `strangle`); the router runs the renamed command and tells you the new name once
@@ -170,7 +170,7 @@ install. Each phase is one of the router's activity groups:
 |---|---|---|---|
 | `greenfield-` | Design something new | 8 | Creating something new: idea → spec → architecture |
 | `exploration-` | Decide under uncertainty | 4 | Research spikes, prototypes, assumption testing, tradeoffs |
-| `brownfield-` | Change a running system | 7 | Adding to, improving, or safely changing an existing system |
+| `brownfield-` | Change a running system | 8 | Adding to, improving, or safely changing an existing system |
 
 ## Skills
 
@@ -207,6 +207,7 @@ install. Each phase is one of the router's activity groups:
 | `dependency-upgrade` | Safely upgrade a critical dependency with compatibility checks and staged rollout |
 | `brownfield-architecture-review` | Assess an existing system against the principle library before significant new work |
 | `change-review` | Review a finished change against its approved plan's delta and the active principles: GO or FIX, advisory (`/groundwork check`) |
+| `path-to-production` | Map commit-to-production stages, find the constraint, separate real review gates from theater, and rank fixes by flow gained (`/groundwork path-to-prod`) |
 
 ## Principle Library
 
@@ -394,11 +395,11 @@ groundwork/
 │   ├── _schema/            Frontmatter JSON Schema
 │   ├── groundwork/         The /groundwork router skill
 │   │   ├── SKILL.md        Command table + routing rules (rule-marked)
-│   │   ├── reference/      24 playbooks (19 compiled from phase skills + init, doctor, start, continue, learn)
+│   │   ├── reference/      25 playbooks (20 compiled from phase skills + init, doctor, start, continue, learn)
 │   │   └── scripts/        context.mjs session loader, status.mjs, hook.mjs lifecycle hook dispatcher
 │   ├── greenfield-*/       0-to-1 skills (8) — "design something new" playbooks
 │   ├── exploration-*/      Research and prototype skills (4) — "decide under uncertainty" playbooks
-│   └── brownfield-*/       Existing-system skills (7) — "change a running system" playbooks
+│   └── brownfield-*/       Existing-system skills (8) — "change a running system" playbooks
 ├── agents/                 groundwork-builder — read-only builder-check reviewer (plugin)
 ├── hooks/                  hooks.json — Claude Code plugin lifecycle hooks (ADR-006)
 ├── cli/                    npx @kdowswell/groundwork — detect / doctor / install / update

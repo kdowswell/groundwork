@@ -1,0 +1,101 @@
+[
+  {
+    "id": "review-queue-and-nightly-staging",
+    "skill": "brownfield-path-to-production",
+    "task_description": "We're a team of eight on a B2B scheduling product. Since we started using coding agents, everyone feels faster, but features don't reach customers any sooner; leadership wants to know why. My guess is our CI is too slow and we should buy faster runners. Can you map how a change actually gets to production and tell us what to fix first?",
+    "context": "## Pipeline configuration (from the repository)\n\n- On every pull request: lint, unit tests, integration tests; median run 11 minutes; reruns with no code change pass ~4% of the time\n- Branch protection: 2 approvals required, one from the code owners of any touched directory; the platform team owns 60% of directories\n- Staging deploy: scheduled job at 02:00 nightly deploys whatever is on main\n- Production deploy: manual job, run by the on-call engineer after a QA engineer signs off in a chat channel; happens Tuesdays and Thursdays\n\n## Change history sample (last 40 merged pull requests)\n\n- Opened to first review: median 3.1 days; 90th percentile 6 days\n- First review to approval: median 4 hours; 38 of 40 approved with no requested changes beyond nits\n- Approval to merge: median 20 minutes\n- Merge to production: median 2.5 days\n- Median pull request size: 640 changed lines (up from ~200 a year ago)\n\n## Other\n\n- QA sign-off: QA reports finding a real defect in staging about once a month\n- Post-release: an error dashboard exists; agents cannot query it; nobody is assigned to watch it after deploys",
+    "rubric": [
+      {
+        "dimension": "evidence_grounded_stage_table",
+        "description": "1.0=produces a Stages table covering commit, review, pipeline checks, nightly staging, QA sign-off, production release, and post-release verification, each with owner, wait, failure rate, manual/automated, and agent-visible signals, with numbers taken from the provided config and history and tagged by source; asks the user nothing the context already answers; 0.5=a stage list with some numbers but missing columns, untagged numbers, or a merged staging/release stage that hides the batch wait; 0.0=generic delivery advice with no per-stage map",
+        "weight": 0.25
+      },
+      {
+        "dimension": "single_constraint_identified",
+        "description": "1.0=names review wait (3.1-day median to first review) as the single constraint, with nightly staging plus twice-weekly release as the runner-up, and explicitly rebuts the user's faster-runners guess using the 11-minute CI median; 0.5=identifies review and staging as problems but does not pick one, or picks one without the numbers; 0.0=agrees CI speed is the constraint or names no constraint",
+        "weight": 0.25
+      },
+      {
+        "dimension": "gate_real_vs_theater",
+        "description": "1.0=classifies the second required approval and/or code-owner approval as largely theater (38 of 40 approved without substantive changes, approval time tracks queue not size) and QA sign-off as partly real (catches a defect monthly), mapping each to risk tiers (e.g., low-tier changes need one approval; high-tier keep a named reviewer) and naming a replacement check; 0.5=comments on review quality without a real/theater verdict per gate or without tier mapping; 0.0=no gate analysis",
+        "weight": 0.2
+      },
+      {
+        "dimension": "ranked_fixes_flow_per_effort",
+        "description": "1.0=ranks fixes by flow gained per effort with constraint fixes first (e.g., smaller pull requests, tier-based approval count, narrower code ownership, automated rules replacing repeated review comments), then deploy-on-merge to staging and flag-separated release, each citing a principle (ci-cd-pipeline, feature-flags, blue-green-canary, testing-strategy, executable-architecture-guardrails) and naming its risk; 0.5=a fix list without effort or flow estimates, or not ordered around the constraint; 0.0=no ranked fixes, or faster runners ranked first",
+        "weight": 0.2
+      },
+      {
+        "dimension": "user_picks_first_two",
+        "description": "1.0=ends by asking the user to pick the first two fixes in one round, leaves First Two Fixes unfilled or pending their answer, and recommends `plan` for the first pick as the single next step; 0.5=asks for a pick but pre-fills the choice or lists several next commands; 0.0=decides the fixes for the user with no checkpoint",
+        "weight": 0.1
+      }
+    ]
+  },
+  {
+    "id": "solo-dev-flaky-suite",
+    "skill": "brownfield-path-to-production",
+    "task_description": "I'm a solo developer running a habit-tracking app with about 4,000 paying users. I review my own code (well, an agent writes most of it and I skim), deploys are automatic on merge, and there's a canary. Yet shipping still feels slow and I lose whole afternoons. Map my path to production and tell me where the time goes.",
+    "context": "## Pipeline configuration\n\n- On every push: unit tests (2 min), end-to-end browser tests (19 min)\n- Merge to main deploys to production automatically with a 10% canary for 15 minutes, auto-rollback on error rate\n- No staging environment\n\n## History (last 30 merges, from the code host)\n\n- 21 of 30 merges had at least one failed pipeline run that passed on rerun with no code change; mean 2.3 reruns per merge\n- Failures cluster in 6 end-to-end tests that touch the calendar view\n- Self-review: opened to merge median 35 minutes excluding reruns\n- Canary auto-rolled back twice in 3 months, both real regressions\n- The agent cannot read pipeline logs; the developer copies failure output into the chat by hand",
+    "rubric": [
+      {
+        "dimension": "evidence_grounded_stage_table",
+        "description": "1.0=Stages table covers commit/local checks, self-review, unit tests, end-to-end tests, deploy+canary, and verification with source-tagged numbers from the history, and marks pipeline logs as not agent-visible (relayed by hand); 0.5=stages listed but failure rates or agent visibility missing; 0.0=no per-stage map",
+        "weight": 0.25
+      },
+      {
+        "dimension": "single_constraint_identified",
+        "description": "1.0=names the end-to-end test stage as the single constraint because of rework (70% of merges rerun, ~2.3 reruns x 19 minutes), not wait, and does not call the absence of review or staging the problem; 0.5=says 'tests are slow' without separating flake rework from run time, or names two constraints; 0.0=recommends adding a staging environment or human review as the main fix",
+        "weight": 0.25
+      },
+      {
+        "dimension": "gate_real_vs_theater",
+        "description": "1.0=recognizes the canary with auto-rollback as a real gate (two real catches) and keeps it; treats agent-written code skimmed by the author as a weak human gate and maps it to risk tiers (fine for low tier; high-tier changes get a deliberate review or the change plan) rather than adding ceremony; 0.5=evaluates gates but adds new manual gates for a solo developer; 0.0=no gate analysis",
+        "weight": 0.15
+      },
+      {
+        "dimension": "ranked_fixes_flow_per_effort",
+        "description": "1.0=ranks quarantining the 6 flaky calendar tests first (high flow, low effort), then pushing their coverage down to unit or component tests and making pipeline results agent-readable so the agent fixes its own failures, citing testing-strategy and ci-cd-pipeline with effort and risk per fix; 0.5=fixes are sensible but unranked or lack effort estimates; 0.0=generic advice like 'write better tests'",
+        "weight": 0.25
+      },
+      {
+        "dimension": "user_picks_first_two",
+        "description": "1.0=asks the user to pick two fixes in one round and recommends `plan` for the first pick as the one next step; 0.5=asks but presupposes the answer or gives a list of next commands; 0.0=no checkpoint",
+        "weight": 0.1
+      }
+    ]
+  },
+  {
+    "id": "enterprise-weekly-cab",
+    "skill": "brownfield-path-to-production",
+    "task_description": "I lead a payments platform team at a large bank. Every production change goes to a weekly Change Advisory Board on Wednesdays. Engineers say the CAB is a rubber stamp; risk and compliance say it's required. Changes sit for up to nine days. Map our path to production and tell us what we can actually change.",
+    "context": "## Path as described by the team lead\n\n- Pull request review: 1 approval, median 6 hours\n- Pipeline: build, unit, contract tests, static security scan; 25 minutes; flake rate under 2%\n- Change ticket: engineer fills a 14-field form, about 45 minutes per change\n- CAB: weekly Wednesday meeting; submissions close Monday; 9-member board\n- Release: deploy job run by a separate operations team in a Saturday window; blue-green with manual switch\n- Verify: operations checks a dashboard for 30 minutes after switch\n\n## Evidence\n\n- CAB records for the last 6 months: 412 changes submitted, 409 approved, 3 deferred for missing paperwork, 0 rejected on technical grounds\n- 2 production incidents in that period, both from changes the CAB approved\n- Internal audit policy requires 'documented approval by an authorized person independent of the author before production change'; it does not require a meeting\n- About 70% of changes are configuration or copy changes with no schema or interface change\n- The agent can read pipeline results but not change tickets, CAB outcomes, or the operations dashboard",
+    "rubric": [
+      {
+        "dimension": "evidence_grounded_stage_table",
+        "description": "1.0=Stages table includes review, pipeline, change ticket, CAB, operations release window, and verify, with owners showing the handoffs (team, CAB, operations), waits and failure rates tagged as user-stated or measured from CAB records, and agent visibility marked none for ticket, CAB, and dashboard; 0.5=stages present but ticket or release window folded into CAB, or sources untagged; 0.0=no per-stage map",
+        "weight": 0.2
+      },
+      {
+        "dimension": "single_constraint_identified",
+        "description": "1.0=names the CAB cadence (with the Saturday release window as runner-up or as part of the same batching) as the single constraint, quantified as up to nine days of wait against hours of work elsewhere, and flags the separate operations team handoff as an organizational finding; 0.5=identifies CAB as a problem without quantification or names several constraints; 0.0=focuses on pipeline or code review speed",
+        "weight": 0.2
+      },
+      {
+        "dimension": "gate_real_vs_theater_and_mandate",
+        "description": "1.0=classifies the CAB as theater on evidence (409/412 approved, 0 technical rejections, approved both incident-causing changes) while honoring that independent approval is mandated: distinguishes the mandated requirement (documented independent approval) from the unmandated mechanism (a weekly meeting), and maps tiers (pre-approved standard change type for low-tier config/copy changes, real independent review kept for high-tier); 0.5=calls CAB theater but recommends removing it outright, or accepts it as required without separating mandate from mechanism; 0.0=no gate analysis or no mention of the mandate",
+        "weight": 0.3
+      },
+      {
+        "dimension": "ranked_fixes_flow_per_effort",
+        "description": "1.0=ranks fixes by flow per effort, e.g. standard-change pre-approval for the ~70% low-tier changes, auto-generating the change ticket from pipeline evidence, asynchronous independent approval satisfying the audit policy, automated canary or blue-green switch with health-based rollback replacing the manual Saturday window, each citing a principle (ci-cd-pipeline, blue-green-canary, feature-flags, conways-law-organizational-alignment) and naming its compliance risk; 0.5=fix list without effort or flow estimates or not centered on the constraint; 0.0=no ranked fixes or fixes that violate the stated mandate",
+        "weight": 0.2
+      },
+      {
+        "dimension": "user_picks_first_two",
+        "description": "1.0=asks the user to pick two fixes in one round, flags any mandate it treated as unknown as a confirm-first action, and recommends `plan` for the first pick as the single next step; 0.5=asks but pre-decides or lists several next commands; 0.0=no checkpoint",
+        "weight": 0.1
+      }
+    ]
+  }
+]

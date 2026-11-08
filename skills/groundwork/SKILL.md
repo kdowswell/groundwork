@@ -4,12 +4,12 @@ title: "groundwork"
 description: >
   Single entry point for the groundwork architecture toolkit: start, continue,
   spec, architecture, data-model, principles, adr, threat, spike, risks, compare,
-  prototype-review, review, debt, upgrade, postmortem, plan, replace, check, analytics-model, evals, plus init,
+  prototype-review, review, debt, upgrade, postmortem, plan, replace, check, analytics-model, evals, path-to-prod, plus init,
   doctor, and learn. Invoke when the
   user asks for architecture or planning help — specifying a new build, designing
   a system's architecture, choosing a data model, designing an analytical data platform, threat modeling, designing evals for an AI feature, running a research spike or
   tradeoff analysis, reviewing an existing system, triaging tech debt, planning a
-  safe production change, or any /groundwork command. Not for writing feature
+  safe production change, mapping the path to production, or any /groundwork command. Not for writing feature
   code directly.
 argument-hint: "[command] [--grill] [target]"
 user-invocable: true
@@ -71,6 +71,7 @@ what the request needs — never preload multiple playbooks. <!-- rule:router-pr
 | `plan [change]` | Safe change plan: what changes against the spec, blast radius, rollback, test coverage | [reference/plan.md](reference/plan.md) |
 | `replace [component]` | Incrementally replace a legacy component | [reference/replace.md](reference/replace.md) |
 | `check [branch or PR]` | Review a finished change against its approved plan and the active principles: GO or FIX, advisory | [reference/check.md](reference/check.md) |
+| `path-to-prod [system]` | Map every stage from commit to production, find the constraint, separate real gates from theater, rank fixes | [reference/path-to-prod.md](reference/path-to-prod.md) |
 
 `start` and `continue` chain the design playbooks strictly in sequence: read the spec playbook
 and write the spec file, and only then read the architecture playbook and write its file, and only
