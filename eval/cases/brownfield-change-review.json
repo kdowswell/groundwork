@@ -1,0 +1,101 @@
+[
+  {
+    "id": "undeclared-retry-behavior",
+    "skill": "brownfield-change-review",
+    "task_description": "Run /groundwork check on branch feat/invoice-email-retry before I open the PR. The plan is plans/safe-change-plan-invoice-email-retry.md and it was approved yesterday (verify exits 0). Spec is docs/spec.md. Risk tier in the plan is moderate.",
+    "context": "## Plan excerpt (approved)\n\n### Behavior Delta\nBaseline: docs/spec.md (approved 2026-10-02)\n\n#### Added\n- A failed invoice email is retried up to 3 times with backoff before it is marked failed.\n\n#### Modified\n| Before | After | Spec reference |\n|---|---|---|\n| A failed invoice email is marked failed immediately | Marked failed after the third retry fails | spec §4.2 Invoice delivery |\n\n#### Removed\n(none)\n\n#### Unchanged (must keep working)\n- An invoice is created exactly once per order, whether or not its email succeeds.\n- Customers with email_opt_out=true receive no invoice email.\n\n## Risk Tier\n**Tier:** moderate\n\n## Diff (feat/invoice-email-retry vs main)\n\n```diff\n--- a/src/billing/invoice_mailer.ts\n+++ b/src/billing/invoice_mailer.ts\n@@ -18,9 +18,17 @@ export async function sendInvoiceEmail(invoice: Invoice) {\n-  if (invoice.customer.emailOptOut) return;\n-  const ok = await mailer.send(invoice.customer.email, render(invoice));\n-  if (!ok) await markFailed(invoice.id);\n+  for (let attempt = 1; attempt <= 3; attempt++) {\n+    const ok = await mailer.send(invoice.customer.email, render(invoice));\n+    if (ok) return;\n+    await sleep(backoff(attempt));\n+  }\n+  await markFailed(invoice.id);\n }\n--- a/src/billing/invoice_mailer.test.ts\n+++ b/src/billing/invoice_mailer.test.ts\n@@ -40,0 +41,12 @@\n+it('retries three times before marking failed', async () => {\n+  mailer.send.mockResolvedValue(false);\n+  await sendInvoiceEmail(invoice);\n+  expect(mailer.send).toHaveBeenCalledTimes(3);\n+  expect(markFailed).toHaveBeenCalledWith(invoice.id);\n+});\n--- a/docs/spec.md\n+++ b/docs/spec.md\n@@ -61 +61 @@ ### 4.2 Invoice delivery\n-A failed invoice email is marked failed immediately.\n+A failed invoice email is retried up to 3 times with backoff; it is marked failed after the third retry fails.\n```\n\n`npx @kdowswell/groundwork verify docs/spec.md` reports: approved, amended via plans/safe-change-plan-invoice-email-retry.md. Detector on changed files: no findings.",
+    "rubric": [
+      {
+        "dimension": "detects_undeclared_change",
+        "description": "1.0=flags that the email opt-out guard (invoice_mailer.ts:18) was removed, as an undeclared change and as an Unchanged item ('opted-out customers receive no invoice email') touched with no test, citing file:line and the quoted Unchanged item; 0.5=notices the opt-out line disappeared but does not tie it to the delta or the Unchanged list, or gives no location; 0.0=does not notice the removed opt-out guard",
+        "weight": 0.35
+      },
+      {
+        "dimension": "verdict_correct",
+        "description": "1.0=verdict is FIX, driven by the opt-out regression; 0.5=lists the problem but gives GO or no clear verdict; 0.0=GO with no mention of the problem",
+        "weight": 0.2
+      },
+      {
+        "dimension": "item_actionability",
+        "description": "1.0=each item has file:line, the delta line or principle id it concerns, and a one-sentence fix (restore the guard before the loop and add a test that an opted-out customer gets no send call); 0.5=items present but missing locations, delta references, or fixes; 0.0=prose commentary with no actionable items",
+        "weight": 0.15
+      },
+      {
+        "dimension": "credits_declared_work",
+        "description": "1.0=matches the retry loop to the Added and Modified lines, confirms the retry test as evidence, and confirms the spec amendment is present and recorded instead of flagging it; 0.5=reviews the declared work but raises false positives on it (e.g. calls the spec edit missing); 0.0=ignores the delta entirely",
+        "weight": 0.15
+      },
+      {
+        "dimension": "advisory_scope",
+        "description": "1.0=writes a check-<slug>.md review, stays within the diff, edits no code, plan, or spec, records no approval, and asks once whether to act on the FIX items; 0.5=reviews correctly but also rewrites the code or drifts into a whole-system audit; 0.0=edits code or records an approval in place of reviewing",
+        "weight": 0.15
+      }
+    ]
+  },
+  {
+    "id": "clean-diff-matches-plan",
+    "skill": "brownfield-change-review",
+    "task_description": "Can you /groundwork check PR #212 before I merge? It implements plans/safe-change-plan-order-search-limit.md (approved, verify exits 0, tier low). Spec is docs/spec.md.",
+    "context": "## Plan excerpt (approved)\n\n### Behavior Delta\nBaseline: docs/spec.md (approved 2026-09-14)\n\n#### Added\n(none)\n\n#### Modified\n| Before | After | Spec reference |\n|---|---|---|\n| Order search returns up to 100 results per page | Order search returns up to 50 results per page; a larger requested page size is clamped to 50 | spec §3.1 Order search |\n\n#### Removed\n(none)\n\n#### Unchanged (must keep working)\n- Results stay sorted by created_at descending.\n- The next-page cursor format is unchanged.\n\n## Risk Tier\n**Tier:** low\n**Why:** severity Degraded, rollback is a config revert, Removed is empty, both Unchanged items have tests (search.test.ts 'sorts newest first', 'cursor round-trips').\n\n## Diff (PR #212)\n\n```diff\n--- a/src/orders/search.ts\n+++ b/src/orders/search.ts\n@@ -7 +7 @@\n-const MAX_PAGE_SIZE = 100;\n+const MAX_PAGE_SIZE = 50;\n--- a/src/orders/search.test.ts\n+++ b/src/orders/search.test.ts\n@@ -52,0 +53,6 @@\n+it('clamps page size to 50', async () => {\n+  const res = await searchOrders({ pageSize: 80 });\n+  expect(res.items.length).toBeLessThanOrEqual(50);\n+});\n--- a/docs/spec.md\n+++ b/docs/spec.md\n@@ -40 +40 @@ ### 3.1 Order search\n-Order search returns up to 100 results per page.\n+Order search returns up to 50 results per page; a larger requested page size is clamped to 50.\n```\n\n`npx @kdowswell/groundwork verify docs/spec.md` reports: approved, amended via plans/safe-change-plan-order-search-limit.md. Detector on changed files: no findings. The existing tests 'sorts newest first' and 'cursor round-trips' still pass in CI.",
+    "rubric": [
+      {
+        "dimension": "verdict_correct",
+        "description": "1.0=verdict is GO, stated plainly with a one-sentence reason; 0.5=GO but hedged with invented concerns presented as blockers; 0.0=FIX",
+        "weight": 0.3
+      },
+      {
+        "dimension": "no_false_positives",
+        "description": "1.0=raises no FIX items; at most one or two Notes that are genuinely useful (e.g. the clamp test could assert exactly 50 with enough data); 0.5=raises speculative issues the diff did not introduce (style, unrelated modules) as items; 0.0=invents undeclared changes, missing amendments, or missing tests that the context shows are present",
+        "weight": 0.3
+      },
+      {
+        "dimension": "delta_coverage_shown",
+        "description": "1.0=maps the Modified row to search.ts:7 with the new clamp test as evidence, and notes both Unchanged items are untouched or covered by the named existing tests; 0.5=says it matches the plan without showing the mapping; 0.0=no reference to the delta",
+        "weight": 0.2
+      },
+      {
+        "dimension": "amendment_confirmed",
+        "description": "1.0=confirms the spec edit matches the Modified row's After text exactly and the amendment is recorded via the plan; 0.5=mentions the spec edit without checking it against the delta or the record; 0.0=ignores the spec or calls it missing",
+        "weight": 0.1
+      },
+      {
+        "dimension": "proportionate_and_advisory",
+        "description": "1.0=a short check-<slug>.md review sized to a low-tier one-line change, no code edits, no approval recorded, next step is to merge through normal code review; 0.5=correct but padded with a long audit or a list of next commands; 0.0=edits code or adds a new gate before merge",
+        "weight": 0.1
+      }
+    ]
+  },
+  {
+    "id": "missing-spec-amendment",
+    "skill": "brownfield-change-review",
+    "task_description": "/groundwork check on branch feat/guest-checkout. Plan plans/safe-change-plan-guest-checkout.md is approved (verify exits 0), tier moderate. Baseline spec is docs/spec.md. I want to open the PR today.",
+    "context": "## Plan excerpt (approved)\n\n### Behavior Delta\nBaseline: docs/spec.md (approved 2026-08-30)\n\n#### Added\n- A shopper can complete checkout without an account by giving an email address; the order is linked to that email.\n\n#### Modified\n| Before | After | Spec reference |\n|---|---|---|\n| Checkout requires a signed-in account | Checkout requires a signed-in account or a guest email | spec §2.3 Checkout |\n\n#### Removed\n(none)\n\n#### Unchanged (must keep working)\n- Signed-in checkout still attaches the order to the account.\n\n## Risk Tier\n**Tier:** moderate\n\n## Diff (feat/guest-checkout vs main)\n\n```diff\n--- a/src/checkout/handler.ts\n+++ b/src/checkout/handler.ts\n@@ -12,6 +12,10 @@ export async function checkout(req: CheckoutRequest) {\n-  if (!req.user) throw new AuthRequired();\n-  const order = await createOrder(req.cart, { accountId: req.user.id });\n+  if (!req.user && !req.guestEmail) throw new AuthRequired();\n+  const owner = req.user\n+    ? { accountId: req.user.id }\n+    : { guestEmail: req.guestEmail };\n+  const order = await createOrder(req.cart, owner);\n--- a/src/checkout/handler.test.ts\n+++ b/src/checkout/handler.test.ts\n@@ -30,0 +31,14 @@\n+it('allows guest checkout with an email', async () => { /* asserts order.guestEmail */ });\n+it('still attaches signed-in orders to the account', async () => { /* asserts order.accountId */ });\n+it('rejects checkout with neither user nor guest email', async () => { /* expects AuthRequired */ });\n```\n\nThe change set does not touch docs/spec.md. `npx @kdowswell/groundwork verify docs/spec.md` reports: approved 2026-08-30, no amendment recorded. Detector on changed files: no findings.",
+    "rubric": [
+      {
+        "dimension": "detects_missing_amendment",
+        "description": "1.0=flags a missing amendment: docs/spec.md §2.3 is not edited to the Modified row's After text, the Added guest-checkout requirement is absent from the spec, and no `approve docs/spec.md --decision=amended --via=<plan>` is recorded; says the spec edit belongs in this same change set, not a later step; 0.5=notes the spec is out of date but misses the recorded amendment or suggests updating it after merge; 0.0=does not mention the spec",
+        "weight": 0.4
+      },
+      {
+        "dimension": "verdict_correct",
+        "description": "1.0=verdict is FIX, driven by the missing amendment; 0.5=raises the problem but gives GO or no clear verdict; 0.0=GO",
+        "weight": 0.2
+      },
+      {
+        "dimension": "item_actionability",
+        "description": "1.0=the item cites the spec path and section, the delta lines it concerns, and a one-sentence fix (apply the Added and Modified lines to §2.3 and record the amendment via the plan), without asking the user to re-approve the spec; 0.5=actionable but asks for a fresh spec approval or omits the delta reference; 0.0=vague or no fix",
+        "weight": 0.15
+      },
+      {
+        "dimension": "credits_declared_work",
+        "description": "1.0=matches the handler change to the Added and Modified lines and names the 'still attaches signed-in orders' test as evidence for the Unchanged item, raising no false positives on the code; 0.5=reviews the code but raises unfounded issues; 0.0=ignores the delta",
+        "weight": 0.1
+      },
+      {
+        "dimension": "advisory_scope",
+        "description": "1.0=writes check-<slug>.md, edits neither code nor spec itself, records no approval, and asks once whether to act on the FIX item; 0.5=correct review but edits the spec or records the amendment itself without asking; 0.0=rewrites code or adds a merge block",
+        "weight": 0.15
+      }
+    ]
+  }
+]

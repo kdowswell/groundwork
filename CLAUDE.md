@@ -27,13 +27,13 @@ groundwork/
 │   ├── _schema/            JSON Schema for skill frontmatter
 │   ├── groundwork/         Router skill: /groundwork <command> (single entry point)
 │   │   ├── SKILL.md        Command table + routing rules; rule-marked (<!-- rule:... -->)
-│   │   ├── reference/      19 playbooks — 15 GENERATED from phase skills + init, doctor, start, continue
+│   │   ├── reference/      20 playbooks — 16 GENERATED from phase skills + init, doctor, start, continue
 │   │   │   └── principles/ GENERATED trimmed principle copies (keeps relative links working)
 │   │   └── scripts/        context.mjs (session context loader), status.mjs (artifact state + next step), hook.mjs (lifecycle hook dispatcher)
 │   ├── greenfield-*/       Phase 1: 5 skills (greenfield-spec-from-idea, etc.)
 │   │   └── SKILL.md        Literal filename required by Agent Skills standard
 │   ├── exploration-*/      Phase 2: 4 skills
-│   └── brownfield-*/       Phase 3: 6 skills
+│   └── brownfield-*/       Phase 3: 7 skills
 ├── agents/                 Plugin subagents: groundwork-builder (read-only builder check, ADR-007)
 ├── hooks/hooks.json        Plugin lifecycle hooks → hook.mjs (SessionStart/PostToolUse/Stop, ADR-006)
 ├── cli/                    npx @kdowswell/groundwork CLI — plain ESM, ZERO runtime dependencies (ADR-005)
@@ -43,7 +43,7 @@ groundwork/
 │   ├── render/             Safe Markdown subset → self-contained review page (ADR-008)
 │   └── data/               GENERATED principle index (sync:router)
 ├── eval/                   Three harnesses:
-│   ├── harness.ts          Quality: skill-vs-baseline A/B with LLM judge (eval/cases/, 15 skills)
+│   ├── harness.ts          Quality: skill-vs-baseline A/B with LLM judge (eval/cases/, one file per skill)
 │   ├── behavior/           Behavior: real-model tool-trace assertions on router rules
 │   └── plugin/             `claude plugin eval` cases: real Claude Code, with vs. without the plugin
 ├── examples/case-study/    SlopMart before/after fixtures (detector tests + docs/case-study.md)
@@ -139,7 +139,7 @@ Every feature must hold to these:
 
 ## Router, Sync, and CLI Invariants
 
-- The 15 phase skills are the source of truth; `skills/groundwork/reference/*.md` (except the
+- The phase skills are the source of truth; `skills/groundwork/reference/*.md` (except the
   hand-written `HAND_WRITTEN` playbooks in `scripts/router-commands.ts`: `init`, `doctor`,
   `start`, `continue`) and `skills/groundwork/reference/principles/` are GENERATED.
   Never edit generated files — edit the source skill, then run `npm run sync:router`.

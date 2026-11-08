@@ -21,7 +21,7 @@ Notes:
 - The installed router is self-contained: `groundwork install` embeds the detector engine at
   `skills/groundwork/scripts/engine/` so the Claude Code hook works without an npm install
   in the consumer repo.
-- `--all-skills` additionally installs the 15 standalone phase skills for harnesses/users
+- `--all-skills` additionally installs the standalone phase skills for harnesses/users
   that prefer direct invocation (e.g. `/brownfield-safe-change-plan`) over the router. Each
   sets `disable-model-invocation: true` (ADR-011), so it runs when typed by name but isn't
   listed to the model; the router is the model's only entry point. Harnesses that ignore the
