@@ -226,6 +226,22 @@ install. Each phase is one of the router's activity groups:
 | **Delivery** | CI/CD Pipeline, Blue-Green / Canary, Feature Flags, Infrastructure as Code, Testing Strategy, Executable Architecture Guardrails, Eval-Driven Development, Model as a Versioned Dependency |
 | **Operations** | Incident Response, Runbooks, Capacity Planning, FinOps Cost Visibility, Tech Debt Management |
 
+### Your own principles (overlays)
+
+Add house rules (approved stacks, compliance controls, platform standards) in the same format as
+the library ([ADR-023](docs/decisions/ADR-023-principle-overlays.md)): put them in
+`.groundwork/principles/<category>/<id>.md`, or publish them as a package and list it in
+`.groundwork/config.json`:
+
+```json
+{ "principles": { "overlays": ["node_modules/@acme/groundwork-principles"] } }
+```
+
+Resolution is project → org packages → built-in. An id that matches a built-in is an error unless
+the overlay says `overrides: <id>`. `doctor` validates overlay files and lists the active ones,
+`/groundwork principles` selects them, and the router honors them like built-ins. See
+[examples/overlay/](examples/overlay/).
+
 ## Installation
 
 Skills follow the [Agent Skills open standard](https://agentskills.io). Each standalone
@@ -242,6 +258,16 @@ npx @kdowswell/groundwork install --global             # user-level (~/.claude),
 npx @kdowswell/groundwork install --hooks              # + Claude Code lifecycle hooks (skip if using the plugin)
 npx @kdowswell/groundwork update                       # refresh an existing install
 ```
+
+### APM (Agent Package Manager)
+
+```bash
+apm install kdowswell/groundwork#v<version>     # router, phase skills, builder agent, and hooks
+npm i -D @kdowswell/groundwork                  # the CLI, and the detector engine the hooks use
+```
+
+[docs/HARNESSES.md](docs/HARNESSES.md#installing-and-pinning-a-version) covers pinning a version for
+every channel: npm, APM, the plugin marketplace, and skills.sh.
 
 ### Claude Code plugin
 
