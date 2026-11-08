@@ -423,6 +423,7 @@ npm run typecheck         # TypeScript
 npm test                  # detector, CLI, and behavior suites (behavior skips without ANTHROPIC_API_KEY)
 npm run eval              # LLM-judged skill-vs-baseline eval (45+ cases, costs tokens)
 npm run eval:plugin       # end-to-end plugin cases in real Claude Code, with vs. without (eval/plugin/)
+npm run eval:routing      # router description vs. co-installed packs' descriptions, 12 routing prompts
 ```
 
 ## Source Frameworks

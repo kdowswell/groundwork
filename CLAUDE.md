@@ -188,4 +188,5 @@ npm run typecheck         # TypeScript type checking on scripts
 npm test                  # vitest: detector, CLI, behavior (behavior skips without ANTHROPIC_API_KEY)
 npm run eval              # LLM-judged skill evals (costs tokens; not run in CI)
 npm run eval:plugin       # real Claude Code with/without the plugin (eval/plugin/; ~$5, not run in CI)
+npm run eval:routing      # does the router description win its prompts beside co-installed packs (cents; not CI)
 ```

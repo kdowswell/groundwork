@@ -6,6 +6,8 @@ import Ajv, { type ErrorObject } from "ajv";
 import addFormats from "ajv-formats";
 import { glob } from "glob";
 import matter from "gray-matter";
+import { lintRouterDescription } from "./lint-description.js";
+import { COMMAND_MAP, HAND_WRITTEN } from "./router-commands.js";
 
 const ROOT = resolve(fileURLToPath(import.meta.url), "../..");
 const SCHEMA_PATH = resolve(ROOT, "skills/_schema/skill.schema.json");
@@ -209,6 +211,9 @@ function validateFile(
     }
   } else if (data["disable-model-invocation"] === true) {
     messages.push("the router must stay model-invocable: remove disable-model-invocation (ADR-011)");
+  }
+  if (!data.phase && data.name === "groundwork" && typeof data.description === "string") {
+    messages.push(...lintRouterDescription(data.description, [...Object.keys(COMMAND_MAP), ...HAND_WRITTEN]));
   }
 
   // Quality checks

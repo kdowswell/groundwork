@@ -3,14 +3,16 @@ name: groundwork
 title: "groundwork"
 description: >
   Single entry point for the groundwork architecture toolkit: start, continue,
-  spec, architecture, data-model, principles, adr, threat, spike, risks, compare,
-  prototype-review, review, debt, upgrade, postmortem, plan, replace, check, analytics-model, evals, path-to-prod, plus init,
-  doctor, and learn. Invoke when the
-  user asks for architecture or planning help — specifying a new build, designing
-  a system's architecture, choosing a data model, designing an analytical data platform, threat modeling, designing evals for an AI feature, running a research spike or
-  tradeoff analysis, reviewing an existing system, triaging tech debt, planning a
-  safe production change, mapping the path to production, or any /groundwork command. Not for writing feature
-  code directly.
+  spec, architecture, data-model, principles, adr, threat, analytics-model,
+  evals, spike, risks, compare, prototype-review, review, debt, upgrade,
+  postmortem, plan, replace, check, path-to-prod, plus init, doctor, and learn.
+  Invoke when the user asks for architecture or planning help: specifying a new
+  build, designing a system's architecture or data model, an analytical data
+  platform, a threat model, or evals for an AI feature, running a research spike
+  or tradeoff analysis, reviewing an existing system, triaging tech debt,
+  planning or reviewing a safe production change, mapping the path to
+  production, or any /groundwork command. Not for writing feature code,
+  debugging, or running tests directly.
 argument-hint: "[command] [--grill] [--tasks] [target]"
 user-invocable: true
 tags: [router, architecture, phases, toolkit]
