@@ -80,6 +80,8 @@ The human's job is to answer questions honestly, including "I don't know." Open 
 
 10. **Record the user's decision.** When the user answers the acceptance Checkpoint, run `npx @kdowswell/groundwork approve <spec path> --checkpoint=greenfield-spec-from-idea/accept`, adding `--decision=changes-requested` if they asked for changes or `--decision=delegated` if they told you to decide. Record only an answer the user gave in this conversation. If they decided in the review page, it is already recorded: confirm with `npx @kdowswell/groundwork verify` instead of recording it again, and never submit the page yourself. With no one available to answer, record nothing and leave the artifact marked as a draft. If the CLI is unavailable, write the decision and date at the top of the artifact instead and say it is unverified.
 
+11. **Task list for a build-phase tool (opt-in).** Only when the user asks for one (`--tasks`, or "hand this to <build tool>"), after the spec is written, also write `.groundwork/tasks/<slug>.json`: a JSON array where each task is `{"id": "T1", "title": "...", "acceptance": "<the check that proves it done>", "criterion_ref": "<the spec line it implements>", "passes": false}`. Derive tasks from the success criteria and in-scope items (criteria marked (property) say so in their acceptance check), one per independently verifiable outcome, each acceptance check runnable without reading this conversation. The approval pins the spec, not the task list; regenerate the list if the spec changes.
+
 ## Checkpoints
 
 **Is the problem statement about a user, or about the system?**

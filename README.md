@@ -34,7 +34,9 @@ behind it:
 | Paired with/without evals (`eval/`) | [SkillsBench](https://arxiv.org/abs/2602.12670) paired evaluation |
 
 They compose: use groundwork for judgment and approvals, then a build-phase pack for TDD,
-debugging, and shipping. [docs/HARNESSES.md](docs/HARNESSES.md) covers installing them side by side.
+debugging, and shipping. `plan --tasks` hands the build pack a task list with acceptance checks and
+pass flags, and `check` reviews the result. [docs/HARNESSES.md](docs/HARNESSES.md#composing-with-other-packs)
+covers the task-list contract and installing the packs side by side.
 
 ## Quick Start
 

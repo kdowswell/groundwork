@@ -173,5 +173,33 @@
         "weight": 0.1
       }
     ]
+  },
+  {
+    "id": "plan-with-task-list",
+    "skill": "brownfield-safe-change-plan",
+    "task_description": "Plan adding per-team business-hours calendars to our escalation board (today there is one calendar for everyone), and give me a task list I can hand to our build agent: --tasks.",
+    "context": "## Current System\n\nEscalation board (TypeScript). Idle time is computed in src/idle.ts against one global business-hours calendar. Spec at docs/spec.md, approved. Tests in tests/idle.test.ts.\n",
+    "rubric": [
+      {
+        "dimension": "task_list_contract",
+        "description": "1.0=produces .groundwork/tasks/<slug>.json content as a JSON array where every task has id, title, acceptance (a runnable check that doesn't depend on the conversation), delta_ref pointing at a delta line, and passes:false; Unchanged items show up as acceptance checks; 0.5=a task list exists but acceptance checks are vague or delta_ref is missing; 0.0=no task list",
+        "weight": 0.4
+      },
+      {
+        "dimension": "behavior_delta",
+        "description": "1.0=Added per-team calendars, Modified idle computation (Before → After citing src/idle.ts and the spec section), Unchanged items (teams without a calendar keep the global one); 0.5=delta missing Unchanged; 0.0=no delta",
+        "weight": 0.3
+      },
+      {
+        "dimension": "rollback_completeness",
+        "description": "1.0=rollback covers the calendar data and code path, executable without the author; 0.5=revert only; 0.0=none",
+        "weight": 0.15
+      },
+      {
+        "dimension": "risk_tier",
+        "description": "1.0=assigns a tier with a reason tied to severity (a wrong calendar is Silent → high) and rollback; 0.5=tier without reasoning; 0.0=no tier",
+        "weight": 0.15
+      }
+    ]
   }
 ]

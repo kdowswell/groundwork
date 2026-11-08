@@ -11,7 +11,7 @@ description: >
   tradeoff analysis, reviewing an existing system, triaging tech debt, planning a
   safe production change, mapping the path to production, or any /groundwork command. Not for writing feature
   code directly.
-argument-hint: "[command] [--grill] [target]"
+argument-hint: "[command] [--grill] [--tasks] [target]"
 user-invocable: true
 tags: [router, architecture, phases, toolkit]
 ---
@@ -68,7 +68,7 @@ what the request needs — never preload multiple playbooks. <!-- rule:router-pr
 | `debt` | Categorize and prioritize technical debt | [reference/debt.md](reference/debt.md) |
 | `upgrade [dep]` | Plan a safe dependency upgrade | [reference/upgrade.md](reference/upgrade.md) |
 | `postmortem [incident]` | Blameless incident postmortem with owned action items | [reference/postmortem.md](reference/postmortem.md) |
-| `plan [change]` | Safe change plan: what changes against the spec, blast radius, rollback, test coverage | [reference/plan.md](reference/plan.md) |
+| `plan [--tasks] [change]` | Safe change plan: what changes against the spec, blast radius, rollback, test coverage | [reference/plan.md](reference/plan.md) |
 | `replace [component]` | Incrementally replace a legacy component | [reference/replace.md](reference/replace.md) |
 | `check [branch or PR]` | Review a finished change against its approved plan and the active principles: GO or FIX, advisory | [reference/check.md](reference/check.md) |
 | `path-to-prod [system]` | Map every stage from commit to production, find the constraint, separate real gates from theater, rank fixes | [reference/path-to-prod.md](reference/path-to-prod.md) |
@@ -212,6 +212,10 @@ a ten-year-old codebase is still design work. <!-- rule:router-phase-from-reques
   are the gate from there. For a **high** tier, point to the review path the plan names (a named
   reviewer, and `/groundwork check` in the pull request). The tier adds no stop beyond the one
   approval, and you never lower it to make approval easier. <!-- rule:router-risk-tier -->
+- When you implement from a task list (`.groundwork/tasks/<slug>.json`), work one task at a time
+  and set its `passes` to `true` only after its acceptance check has run and passed. Never delete,
+  reorder, reword, or add tasks, and never weaken an acceptance check: a task that can't pass as
+  written goes back to the user or the plan. <!-- rule:router-tasks-flip-only -->
 - When you implement an approved change plan, apply its Behavior Delta to the baseline spec in
   the same change set as the code, then record it with
   `npx @kdowswell/groundwork approve <spec> --decision=amended --via=<plan>`. The user approved the
