@@ -1,6 +1,6 @@
 # Context Doctor (`/groundwork doctor`)
 
-**Phase:** Setup · **Time box:** 5-15 minutes
+**Activity:** Set up · **Time box:** 5-15 minutes
 
 Report drift between `.groundwork/context.md` and observable reality, then repair only what
 the user approves. Doctor is the only command allowed to modify the context file outside of

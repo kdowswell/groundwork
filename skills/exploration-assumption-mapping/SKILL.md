@@ -1,7 +1,7 @@
 ---
 name: exploration-assumption-mapping
 disable-model-invocation: true
-title: "Assumption Mapping"
+title: "Risky Assumptions"
 description: >
   Surfaces and ranks the riskiest assumptions in a plan so the most dangerous
   unknowns are tested first. Use when a spec or plan exists and the team is
@@ -22,7 +22,7 @@ time_box: "60-90 minutes"
 tags: [exploration, risk, planning, validation]
 ---
 
-# Assumption Mapping
+# Risky Assumptions
 
 ## How This Skill Works
 
@@ -131,3 +131,5 @@ An `assumption-map.md` file with:
 ## Constraints (Not Assumptions)
 - {{CONSTRAINT}} — must be addressed; not subject to risk scoring
 ```
+
+**Next step:** End your reply (not the artifact) with one recommended next command and why, worked out from what exists now (the router's Next steps table), never a list. Usually `spike` on the highest-ranked assumption to validate; `spec` or `architecture` when every high-risk assumption is already settled.

@@ -12,6 +12,7 @@ can't: the real Skill tool, the lifecycle hooks, and the `groundwork-builder` su
 | `delta-rides-with-code` | ADR-012, `rule:router-delta-rides-with-code`: a later session implements an approved change plan, applies its delta to the spec, and records the amendment without a second approval |
 | `plan-nudge` | ADR-013: several source files changed with no plan in sight get one advisory mention of `/groundwork plan`; the work still finishes |
 | `stop-hook-secret` | ADR-006 hooks: an edit to a file holding a credential ends with the key moved out of source |
+| `dropoff-start` / `dropoff-spec-only` | ADR-017 drop-off: the same idea through `start` and through `spec` alone, with identical graders (design documents on disk, approvals asked). Compare the two cases' scores |
 
 ```bash
 npm run eval:plugin                                   # all cases, 2 runs each, with and without the plugin

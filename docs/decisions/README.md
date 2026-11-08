@@ -27,3 +27,5 @@ Never edit an accepted ADR's decision — write a new one that supersedes it.
 - [ADR-013: Nudge toward a plan when unplanned code grows, with an opt-in strict gate](ADR-013-plan-nudge.md)
 - [ADR-014: Extend the principle library for the agent era inside the existing eight categories](ADR-014-agent-era-principle-library.md)
 - [ADR-015: Add analytical data platform principles, and the test for adding a practice area](ADR-015-data-platform-principles.md)
+- [ADR-016: Plain-language command names, one activity vocabulary, and plain words for users](ADR-016-plain-language-command-names.md)
+- [ADR-017: Outcome commands start and continue: chained playbooks, deferred approvals, one decision with a receipt per file](ADR-017-outcome-commands-start-continue.md)

@@ -1,17 +1,18 @@
 <!-- generated from skills/greenfield-architecture-sketch/SKILL.md by scripts/sync-router-references.ts.
      Edit the source skill, then run: npm run sync:router -->
 
-# Architecture Sketch (`/groundwork sketch`)
+# Architecture (`/groundwork architecture`)
 
-**Phase:** Define (greenfield) · **Time box:** 45-90 minutes
+**Activity:** Design something new · **Time box:** 45-90 minutes
 
 **Before you start:** load project context for this session if you have not already (see the
-router's Steps); honor active principles throughout. Entry criteria below must hold — if one
-does not, say which and route to the command that establishes it instead of proceeding.
+router's Steps); honor active principles throughout. Entry criteria below are what this playbook
+works best from. If one doesn't hold, don't stop: draft from what exists, label what you assumed,
+and name the command that would firm it up as your next step.
 
 **Entry criteria:**
-- A spec exists with a problem statement, scope, and primary data entity
-- Active principles have been selected (signal-driven-principles skill)
+- A spec with a problem statement, scope, and primary data entity (if none exists, draft from the request and list the requirements you assumed)
+- Active principles are selected (if not, apply the ones the request obviously touches and say so)
 
 **Exit criteria:**
 - System boundary is drawn: what is inside this system vs. outside
@@ -164,3 +165,5 @@ It receives from: ...
 |---|---|
 | ... | Answered in sketch (wording tightened) / Agent call: ... / User: ... |
 ```
+
+**Next step:** End your reply (not the artifact) with one recommended next command and why, worked out from what exists now (the router's Next steps table), never a list. Usually `data-model` once the architecture is approved; `adr` when a decision in it was close and expensive to reverse; `compare` when a component choice is still open.

@@ -8,15 +8,10 @@
  */
 import { diffHunks, diffStats } from "./diff.mjs";
 import { escapeHtml, renderInline, renderMarkdown, slugify } from "./markdown.mjs";
+import { kindOf } from "./kinds.mjs";
 import { column, deriveVisuals, sectionTable, TOP, VISUAL_CSS } from "./visuals.mjs";
 
-/** Artifact kinds groundwork produces, keyed by their H1 prefix. */
-export const ARTIFACT_KINDS = [
-  { prefix: "Spec:", label: "Spec", checkpoint: "greenfield-spec-from-idea/accept" },
-  { prefix: "Architecture:", label: "Architecture sketch", checkpoint: "greenfield-architecture-sketch/accept" },
-  { prefix: "Data Model:", label: "Data model", checkpoint: "greenfield-data-model-first/accept" },
-  { prefix: "Safe Change Plan:", label: "Change plan", checkpoint: "brownfield-safe-change-plan/accept" },
-];
+export { ARTIFACT_KINDS } from "./kinds.mjs";
 
 const PRINCIPLE_URL = "https://github.com/kdowswell/groundwork/blob/main/principles";
 
@@ -29,7 +24,7 @@ export function analyzeArtifact(source, principles = []) {
   const text = source.replace(/\r\n/g, "\n");
   const lines = text.split("\n");
   const h1 = (lines.find((l) => /^#\s+/.test(l)) ?? "").replace(/^#\s+/, "").trim();
-  const kind = ARTIFACT_KINDS.find((k) => h1.startsWith(k.prefix)) ?? null;
+  const kind = kindOf(text);
 
   const questions = [];
   const builder = sectionTable(lines, "Builder Check");
@@ -40,7 +35,7 @@ export function analyzeArtifact(source, principles = []) {
     for (const row of builder.rows) {
       const resolution = row[rCol] ?? "";
       if (/^\s*(\*\*)?user\b/i.test(resolution) && !/answered|resolved/i.test(resolution)) {
-        questions.push({ source: "Builder check", text: row[qCol] ?? "" });
+        questions.push({ source: "Fresh-eyes review", text: row[qCol] ?? "" });
       }
     }
   }
@@ -129,7 +124,7 @@ const STATUS = {
   fresh: { cls: "ok", text: "Approved, unchanged since" },
   stale: { cls: "bad", text: "Changed since approval" },
   missing: { cls: "bad", text: "Receipt points at a missing file" },
-  invalid: { cls: "bad", text: "Approval receipt is invalid" },
+  invalid: { cls: "bad", text: "Approval record is invalid" },
   unapproved: { cls: "warn", text: "Not yet approved" },
 };
 
@@ -181,7 +176,7 @@ function amendmentSection(amendment) {
     return `<section class="changes" id="amendment">${head}The amendment changed too much to show as a diff.</div></header></section>`;
   }
   const { added, removed } = diffStats(amendment.ops);
-  return `<section class="changes" id="amendment">${head}<span class="stat-add">+${added}</span> <span class="stat-del">−${removed}</span> lines applied from the plan's behavior delta to the version ${escapeHtml(amendment.previous.decision)} on ${escapeHtml(amendment.previous.date)}. Check them against the plan; code review covers the edit.</div></header>${diffBlock(amendment.ops)}</section>`;
+  return `<section class="changes" id="amendment">${head}<span class="stat-add">+${added}</span> <span class="stat-del">−${removed}</span> lines applied from the plan's list of what changes to the version ${escapeHtml(amendment.previous.decision)} on ${escapeHtml(amendment.previous.date)}. Check them against the plan; code review covers the edit.</div></header>${diffBlock(amendment.ops)}</section>`;
 }
 
 /** The spec a change plan departs from, and its approval status (ADR-012). */
@@ -246,7 +241,7 @@ export function buildPage(p) {
 
   const questions =
     a.questions.length === 0
-      ? `<p class="small">None recorded. The builder check found nothing that changes what gets built.</p>`
+      ? `<p class="small">None recorded. The fresh-eyes review found nothing that changes what gets built.</p>`
       : `<ul class="plain">${a.questions
           .map((q) => `<li>${renderInline(q.text)}<div class="small">${escapeHtml(q.source)}</div></li>`)
           .join("")}</ul>`;
@@ -298,7 +293,7 @@ export function buildPage(p) {
 
   let decide;
   if (!p.checkpoint) {
-    decide = `<p class="small">Not a groundwork spec, sketch, or data model. Pass <code>--checkpoint=&lt;id&gt;</code> to record a decision.</p>`;
+    decide = `<p class="small">Not a groundwork spec, architecture, or data model. Pass <code>--checkpoint=&lt;id&gt;</code> to record a decision.</p>`;
   } else if (p.form) {
     const blocked =
       a.questions.length > 0

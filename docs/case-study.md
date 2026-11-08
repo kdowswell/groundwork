@@ -40,7 +40,7 @@ Every finding names the principle it violates — the detector is the enforcemen
 2. **`/groundwork review`** — the agent assesses the system against active principles and
    writes a findings report; the detector output seeds the mechanical layer so the agent
    spends judgment only where judgment is needed.
-3. **`/groundwork triage`** — findings become a prioritized debt register (the mock-data
+3. **`/groundwork debt`** — findings become a prioritized debt register (the mock-data
    path and swallowed exceptions rank above the TODO count).
 4. **`/groundwork plan`** — the remediation ships as a safe change plan: blast radius,
    rollback path, and test coverage before any code moves.

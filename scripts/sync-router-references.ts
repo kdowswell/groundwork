@@ -7,16 +7,20 @@
  * `principles/<id>.md` links keep working inside the router skill.
  *
  * The standalone skills remain the source of truth. Hand-authored playbooks
- * (init.md, doctor.md) are never touched. Also emits cli/data/principles.json
+ * (HAND_WRITTEN below) are never touched; any other reference/*.md that no
+ * command maps to (a renamed command's old playbook) is removed. Also emits cli/data/principles.json
  * (id, title, category) for the CLI's doctor command.
  *
  * Run: npm run sync:router
  */
-import { readFileSync, writeFileSync, mkdirSync, existsSync } from "node:fs";
+import { readFileSync, writeFileSync, mkdirSync, existsSync, readdirSync, unlinkSync } from "node:fs";
 import { join, relative, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { glob } from "glob";
 import matter from "gray-matter";
+import { COMMAND_MAP, HAND_WRITTEN } from "./router-commands.js";
+
+export { COMMAND_ALIASES, COMMAND_MAP, HAND_WRITTEN } from "./router-commands.js";
 
 const ROOT = resolve(fileURLToPath(import.meta.url), "../..");
 const ROUTER_DIR = join(ROOT, "skills/groundwork");
@@ -25,29 +29,11 @@ const REF_PRINCIPLES_DIR = join(REFERENCE_DIR, "principles");
 const CLI_DATA_DIR = join(ROOT, "cli/data");
 const STRIP_HEADINGS = ["## Further Reading"];
 
-/** Router command verb -> standalone skill directory name. */
-export const COMMAND_MAP: Record<string, string> = {
-  spec: "greenfield-spec-from-idea",
-  sketch: "greenfield-architecture-sketch",
-  model: "greenfield-data-model-first",
-  principles: "greenfield-signal-driven-principles",
-  adr: "greenfield-adr-setup",
-  spike: "exploration-research-spike",
-  assume: "exploration-assumption-mapping",
-  compare: "exploration-tradeoff-analysis",
-  vet: "exploration-prototype-review",
-  review: "brownfield-architecture-review",
-  triage: "brownfield-debt-triage",
-  upgrade: "brownfield-dependency-upgrade",
-  retro: "brownfield-incident-retro",
-  plan: "brownfield-safe-change-plan",
-  strangle: "brownfield-strangler-fig",
-};
-
+/** What the user is doing, per phase. The phase names stay internal metadata (ADR-016). */
 const PHASE_LABELS: Record<string, string> = {
-  greenfield: "Define (greenfield)",
-  exploration: "Explore (exploration)",
-  brownfield: "Evolve (brownfield)",
+  greenfield: "Design something new",
+  exploration: "Decide under uncertainty",
+  brownfield: "Change a running system",
 };
 
 function criteriaList(items: unknown): string {
@@ -66,11 +52,12 @@ function buildPlaybook(verb: string, skillName: string, raw: string): string {
 
 # ${data.title ?? skillName} (\`/groundwork ${verb}\`)
 
-**Phase:** ${phaseLabel} · **Time box:** ${data.time_box ?? "not set"}
+**Activity:** ${phaseLabel} · **Time box:** ${data.time_box ?? "not set"}
 
 **Before you start:** load project context for this session if you have not already (see the
-router's Steps); honor active principles throughout. Entry criteria below must hold — if one
-does not, say which and route to the command that establishes it instead of proceeding.
+router's Steps); honor active principles throughout. Entry criteria below are what this playbook
+works best from. If one doesn't hold, don't stop: draft from what exists, label what you assumed,
+and name the command that would firm it up as your next step.
 
 **Entry criteria:**
 ${criteriaList(data.entry_criteria)}
@@ -123,6 +110,15 @@ async function main(): Promise<void> {
     } else {
       unchanged++;
     }
+  }
+
+  // 1b. Remove playbooks no command maps to any more (a renamed command's old file).
+  const expected = new Set([...Object.keys(COMMAND_MAP), ...HAND_WRITTEN].map((v) => `${v}.md`));
+  for (const name of readdirSync(REFERENCE_DIR)) {
+    if (!name.endsWith(".md") || expected.has(name)) continue;
+    unlinkSync(join(REFERENCE_DIR, name));
+    console.log(`  ✗ reference/${name} (no command maps to it)`);
+    written++;
   }
 
   // 2. Sync the union of referenced principles into reference/principles/.

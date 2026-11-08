@@ -1,6 +1,6 @@
 # Initialize Project Context (`/groundwork init`)
 
-**Phase:** Setup · **Time box:** 10-20 minutes
+**Activity:** Set up · **Time box:** 10-20 minutes
 
 Write `.groundwork/context.md` — the durable project context that every other groundwork
 command reads. Later commands use it to pick applicable principles, calibrate rigor to team
@@ -86,7 +86,7 @@ size and stage, and skip questions that are already answered. Run once per proje
    user declines, leave the placeholder line so `doctor` flags it later.
 
 6. **Recommend next steps.** Based on stage: ideation/discovery → `spec` or `spike`;
-   refinement/build → `sketch`, `model`, `adr`; maintain → `review` or `triage`. One sentence
+   refinement/build → `architecture`, `data-model`, `adr`; maintain → `review` or `debt`. One sentence
    each, only for the two or three commands that fit.
 
 ## Checkpoints

@@ -14,7 +14,7 @@ entry_criteria:
   - "The change is described (what will be different after)"
   - "The system's spec is identified, or its absence is known"
   - "The system receiving the change is running in production"
-  - "Active principles are available"
+  - "Active principles are available (if not, apply the ones the change obviously touches and say so)"
 exit_criteria:
   - "The behavior delta states what is added, modified, removed, and must stay unchanged"
   - "Blast radius is assessed: what breaks if this goes wrong"
@@ -216,3 +216,5 @@ One-way doors: {{NONE | DESCRIBE WHAT CANNOT BE REVERSED}}
 |---|---|
 | ... | Answered in plan (wording tightened) / Agent call: ... / User: ... |
 ```
+
+**Next step:** End your reply (not the artifact) with one recommended next command and why, worked out from what exists now (the router's Next steps table), never a list. Once approved: implement it, applying what it changes to the spec in the same change set. Before approval, the next step is the user's answer, not another command.

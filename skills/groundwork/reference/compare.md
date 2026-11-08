@@ -3,14 +3,15 @@
 
 # Tradeoff Analysis (`/groundwork compare`)
 
-**Phase:** Explore (exploration) · **Time box:** 60-120 minutes
+**Activity:** Decide under uncertainty · **Time box:** 60-120 minutes
 
 **Before you start:** load project context for this session if you have not already (see the
-router's Steps); honor active principles throughout. Entry criteria below must hold — if one
-does not, say which and route to the command that establishes it instead of proceeding.
+router's Steps); honor active principles throughout. Entry criteria below are what this playbook
+works best from. If one doesn't hold, don't stop: draft from what exists, label what you assumed,
+and name the command that would firm it up as your next step.
 
 **Entry criteria:**
-- At least two distinct approaches have been identified
+- At least two distinct approaches are identified (if only one is, generate the strongest alternative)
 - The decision criteria are known (or need to be surfaced)
 - The team agrees this decision is worth documenting
 
@@ -117,3 +118,5 @@ A `tradeoff-{{DECISION-SLUG}}.md` file (often becomes the basis for an ADR):
 This decision should be revisited if:
 - ...
 ```
+
+**Next step:** End your reply (not the artifact) with one recommended next command and why, worked out from what exists now (the router's Next steps table), never a list. Usually `adr` to record the decision; `spike` when one criterion is still unknown.

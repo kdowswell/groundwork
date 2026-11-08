@@ -799,7 +799,7 @@ export function deriveVisuals(kind, source) {
   const add = (heading, html) => {
     if (html) out.set(slugify(heading), html);
   };
-  if (kind?.label === "Architecture sketch") {
+  if (kind?.label === "Architecture") {
     add("Components", systemMap(lines));
     add("External Dependencies", dependencies(lines));
     add("Sync / Async Boundary", syncAsync(lines));

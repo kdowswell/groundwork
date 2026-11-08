@@ -1,0 +1,42 @@
+schema_version: "1.1"
+name: dropoff-spec-only
+description: >
+  ADR-017 drop-off eval, arm (b): the same idea as dropoff-start, from a user who runs only
+  `spec` and stops. Same graders, so the score gap is the completeness and asks the user
+  loses by stopping after the spec.
+tags: [start, dropoff]
+runs: 2
+context:
+  scaffold_script: scaffold.sh
+execution:
+  max_turns: 40
+  timeout_seconds: 900
+  allowed_tools: [Read, Glob, Grep, Bash, Skill, Write, Edit, Agent]
+  prompt: >
+    /groundwork:groundwork spec an internal tool for our support leads to see which
+    escalations are stuck and reassign them. Keep design documents in docs/.
+graders:
+  - name: spec-written
+    type: file_exists
+    path: docs/spec.md
+  - name: architecture-written
+    type: file_exists
+    path: docs/architecture.md
+  - name: data-model-written
+    type: file_exists
+    path: docs/data-model.md
+  - name: no-recorded-approval
+    type: tool_used
+    tool: Bash
+    input_match: "groundwork approve"
+    min: 0
+    max: 0
+  - name: asked-once
+    type: llm
+    criteria: >
+      PASS if the reply delivers every design document it produced and puts all of its remaining
+      questions and its approval request in this one message, so the user can settle everything
+      with a single answer. The number of questions does not matter. FAIL if the reply says
+      another design document (for example the architecture or the data model) will be drafted
+      and brought for approval only after this one is accepted, or if it holds questions back for
+      a later turn.

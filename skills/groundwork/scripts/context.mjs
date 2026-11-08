@@ -11,10 +11,14 @@
  *   CONTEXT_MISSING            no context file — offer /groundwork init
  *   CONTEXT_STALE <reason>     context found but needs attention (report, don't repair)
  *   CONTEXT_NO_PRINCIPLES      Active Principles section is empty — offer /groundwork principles
+ *   STATUS <kind> <path> <state>   one per groundwork artifact found (status.mjs)
+ *   STATUS <kind> — missing        a design artifact (spec, architecture, data-model) not found
+ *   NEXT <command> — <reason>      the one command worth running next
  */
 import { existsSync, readFileSync } from "node:fs";
 import { dirname, join, parse, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
+import { formatStatus, projectStatus } from "./status.mjs";
 
 const STALE_AFTER_DAYS = 90;
 
@@ -67,15 +71,40 @@ export function analyzeContext(raw) {
   return { staleReasons, principleLines, principleIds };
 }
 
+/** The project root: the context file's repository, else the nearest .git, else cwd. */
+function projectRoot(cwd, contextPath) {
+  if (contextPath) return dirname(dirname(contextPath));
+  let dir = resolve(cwd);
+  const { root } = parse(dir);
+  while (dir !== root) {
+    if (existsSync(join(dir, ".git"))) return dir;
+    dir = dirname(dir);
+  }
+  return resolve(cwd);
+}
+
+function printStatus(root) {
+  let lines;
+  try {
+    lines = formatStatus(projectStatus(root));
+  } catch {
+    return; // Status is a convenience; never fail the loader over it.
+  }
+  console.log("---BEGIN STATUS---");
+  for (const line of lines) console.log(line);
+  console.log("---END STATUS---");
+}
+
 function main() {
   const contextPath = findContextFile(process.cwd());
 
   if (!contextPath) {
     console.log("CONTEXT_MISSING");
     console.log(
-      "No .groundwork/context.md found. For Define or Evolve commands, offer /groundwork init " +
+      "No .groundwork/context.md found. For commands that design something new or change a running system, offer /groundwork init " +
         "first (never block on it). If the user declines, proceed and state the defaults you assume.",
     );
+    printStatus(projectRoot(process.cwd(), null));
     return;
   }
 
@@ -89,9 +118,11 @@ function main() {
   console.log("---BEGIN PROJECT CONTEXT---");
   console.log(raw.trimEnd());
   console.log("---END PROJECT CONTEXT---");
+  printStatus(projectRoot(process.cwd(), contextPath));
   console.log(
     "Directives: honor this context in every command. Report staleness to the user once; " +
-      "repair only via /groundwork doctor when asked. Do not rerun this script this session.",
+      "repair only via /groundwork doctor when asked. Use STATUS and NEXT for a bare /groundwork " +
+      "and for each command's next step. Do not rerun this script this session.",
   );
 }
 

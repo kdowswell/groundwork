@@ -146,3 +146,5 @@ A `dependency-upgrade-{{PACKAGE-NAME}}-{{VERSION}}.md` file:
 2. Run {{COMMAND}} to restore prior lockfile
 3. Deploy reverted version
 ```
+
+**Next step:** End your reply (not the artifact) with one recommended next command and why, worked out from what exists now (the router's Next steps table), never a list. Usually: carry out the upgrade's first stage; `plan` when the upgrade changes behavior callers depend on.

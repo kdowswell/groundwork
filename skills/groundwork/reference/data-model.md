@@ -1,18 +1,19 @@
 <!-- generated from skills/greenfield-data-model-first/SKILL.md by scripts/sync-router-references.ts.
      Edit the source skill, then run: npm run sync:router -->
 
-# Data Model First (`/groundwork model`)
+# Data Model (`/groundwork data-model`)
 
-**Phase:** Define (greenfield) · **Time box:** 45-90 minutes
+**Activity:** Design something new · **Time box:** 45-90 minutes
 
 **Before you start:** load project context for this session if you have not already (see the
-router's Steps); honor active principles throughout. Entry criteria below must hold — if one
-does not, say which and route to the command that establishes it instead of proceeding.
+router's Steps); honor active principles throughout. Entry criteria below are what this playbook
+works best from. If one doesn't hold, don't stop: draft from what exists, label what you assumed,
+and name the command that would firm it up as your next step.
 
 **Entry criteria:**
-- The primary data entity is named (from spec-from-idea)
-- Data ownership is established
-- Active principles are selected
+- The primary data entity is named, ideally in an approved spec (if not, infer it from the request and label it an assumption)
+- Data ownership is established (if not, propose owners and mark them for confirmation)
+- Active principles are selected (if not, apply the ones the request obviously touches and say so)
 
 **Exit criteria:**
 - Core entities and their relationships are modeled
@@ -152,3 +153,5 @@ Reason: ...
 |---|---|
 | ... | Answered in data model (wording tightened) / Agent call: ... / User: ... |
 ```
+
+**Next step:** End your reply (not the artifact) with one recommended next command and why, worked out from what exists now (the router's Next steps table), never a list. Usually: start building once the spec, architecture, and data model are approved; `adr` for a consistency or ownership decision that was close; `architecture` when none exists yet.

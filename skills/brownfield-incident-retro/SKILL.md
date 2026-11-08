@@ -1,7 +1,7 @@
 ---
 name: brownfield-incident-retro
 disable-model-invocation: true
-title: "Incident Retro"
+title: "Incident Postmortem"
 description: >
   Runs a blameless postmortem that produces a verified timeline, contributing
   factors, and owned action items with due dates. Use after a production
@@ -25,7 +25,7 @@ time_box: "60-90 minutes (meeting) + 30 minutes (write-up)"
 tags: [brownfield, incident, postmortem, reliability]
 ---
 
-# Incident Retro
+# Incident Postmortem
 
 ## How This Skill Works
 
@@ -141,3 +141,5 @@ An `incident-retro-{{DATE}}-{{INCIDENT-SLUG}}.md` file:
 Similar incidents: {{NONE | LINK TO PREVIOUS RETRO}}
 If prior action items existed: {{STATUS AND WHAT FAILED}}
 ```
+
+**Next step:** End your reply (not the artifact) with one recommended next command and why, worked out from what exists now (the router's Next steps table), never a list. Usually `plan` for the highest-priority action item that changes production; `review` when the incident exposed a systemic gap.

@@ -10,9 +10,11 @@
 import {
   cpSync,
   existsSync,
+  lstatSync,
   mkdirSync,
   readFileSync,
   readdirSync,
+  rmSync,
   writeFileSync,
 } from "node:fs";
 import { homedir } from "node:os";
@@ -38,6 +40,12 @@ export function detectProviders(projectRoot) {
 function copySkill(sourceDir, targetSkillsDir, skillName) {
   const target = join(targetSkillsDir, skillName);
   mkdirSync(targetSkillsDir, { recursive: true });
+  // reference/ is generated and owned by groundwork: replace it whole, so a renamed command's
+  // old playbook (ADR-016) doesn't linger in an updated install.
+  const reference = join(target, "reference");
+  if (existsSync(join(sourceDir, "reference")) && existsSync(reference) && !lstatSync(reference).isSymbolicLink()) {
+    rmSync(reference, { recursive: true, force: true });
+  }
   cpSync(sourceDir, target, { recursive: true });
   return target;
 }

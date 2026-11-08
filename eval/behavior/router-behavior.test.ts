@@ -10,10 +10,14 @@
 import { readFileSync } from "node:fs";
 import path from "node:path";
 import { afterAll, describe, expect, it } from "vitest";
+// eslint-disable-next-line @typescript-eslint/ban-ts-comment
+// @ts-ignore — dependency-free ESM CLI, no declarations (ADR-005)
+import { approve } from "../../cli/commands/approvals.mjs";
 import {
   cliCalls,
   createWorkspace,
   destroyWorkspace,
+  filesWritten,
   firstIndex,
   isContextAccess,
   playbooksRead,
@@ -49,8 +53,11 @@ afterAll(() => {
 });
 
 describe.skipIf(!hasKey)("router behavior (live model)", () => {
-  it("rule:router-no-arg-menu — bare /groundwork presents a menu and runs nothing", async () => {
-    const dir = workspace({ ".groundwork/context.md": CONTEXT_MD });
+  it("rule:router-no-arg-menu — bare /groundwork opens with status and one next step, then the menu, and runs nothing", async () => {
+    const dir = workspace({
+      ".groundwork/context.md": CONTEXT_MD,
+      "docs/spec.md": "# Spec: Escalation tracker\n\n## Problem\nLeads can't see stuck escalations.\n",
+    });
     const { trace, finalText } = await runScenario({
       workspace: dir,
       userMessage: "/groundwork",
@@ -65,7 +72,28 @@ describe.skipIf(!hasKey)("router behavior (live model)", () => {
     expect(named.length, `menu should name commands, got:\n${finalText}`).toBeGreaterThanOrEqual(4);
     // No artifact was produced (menus describe; commands produce).
     expect(finalText).not.toMatch(/^# (Safe Change Plan|Spec|Architecture)/m);
-  });
+    // Status first: the draft spec and a suggested next command appear before the menu.
+    const lower = finalText.toLowerCase();
+    expect(lower, "status should name the spec's state").toMatch(/docs\/spec\.md[\s\S]{0,80}(draft|not approved|unapproved)/);
+    expect(lower, "status should suggest a next command").toMatch(/next|suggest|recommend/);
+    expect(lower.indexOf("docs/spec.md"), "status comes before the menu").toBeLessThan(lower.lastIndexOf("review"));
+  }, 180_000);
+
+  it("rule:router-next-step — data-model with no spec drafts from the request instead of stopping", async () => {
+    const dir = workspace({ ".groundwork/context.md": CONTEXT_MD });
+    const { trace, finalText } = await runScenario({
+      workspace: dir,
+      userMessage:
+        "/groundwork data-model for a support escalation tracker: escalations, assignees, and an audit trail of reassignments. There is no spec.",
+    });
+
+    expect(playbooksRead(trace)).toContain("data-model.md");
+    // A draft, not a request for a spec: entities appear and the reply ends with a next step.
+    expect(finalText, `expected a drafted model:\n${finalText}`).toMatch(/escalation/i);
+    expect(finalText).toMatch(/assum/i);
+    expect(finalText.toLowerCase()).toMatch(/next/);
+    expect(finalText).not.toMatch(/(write|create|need) (a|the) spec first/i);
+  }, 180_000);
 
   it("rule:router-one-playbook + rule:router-context-first — explicit command loads context, then exactly that playbook", async () => {
     const dir = workspace({ ".groundwork/context.md": CONTEXT_MD });
@@ -117,11 +145,11 @@ In: create, assign, and close escalations. Out: customer-facing status pages.
 Escalation — owned by the support-operations team.
 `;
 
-  it("rule:router-verify-handoff — sketch checks the spec's approval and re-asks instead of proceeding", async () => {
+  it("rule:router-verify-handoff — architecture checks the spec's approval and re-asks instead of proceeding", async () => {
     const dir = workspace({ ".groundwork/context.md": CONTEXT_MD, "docs/spec.md": SPEC_MD });
     const { trace, finalText } = await runScenario({
       workspace: dir,
-      userMessage: "/groundwork sketch the system for the spec in docs/spec.md",
+      userMessage: "/groundwork architecture for the spec in docs/spec.md",
     });
 
     const verifies = cliCalls(trace, "verify");
@@ -152,7 +180,7 @@ Escalation — owned by the support-operations team.
     });
     const { trace, finalText } = await runScenario({
       workspace: dir,
-      userMessage: "/groundwork model the data for docs/spec.md",
+      userMessage: "/groundwork data-model for docs/spec.md",
     });
 
     expect(cliCalls(trace, "verify").length, "agent must verify before modeling").toBeGreaterThan(0);
@@ -162,6 +190,72 @@ Escalation — owned by the support-operations team.
     expect(reapprovals, `agent re-approved a stale spec: ${reapprovals.join(" | ")}`).toEqual([]);
     expect(finalText.toLowerCase()).toMatch(/chang|stale|approv|confirm/);
   }, 180_000);
+
+  // ADR-017: outcome commands chain the design playbooks and ask once.
+  const kindOfFile = (dir: string, rel: string) =>
+    (readFileSync(path.join(dir, rel), "utf8").match(/^#\s+(Spec|Architecture|Data Model):/m) ?? [])[1];
+
+  it("rule:router-start-chain — start with no context writes spec, architecture, and data model, then asks once", async () => {
+    const dir = workspace(); // no context: start must not stop for init
+    const { trace, finalText } = await runScenario({
+      workspace: dir,
+      maxTurns: 30,
+      userMessage:
+        "/groundwork start an internal tool for our support leads to see which escalations are stuck and reassign them",
+    });
+
+    const kinds = filesWritten(trace).map((f) => kindOfFile(dir, f)).filter(Boolean);
+    for (const k of ["Spec", "Architecture", "Data Model"]) {
+      expect(kinds, `no ${k} file written; wrote: ${filesWritten(trace).join(", ")}`).toContain(k);
+    }
+    // One playbook at a time, and each document on disk before the next playbook loads.
+    const order = trace.flatMap((c) =>
+      c.tool === "read_file" && /reference\/(spec|architecture|data-model)\.md$/.test(String(c.input.path))
+        ? [`read:${String(c.input.path).replace(/^.*reference\//, "")}`]
+        : c.tool === "write_file" && kindOfFile(dir, String(c.input.path))
+          ? [`write:${kindOfFile(dir, String(c.input.path))}`]
+          : [],
+    );
+    expect(order.indexOf("write:Spec"), order.join(" ")).toBeLessThan(order.indexOf("read:architecture.md"));
+    expect(order.indexOf("write:Architecture"), order.join(" ")).toBeLessThan(order.indexOf("read:data-model.md"));
+    // Nothing recorded for the user, and the single reply asks for one approval.
+    expect(cliCalls(trace, "approve")).toEqual([]);
+    expect(finalText.toLowerCase()).toMatch(/approv|accept/);
+  }, 600_000);
+
+  it("rule:router-continue-resume — continue builds on an approved spec without re-asking it, and drafts the architecture", async () => {
+    const dir = workspace({ ".groundwork/context.md": CONTEXT_MD, "docs/spec.md": SPEC_MD });
+    approve(dir, "docs/spec.md", { checkpoint: "greenfield-spec-from-idea/accept" });
+    const specBefore = readFileSync(path.join(dir, "docs/spec.md"), "utf8");
+    const { trace, finalText } = await runScenario({ workspace: dir, maxTurns: 30, userMessage: "/groundwork continue" });
+
+    const written = filesWritten(trace);
+    expect(written.map((f) => kindOfFile(dir, f)), `wrote: ${written.join(", ")}`).toContain("Architecture");
+    expect(readFileSync(path.join(dir, "docs/spec.md"), "utf8"), "an approved spec must not be edited").toBe(specBefore);
+    expect(playbooksRead(trace), "the spec playbook must not be re-run").not.toContain("spec.md");
+    expect(cliCalls(trace, "approve")).toEqual([]);
+    // The approval round covers what changed: the approved spec isn't in it.
+    expect(finalText, finalText).not.toMatch(/groundwork approve[^\n`]*docs\/spec\.md/);
+    expect(finalText.toLowerCase()).toMatch(/approv|accept/);
+  }, 600_000);
+
+  // ADR-016: old names keep working, run the renamed playbook, and say the new name once.
+  for (const [oldName, newName, ask] of [
+    ["sketch", "architecture", "/groundwork sketch the system for an internal escalation tracker"],
+    ["triage", "debt", "/groundwork triage our tech debt; the repo is this workspace"],
+  ] as const) {
+    it(`rule:router-command-aliases — \`${oldName}\` runs ${newName}.md and announces the new name`, async () => {
+      const dir = workspace({ ".groundwork/context.md": CONTEXT_MD });
+      const { trace, finalText } = await runScenario({ workspace: dir, userMessage: ask });
+
+      const playbooks = playbooksRead(trace);
+      expect(playbooks, `${newName}.md must be loaded`).toContain(`${newName}.md`);
+      expect(playbooks.filter((p) => p !== `${newName}.md`)).toEqual([]);
+      expect(finalText, `no rename notice in:\n${finalText}`).toMatch(
+        new RegExp(`${oldName}[\\s\\S]{0,60}\\b(now|renamed)\\b[\\s\\S]{0,40}${newName}`, "i"),
+      );
+    }, 180_000);
+  }
 
   // Shared with the plugin eval: realistic, complete, and with no user question left open, so
   // acceptance is legitimately the next step and length alone triggers the review-page offer.

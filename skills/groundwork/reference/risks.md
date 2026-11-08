@@ -1,13 +1,14 @@
 <!-- generated from skills/exploration-assumption-mapping/SKILL.md by scripts/sync-router-references.ts.
      Edit the source skill, then run: npm run sync:router -->
 
-# Assumption Mapping (`/groundwork assume`)
+# Risky Assumptions (`/groundwork risks`)
 
-**Phase:** Explore (exploration) · **Time box:** 60-90 minutes
+**Activity:** Decide under uncertainty · **Time box:** 60-90 minutes
 
 **Before you start:** load project context for this session if you have not already (see the
-router's Steps); honor active principles throughout. Entry criteria below must hold — if one
-does not, say which and route to the command that establishes it instead of proceeding.
+router's Steps); honor active principles throughout. Entry criteria below are what this playbook
+works best from. If one doesn't hold, don't stop: draft from what exists, label what you assumed,
+and name the command that would firm it up as your next step.
 
 **Entry criteria:**
 - A plan, spec, or idea exists with enough detail to identify assumptions
@@ -127,3 +128,5 @@ An `assumption-map.md` file with:
 ## Constraints (Not Assumptions)
 - {{CONSTRAINT}} — must be addressed; not subject to risk scoring
 ```
+
+**Next step:** End your reply (not the artifact) with one recommended next command and why, worked out from what exists now (the router's Next steps table), never a list. Usually `spike` on the highest-ranked assumption to validate; `spec` or `architecture` when every high-risk assumption is already settled.

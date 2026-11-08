@@ -14,7 +14,7 @@ import { join, resolve } from "node:path";
 import { afterAll, describe, expect, it } from "vitest";
 import { doctor } from "../cli/commands/doctor.mjs";
 import { install } from "../cli/commands/install.mjs";
-import { amendmentDiff, approve, approvedDiff, snapshotPath, verify } from "../cli/commands/approvals.mjs";
+import { amendmentDiff, approve, approveBundle, approvedDiff, snapshotPath, verify } from "../cli/commands/approvals.mjs";
 import { diffHunks, formatUnified, lineDiff } from "../cli/render/diff.mjs";
 
 const ROOT = resolve(__dirname, "..");
@@ -161,6 +161,16 @@ describe("groundwork install", () => {
     expect(existsSync(join(dir, ".github/skills/brownfield-safe-change-plan/SKILL.md"))).toBe(true);
   });
 
+  it("update drops playbooks of renamed commands (ADR-016)", () => {
+    const dir = tempDir();
+    install({ projectRoot: dir, providers: ["claude"] });
+    const stale = join(dir, ".claude/skills/groundwork/reference/sketch.md");
+    writeFileSync(stale, "old playbook");
+    install({ projectRoot: dir, providers: ["claude"] });
+    expect(existsSync(stale)).toBe(false);
+    expect(existsSync(join(dir, ".claude/skills/groundwork/reference/architecture.md"))).toBe(true);
+  });
+
   it("auto-detects providers and rejects unknown ones", () => {
     const dir = tempDir();
     expect(install({ projectRoot: dir }).providers).toEqual(["claude"]);
@@ -184,6 +194,76 @@ describe("groundwork install", () => {
     }
     expect(settings.hooks.PostToolUse[0].matcher).toBe("Edit|Write|MultiEdit");
     expect(settings.hooks.Stop[0].matcher).toBeUndefined();
+  });
+});
+
+describe("command names (ADR-016)", () => {
+  it("every alias maps to a command, and the router lists both", async () => {
+    const { COMMAND_MAP, COMMAND_ALIASES } = await import("../scripts/router-commands.js");
+    const router = readFileSync(join(ROOT, "skills/groundwork/SKILL.md"), "utf8").replace(/\s+/g, " ");
+    for (const verb of Object.keys(COMMAND_MAP)) {
+      expect(router).toContain(`reference/${verb}.md`);
+      expect(existsSync(join(ROOT, "skills/groundwork/reference", `${verb}.md`))).toBe(true);
+    }
+    for (const [oldName, verb] of Object.entries(COMMAND_ALIASES)) {
+      expect(COMMAND_MAP[verb], `${oldName} → ${verb}`).toBeDefined();
+      expect(router).toContain(`\`${oldName}\` → \`${verb}\``);
+      expect(existsSync(join(ROOT, "skills/groundwork/reference", `${oldName}.md`))).toBe(false);
+    }
+  });
+});
+
+describe("project status (status.mjs)", () => {
+  const LOADER = join(ROOT, "skills/groundwork/scripts/context.mjs");
+  const SPEC = "# Spec: Escalations\n\n## Problem\nLeads can't see stuck escalations.\n";
+  const ARCH = "# Architecture: Escalations\n\n## System Boundary\nThe board.\n";
+
+  function scaffold() {
+    const dir = tempDir();
+    mkdirSync(join(dir, ".git"));
+    mkdirSync(join(dir, "docs"));
+    writeFileSync(join(dir, "docs/spec.md"), SPEC);
+    writeFileSync(join(dir, "docs/architecture.md"), ARCH);
+    approve(dir, "docs/spec.md", { checkpoint: "greenfield-spec-from-idea/accept" });
+    approve(dir, "docs/architecture.md", { checkpoint: "greenfield-architecture-sketch/accept" });
+    return dir;
+  }
+
+  it("reports an approved spec, a stale architecture, a missing data model, and one next step", async () => {
+    const { projectStatus, formatStatus, nextStep } = await import("../skills/groundwork/scripts/status.mjs");
+    const dir = scaffold();
+    writeFileSync(join(dir, "docs/architecture.md"), `${ARCH}Added after approval.\n`);
+    const status = projectStatus(dir);
+    expect(status.artifacts.map((a: any) => [a.kind, a.path, a.state])).toEqual([
+      ["spec", "docs/spec.md", "approved"],
+      ["architecture", "docs/architecture.md", "stale"],
+    ]);
+    // Two things unsettled (a stale architecture and no data model): finish them together.
+    expect(nextStep(status).command).toBe("continue");
+    const lines = formatStatus(status);
+    expect(lines).toContain("STATUS data-model — missing");
+    expect(lines.filter((l: string) => l.startsWith("NEXT "))).toHaveLength(1);
+  });
+
+  it("walks the design path one step at a time", async () => {
+    const { projectStatus, nextStep } = await import("../skills/groundwork/scripts/status.mjs");
+    const empty = tempDir();
+    expect(nextStep(projectStatus(empty)).command).toBe("start");
+
+    const dir = scaffold();
+    expect(nextStep(projectStatus(dir)).command).toBe("data-model");
+    writeFileSync(join(dir, "docs/data-model.md"), "# Data Model: Escalations\n");
+    expect(nextStep(projectStatus(dir)).command).toBe("data-model"); // a draft: finish it
+    approve(dir, "docs/data-model.md", { checkpoint: "greenfield-data-model-first/accept" });
+    expect(nextStep(projectStatus(dir)).command).toBe("build");
+  });
+
+  it("is printed by the context loader, with or without a context file", () => {
+    const dir = scaffold();
+    const stdout = execFileSync(process.execPath, [LOADER], { cwd: dir, encoding: "utf8" });
+    expect(stdout).toContain("CONTEXT_MISSING");
+    expect(stdout).toContain("STATUS spec docs/spec.md approved");
+    expect(stdout).toMatch(/^NEXT \/groundwork data-model — /m);
   });
 });
 
@@ -418,6 +498,56 @@ describe("groundwork approve / verify", () => {
     writeFileSync(join(dir, "docs/specs/orders.md"), "# Orders\n\nScope: v1.\n");
     return dir;
   }
+
+  describe("one decision across several artifacts (ADR-017)", () => {
+    function designBundle() {
+      const dir = tempDir();
+      mkdirSync(join(dir, "docs"));
+      writeFileSync(join(dir, "docs/spec.md"), "# Spec: Orders\n");
+      writeFileSync(join(dir, "docs/architecture.md"), "# Architecture: Orders\n");
+      writeFileSync(join(dir, "docs/data-model.md"), "# Data Model: Orders\n");
+      return dir;
+    }
+    const FILES = ["docs/spec.md", "docs/architecture.md", "docs/data-model.md"];
+
+    it("writes one receipt per artifact with its own checkpoint, the same date, and the bundle", () => {
+      const dir = designBundle();
+      const results = approveBundle(dir, FILES, { now: NOW });
+      expect(results.map((r: any) => r.receipt.checkpoint)).toEqual([
+        "greenfield-spec-from-idea/accept",
+        "greenfield-architecture-sketch/accept",
+        "greenfield-data-model-first/accept",
+      ]);
+      for (const r of results) {
+        expect(r.receipt.date).toBe("2026-10-22");
+        expect(r.receipt.bundle).toEqual(FILES);
+      }
+      expect(verify(dir).ok).toBe(true);
+      // Staleness stays per file.
+      writeFileSync(join(dir, "docs/architecture.md"), "# Architecture: Orders\nchanged\n");
+      expect(verify(dir, "docs/spec.md").ok).toBe(true);
+      expect(verify(dir, "docs/architecture.md").ok).toBe(false);
+    });
+
+    it("checks everything before writing anything", () => {
+      const dir = designBundle();
+      writeFileSync(join(dir, "docs/notes.md"), "# Notes\n");
+      expect(() => approveBundle(dir, [...FILES, "docs/notes.md"], { now: NOW })).toThrow(/--checkpoint/);
+      expect(() => approveBundle(dir, [...FILES, "docs/missing.md"], { now: NOW })).toThrow(/does not exist/);
+      expect(existsSync(join(dir, ".groundwork/approvals"))).toBe(false);
+      expect(() => approveBundle(dir, FILES, { decision: "amended", via: "docs/spec.md" })).toThrow(/one artifact/);
+    });
+
+    it("takes several files on the command line, and an explicit checkpoint for all of them", () => {
+      const dir = designBundle();
+      const { status, stdout } = runCli(["approve", ...FILES, "--checkpoint=start/accept", "--decision=delegated"], { cwd: dir });
+      expect(status).toBe(0);
+      expect(stdout).toContain("3 artifacts in one decision (delegated to the agent)");
+      const receipt = JSON.parse(readFileSync(join(dir, ".groundwork/approvals/docs__data-model.md.json"), "utf8"));
+      expect(receipt.checkpoint).toBe("start/accept");
+      expect(receipt.decidedBy).toBe("agent-delegated");
+    });
+  });
 
   it("records a hash-pinned receipt and verifies it fresh", () => {
     const dir = projectWithSpec();

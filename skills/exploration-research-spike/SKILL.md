@@ -10,7 +10,7 @@ description: >
 phase: exploration
 entry_criteria:
   - "A specific question to answer is written down (not a topic to explore)"
-  - "A time box is agreed upon"
+  - "A time box is agreed (if not, propose one)"
   - "The decision that depends on this question is identified"
 exit_criteria:
   - "The original question is answered with evidence"
@@ -102,3 +102,5 @@ If the answer had been different (e.g., performance didn't meet the bar), we wou
 Location: {{BRANCH OR "DELETED"}}
 Status: {{Throwaway (deleted) | Kept for reference (not production-ready)}}
 ```
+
+**Next step:** End your reply (not the artifact) with one recommended next command and why, worked out from what exists now (the router's Next steps table), never a list. Usually `adr` to record the decision the spike settled; `compare` when it narrowed the field to options that still need weighing.

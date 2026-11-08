@@ -183,7 +183,7 @@ export function serve(root, artifact, opts = {}) {
   const rendered = render(root, artifact, { checkpoint: opts.checkpoint, form: { token }, write: false });
   if (!rendered.checkpoint) {
     throw new Error(
-      `${rendered.artifactPath} is not a groundwork spec, sketch, or data model — pass --checkpoint=<id> to decide on it`,
+      `${rendered.artifactPath} is not a groundwork spec, architecture, or data model — pass --checkpoint=<id> to decide on it`,
     );
   }
   const abs = join(root, rendered.artifactPath);
