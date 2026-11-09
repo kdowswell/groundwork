@@ -1,6 +1,6 @@
 {
   "name": "@kdowswell/groundwork",
-  "version": "0.0.2",
+  "version": "0.1.0",
   "description": "Architectural grounding for AI coding agents — distilled principle files agents reference during planning.",
   "type": "module",
   "license": "MIT",
